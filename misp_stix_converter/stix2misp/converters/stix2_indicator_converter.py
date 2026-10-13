@@ -1925,7 +1925,7 @@ class InternalSTIX2IndicatorConverter(
         pattern = indicator.pattern[1:-1]
         data = None
         if ' AND ' in pattern:
-            pattern, data_pattern = pattern.split(' AND ')
+            pattern, data_pattern = self._split_pattern_on_and(pattern)
             data = self._extract_value_from_pattern(data_pattern)
         value = self._extract_value_from_pattern(pattern)
         attribute = self._create_attribute_dict(indicator, value)
@@ -1935,7 +1935,9 @@ class InternalSTIX2IndicatorConverter(
 
     def _attribute_from_double_pattern_indicator(
             self, indicator: _INDICATOR_TYPING):
-        domain_pattern, pattern = indicator.pattern[1:-1].split(' AND ')
+        domain_pattern, pattern = self._split_pattern_on_and(
+            indicator.pattern[1:-1]
+        )
         domain_value = self._extract_value_from_pattern(
             domain_pattern
         )
@@ -1947,7 +1949,7 @@ class InternalSTIX2IndicatorConverter(
 
     def _attribute_from_dual_pattern_indicator(
             self, indicator: _INDICATOR_TYPING):
-        pattern = indicator.pattern[1:-1].split(' AND ')[1]
+        pattern = self._split_pattern_on_and(indicator.pattern[1:-1])[1]
         attribute = self._create_attribute_dict(
             indicator, self._extract_value_from_pattern(pattern)
         )
@@ -1955,7 +1957,7 @@ class InternalSTIX2IndicatorConverter(
 
     def _attribute_from_filename_hash_indicator(
             self, indicator: _INDICATOR_TYPING):
-        for pattern in indicator.pattern[1:-1].split(' AND '):
+        for pattern in self._split_pattern_on_and(indicator.pattern[1:-1]):
             if 'file:name = ' in pattern:
                 filename = self._extract_value_from_pattern(pattern)
             elif 'file:hashes.' in pattern:
@@ -1971,7 +1973,7 @@ class InternalSTIX2IndicatorConverter(
     def _attribute_from_ip_port_indicator(self, indicator: _INDICATOR_TYPING):
         values = [
             self._extract_value_from_pattern(pattern) for pattern
-            in indicator.pattern[1:-1].split(' AND ')[1:]
+            in self._split_pattern_on_and(indicator.pattern[1:-1])[1:]
         ]
         attribute = self._create_attribute_dict(indicator, '|'.join(values))
         self.main_parser._add_misp_attribute(attribute, indicator)
@@ -1979,7 +1981,9 @@ class InternalSTIX2IndicatorConverter(
     def _attribute_from_malware_sample_indicator(
             self, indicator: _INDICATOR_TYPING):
         pattern = indicator.pattern[1:-1]
-        filename_pattern, md5_pattern, *pattern = pattern.split(' AND ')
+        filename_pattern, md5_pattern, *pattern = self._split_pattern_on_and(
+            pattern
+        )
         filename_value = self._extract_value_from_pattern(
             filename_pattern
         )
@@ -2978,6 +2982,43 @@ class InternalSTIX2IndicatorConverter(
         if 'windows-registry-key:' in identifier:
             return value.replace('\\%', '%')
         return value
+
+    @staticmethod
+    def _split_pattern_on_and(pattern: str) -> list:
+        # Splits a STIX pattern on top-level ' AND ' separators, ignoring
+        # any ' AND ' that appears inside a quoted string value so a value
+        # such as 'evil AND you.exe' is not mistaken for two comparisons.
+        parts = []
+        buffer = []
+        in_string = False
+        index = 0
+        length = len(pattern)
+        while index < length:
+            character = pattern[index]
+            if in_string:
+                if character == '\\' and pattern[index + 1:index + 2] in ("'", '\\'):
+                    buffer.append(pattern[index:index + 2])
+                    index += 2
+                    continue
+                if character == "'":
+                    in_string = False
+                buffer.append(character)
+                index += 1
+                continue
+            if character == "'":
+                in_string = True
+                buffer.append(character)
+                index += 1
+                continue
+            if pattern[index:index + 5] == ' AND ':
+                parts.append(''.join(buffer))
+                buffer = []
+                index += 5
+                continue
+            buffer.append(character)
+            index += 1
+        parts.append(''.join(buffer))
+        return parts
 
     @staticmethod
     def _get_contained_value(first_value: str, second_value: str) -> tuple[str]:
