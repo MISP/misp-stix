@@ -22,10 +22,12 @@ def _get_stix_content_version(stix_content: dict) -> str:
 
 
 def _handle_invalid_stix_content(
-        invalid_objects, duplicate_invalid_ids, *stix_objects):
-    # the ids set aside from this content, so a dict the caller passed in
-    # already populated by an earlier load never reads as a duplicate
-    invalid_ids = set()
+        invalid_objects, duplicate_invalid_ids, document_invalid_ids,
+        *stix_objects):
+    # `document_invalid_ids` holds the ids set aside from this content alone,
+    # so a dict the caller passed in already populated by an earlier load never
+    # reads as a duplicate - and the parser can tell this document's losses
+    # apart from the earlier ones when it reports what nothing referenced
     for index, stix_object in enumerate(stix_objects):
         try:
             valid_object = stix2_parser(
@@ -43,9 +45,9 @@ def _handle_invalid_stix_content(
             # `invalid_objects` keeps its `id -> object` shape: the object
             # dropped here is never recovered, but the id it shared travels
             # to the parser, which is where the loss can be reported
-            if object_id in invalid_ids:
+            if object_id in document_invalid_ids:
                 duplicate_invalid_ids.add(object_id)
-            invalid_ids.add(object_id)
+            document_invalid_ids.add(object_id)
             invalid_objects[object_id] = stix_object
             continue
         yield valid_object
@@ -53,7 +55,8 @@ def _handle_invalid_stix_content(
 
 def _handle_stix2_loading_error(
         stix_content: dict, invalid_objects: dict,
-        duplicate_invalid_ids: set) -> _BUNDLE_TYPING:
+        duplicate_invalid_ids: set,
+        document_invalid_ids: set) -> _BUNDLE_TYPING:
     if 'objects' not in stix_content:
         raise STIXLoadingError(
             "The STIX 2 content has no 'objects' property"
@@ -80,7 +83,8 @@ def _handle_stix2_loading_error(
     bundle = Bundle_v21 if version == '2.1' else Bundle_v20
     return bundle(
         *_handle_invalid_stix_content(
-            invalid_objects, duplicate_invalid_ids, *stix_content['objects']
+            invalid_objects, duplicate_invalid_ids, document_invalid_ids,
+            *stix_content['objects']
         ),
         id=bundle_id, allow_custom=True, interoperability=True
     )
@@ -92,6 +96,7 @@ def load_stix2_content(stix_content: BytesIO | dict | list | str,
     if invalid_objects is None:
         invalid_objects = {}
     duplicate_invalid_ids: set = set()
+    document_invalid_ids: set = set()
     if not isinstance(stix_content, (dict, list)):
         if isinstance(stix_content, BytesIO):
             # the buffer is sized before it is decoded: decoding an oversized
@@ -112,7 +117,8 @@ def load_stix2_content(stix_content: BytesIO | dict | list | str,
         # the 2.1 code path in `stix2` reports an object without a `type`
         # property as a bare KeyError where the 2.0 one uses ParseError
         bundle = _handle_stix2_loading_error(
-            stix_content, invalid_objects, duplicate_invalid_ids
+            stix_content, invalid_objects, duplicate_invalid_ids,
+            document_invalid_ids
         )
     # keeps the recovered invalid objects with the bundle they came from, so
     # `load_stix_bundle` sees them even when the caller does not pass the dict
@@ -120,6 +126,9 @@ def load_stix2_content(stix_content: BytesIO | dict | list | str,
     # the ids more than one invalid object claimed: the dict above only kept
     # the last of them, and only the parser can say what that costs
     bundle._duplicate_invalid_ids = duplicate_invalid_ids
+    # the ids diverted from this document alone - what the dict above cannot
+    # say once a caller-prepopulated or reused dict holds earlier losses too
+    bundle._document_invalid_ids = document_invalid_ids
     return bundle
 
 

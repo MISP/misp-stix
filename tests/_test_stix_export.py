@@ -4,9 +4,11 @@
 import json
 import misp_stix_converter
 import os
+import re
 import unittest
 from base64 import b64encode
 from collections import defaultdict
+from copy import deepcopy
 from datetime import datetime, timezone
 from misp_stix_converter.misp2stix.exportparser import MISPtoSTIXParser
 from pathlib import Path
@@ -15,9 +17,13 @@ from shutil import copyfile
 from stix.core import STIXPackage
 from stix2patterns.validator import validate
 from tempfile import TemporaryDirectory
+from typing import Optional
 from unittest.mock import patch
 from uuid import uuid5, UUID
-from ._test_stix import PLANTED_TEMPLATE, TestSTIX
+from misp_stix_converter.tools.misp_object_templates import (
+    _custom_property_name)
+from ._test_stix import (
+    PLANTED_TEMPLATE, TestSTIX, append_further_values, spell_non_pattern_value)
 
 _DEFAULT_ORGNAME = 'MISP'
 _ATTRIBUTE_EXCLUSION_LIST = ('disable_correlation', 'to_ids')
@@ -29,6 +35,35 @@ _MISP_OBJECT_EXCLUSION_LIST = (
 _PRESERVED_OUTPUT = 'IMPORTANT PRE-EXISTING CONTENT'
 _parse_json_file = MISPtoSTIXParser.parse_json_file
 
+# An `anonymised` attribute is unmapped in every export direction: parsing it
+# records the one warning a failing export must still report
+_RECORDED_EXPORT_WARNING = 'MISP Attribute type anonymised not mapped.'
+_UNMAPPED_ATTRIBUTE = {
+    'uuid': '91ae0a21-b7b6-4b16-b34c-5a1a04e39856',
+    'type': 'anonymised', 'category': 'Other',
+    'value': 'ffbb51e2-4166-4b98-a714-be5a0e6f77e1',
+    'timestamp': '1756425600', 'to_ids': False
+}
+# Three attributes failing validation the same way: the message pymisp raises
+# for a missing value names no type, and with no uuid there is no record to
+# name either, so they are one distinct error recorded three times
+_VALUELESS_ATTRIBUTES = [{'type': 'ip-src'} for _ in range(3)]
+# A second unmapped type that passes validation: with the `anonymised` one
+# above, two warnings the Diagnostics list in the order they were recorded
+_UNMAPPED_PDB_ATTRIBUTE = {
+    'uuid': '6e3e7f2f-1e9b-4d4c-8f80-000000000001',
+    'type': 'pdb', 'category': 'Artifacts dropped', 'value': 'malware.pdb',
+    'timestamp': '1756425600', 'to_ids': False
+}
+_UNMAPPED_PDB_WARNING = 'MISP Attribute type pdb not mapped.'
+# On a `to_ids` file object, an invalid TLSH value is recorded as an error and
+# dropped on the STIX 2 side - the hash validation STIX 1 export has no
+# equivalent of
+_INVALID_TLSH_ATTRIBUTE = {
+    'type': 'tlsh', 'object_relation': 'tlsh',
+    'value': 'T1' + 'a1b2c3d4e5' * 7, 'to_ids': True
+}
+
 # Object relations reaching a pattern property-name position, paired with the
 # pattern segment each one must produce. An unquoted metacharacter segment
 # either breaks the pattern - the object is then reported instead of converted
@@ -36,13 +71,22 @@ _parse_json_file = MISPtoSTIXParser.parse_json_file
 # last pair is the benign control: a relation needing no quotes keeps the bare
 # segment it always had. Segments are spelled out rather than computed, so the
 # expectations do not restate the escaping they guard.
+# The custom property name rule folds every character outside
+# [a-z0-9_] to `_`, so a metacharacter relation always reaches the pattern as
+# a bare keyword segment - pattern syntax in a relation cannot escape it.
+_DICTIONARY_META_KEYS = {
+    'Odd Key (1)': 'Odd_Key__1_',
+    'kept-Case_ok': 'kept-Case_ok',
+    'origin:Storm-0558': 'origin_Storm-0558'
+}
 _PATTERN_SEGMENT_RELATIONS = (
-    ("rel' OR file:name = 'x", r"'x_misp_rel\' OR file:name = \'x'"),
-    ('rel]', "'x_misp_rel]'"),
-    ('rel=1', "'x_misp_rel=1'"),
-    ('weird relation', "'x_misp_weird relation'"),
-    ("x'", r"'x_misp_x\''"),
-    ('a.b', "'x_misp_a.b'"),
+    ("rel' OR file:name = 'x", 'x_misp_rel__or_file_name____x'),
+    ('rel]', 'x_misp_rel_'),
+    ('rel=1', 'x_misp_rel_1'),
+    ('weird relation', 'x_misp_weird_relation'),
+    ("x'", 'x_misp_x_'),
+    ('a.b', 'x_misp_a_b'),
+    ('Odd.Case/Relation', 'x_misp_odd_case_relation'),
     ('rel-with-dash', 'x_misp_rel_with_dash')
 )
 
@@ -281,11 +325,96 @@ class TestCollectionSTIXExport(unittest.TestCase):
                     output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
                 )
 
+    def _check_collection_export_reports_recorded_messages(
+            self, collection, json_content: dict,
+            expected_error: Optional[str] = None, **kwargs):
+        # A collection only merges the parser's recorded messages into its
+        # result once something was written: with every input file failing
+        # after it was parsed, the failure lines used to stand alone. The
+        # crash is planted after the parsing, where a write refusal or any
+        # later conversion step raises from inside the per-input `try`
+        def _crash_after_parsing(parser, filename):
+            _parse_json_file(parser, filename)
+            raise RuntimeError('Crash after the parser recorded its messages')
+
+        for arguments in (
+                {}, {'single_output': True},
+                {'single_output': True, 'in_memory': True}):
+            with TemporaryDirectory() as tmp_dir:
+                copies = self._write_json_inputs(tmp_dir, json_content)
+                with patch.object(
+                        MISPtoSTIXParser, 'parse_json_file',
+                        _crash_after_parsing):
+                    results = collection(*copies, **arguments, **kwargs)
+                self.assertNotIn('success', results)
+                self.assertEqual(len(results['fails']), len(copies))
+                self._check_recorded_messages_reported(results, expected_error)
+
+    def _check_single_export_reports_recorded_messages(
+            self, conversion, json_content: dict,
+            expected_error: Optional[str] = None, **kwargs):
+        # The crash every single-input path carries natively: the refused
+        # write sits inside the same `try` as the conversion, after the
+        # parser recorded its messages
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_json_inputs(
+                tmp_dir, json_content, count=1
+            )[0]
+            output_name = self._preserved_output(tmp_dir)
+            results = conversion(filename, output_name=output_name, **kwargs)
+            self.assertNotIn('success', results)
+            self.assertEqual(len(results['fails']), 1)
+            self._check_recorded_messages_reported(results, expected_error)
+
+    def _check_recorded_messages_reported(
+            self, results: dict, expected_error: Optional[str] = None):
+        self.assertIn('warnings', results)
+        self.assertIn(
+            _RECORDED_EXPORT_WARNING,
+            [
+                warning for warnings in results['warnings'].values()
+                for warning in warnings
+            ]
+        )
+        if expected_error is not None:
+            self.assertIn('errors', results)
+            self.assertTrue(
+                any(
+                    expected_error in error
+                    for errors in results['errors'].values()
+                    for error in errors
+                ),
+                results['errors']
+            )
+
     def _check_reduced_input_fails(self, results: dict, *filenames):
         self.assertEqual(len(results['fails']), len(filenames))
         for fail, filename in zip(results['fails'], filenames):
             self.assertTrue(fail.startswith(f'{filename.name} - '), fail)
             self.assertNotIn(str(filename.parent), fail)
+
+    def _event_with_recorded_messages(self) -> dict:
+        # One event recording on its way through any export parser: a warning
+        # for the unmapped attribute, and - on the STIX 2 side, where hashes
+        # are validated - an error for the invalid TLSH value of a `to_ids`
+        # file object
+        from .test_events import get_event_with_file_object
+        event = get_event_with_file_object()
+        event['Event']['Object'][0]['Attribute'].append(
+            dict(_INVALID_TLSH_ATTRIBUTE)
+        )
+        event['Event']['Attribute'] = [dict(_UNMAPPED_ATTRIBUTE)]
+        return event
+
+    def _write_json_inputs(
+            self, tmp_dir: str, json_content: dict, count: int = 2) -> list:
+        input_files = []
+        for n in range(1, count + 1):
+            input_file = Path(tmp_dir) / f'recorded_messages_{n}.json'
+            with open(input_file, 'wt', encoding='utf-8') as f:
+                json.dump(json_content, f)
+            input_files.append(input_file)
+        return input_files
 
     def _collection_files(self, name: str) -> list:
         return [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
@@ -364,10 +493,7 @@ class TestCollectionSTIX2Export(TestCollectionSTIXExport):
         from .test_events import get_event_with_file_object
         event = get_event_with_file_object()
         event['Event']['Object'][0]['Attribute'].append(
-            {
-                'type': 'tlsh', 'object_relation': 'tlsh',
-                'value': 'T1' + 'a1b2c3d4e5' * 7, 'to_ids': True
-            }
+            dict(_INVALID_TLSH_ATTRIBUTE)
         )
         with TemporaryDirectory() as tmp_dir:
             filename = Path(tmp_dir) / 'event_with_invalid_hash.json'
@@ -422,6 +548,290 @@ class TestSTIX2Export(TestSTIX):
     def _add_object_ids_flag(event):
         for misp_object in event['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
+
+    # Spellings stix2 reads with `int()` as another number or refuses with the
+    # whole record, and the ones pymisp lets through for a relation it
+    # validates as a number
+    _NON_CANONICAL_TEXT = ('0x1f', '+5', '1_000', '007', '٣')
+    _NON_CANONICAL_VALIDATED = ('007', '٣')
+    # The spellings pymisp lets through for a `float` relation that stix2
+    # reads as another number, or as a nan or an infinity no JSON holds
+    _NON_CANONICAL_FLOAT = ('nan', 'inf', '1e400', '1_000', '٣')
+
+    @staticmethod
+    def _non_canonical_number_warning(
+            relation, value, record, kind='decimal integer'):
+        return (
+            f'{relation!r} in the {record} is not a canonical {kind}: '
+            f'{value!r} written as a custom property.'
+        )
+
+    @staticmethod
+    def _object_record(misp_object):
+        return f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
+
+    @staticmethod
+    def _spell_object_relations(event, name, values, *extra):
+        # The event's object named `name`, each relation of `values` holding
+        # the value given, and one more attribute per `(type, relation,
+        # value)` of `extra`
+        misp_object = next(
+            misp_object for misp_object in event['Event']['Object']
+            if misp_object['name'] == name
+        )
+        for attribute in misp_object['Attribute']:
+            if attribute['object_relation'] in values:
+                attribute['value'] = values[attribute['object_relation']]
+        misp_object['Attribute'].extend(
+            {'type': attribute_type, 'object_relation': relation,
+             'value': value}
+            for attribute_type, relation, value in extra
+        )
+        return misp_object
+
+    # A relation the export writes one value of natively keeps every value
+    # its MISP object repeats it with: the first one stays in the native
+    # property, each other one is carried under the custom property of the
+    # relation, the rest of the record as it was written without the repeat.
+    # Its pattern keeps every comparison and compares the repeat too
+
+    def _test_repeated_single_value_relations(self, parser_class):
+        for fixture, name, relation, values in self._REPEATED_RELATIONS:
+            if not isinstance(values, tuple):
+                values = (values,)
+            for to_ids in (False, True):
+                with self.subTest(name=name, relation=relation, to_ids=to_ids):
+                    event = fixture()
+                    misp_object = next(
+                        misp_object for misp_object in event['Event']['Object']
+                        if misp_object['name'] == name
+                    )
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = to_ids
+                    base = self._export_event(parser_class, event)
+                    append_further_values(misp_object, relation, values, to_ids)
+                    repeated = self._export_event(parser_class, event)
+                    self.assertEqual(repeated.errors, base.errors)
+                    self.assertEqual(repeated.warnings, base.warnings)
+                    self.assertEqual(
+                        self._without_custom_values(repeated.stix_objects),
+                        self._without_custom_values(base.stix_objects)
+                    )
+                    custom_values = self._custom_values(
+                        repeated.stix_objects, _custom_property_name(relation)
+                    )
+                    for value in values:
+                        self.assertIn(value, custom_values)
+                    indicator_id = f"indicator--{misp_object['uuid']}"
+                    patterns = [
+                        self._pattern_comparisons(parser, indicator_id)
+                        for parser in (base, repeated)
+                    ]
+                    if patterns[0] is None:
+                        continue
+                    if not to_ids:
+                        self.assertEqual(*patterns)
+                        continue
+                    self.assertLessEqual(*patterns)
+                    # A further value with data compares its data too
+                    self.assertEqual(
+                        {
+                            self._comparable(self._compared_value(comparison))
+                            for comparison in patterns[1] - patterns[0]
+                            if not comparison.split(' = ')[0].endswith('.data')
+                        },
+                        {self._comparable(value) for value in values}
+                    )
+
+    # A value holding a quote or a backslash goes out as MISP gave it in
+    # every property that is no pattern: only a pattern escapes them, a
+    # native property or a custom one carries the value itself
+
+    def _test_non_pattern_values_as_given(self, parser_class):
+        value = "it's c:\\tmp"
+        escaped = "it\\'s c:\\\\tmp"
+        for fixture, name, relations in self._NON_PATTERN_RELATIONS:
+            for relation in relations:
+                with self.subTest(name=name, relation=relation):
+                    event = spell_non_pattern_value(
+                        fixture(), name, relation, value
+                    )
+                    parser = self._export_event(parser_class, event)
+                    self.assertEqual(parser.errors, {})
+                    values = self._string_values(parser.stix_objects)
+                    self.assertIn(value, values)
+                    self.assertFalse(
+                        any(escaped in string for string in values)
+                    )
+
+    @staticmethod
+    def _string_values(stix_objects):
+        # Every string a STIX object holds, at any depth
+        values = []
+        def collect(content):
+            if isinstance(content, dict):
+                for value in content.values():
+                    collect(value)
+            elif isinstance(content, list):
+                for value in content:
+                    collect(value)
+            elif isinstance(content, str):
+                values.append(content)
+        for stix_object in stix_objects:
+            collect(json.loads(stix_object.serialize()))
+        return values
+
+    # A netflow object's ICMP type goes out as a custom property of the
+    # network traffic: the ICMP extension requires a code the netflow
+    # template has no relation for. The protocols stay the ones the TCP
+    # flags and the object's own protocol name, and the pattern compares
+    # the type of the extension still
+
+    def _test_netflow_object_with_icmp_type(self, parser_class):
+        from .test_events import get_event_with_netflow_object
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_netflow_object()
+                misp_object = self._spell_object_relations(
+                    event, 'netflow', {}, ('text', 'icmp-type', '08')
+                )
+                for attribute in misp_object['Attribute']:
+                    attribute['to_ids'] = to_ids
+                self.parser = self._export_event(parser_class, event)
+                self.assertEqual(self.parser.errors, {})
+                self.assertEqual(self.parser.warnings, {})
+                network_traffic, = (
+                    observable
+                    for observable in self._record_observables().values()
+                    if observable.type == 'network-traffic'
+                )
+                self.assertEqual(network_traffic.x_misp_icmp_type, '08')
+                self.assertEqual(network_traffic.protocols, ['tcp', 'ip'])
+                self.assertEqual(list(network_traffic.extensions), ['tcp-ext'])
+                comparisons = self._pattern_comparisons(
+                    self.parser, f"indicator--{misp_object['uuid']}"
+                )
+                if not to_ids:
+                    self.assertIsNone(comparisons)
+                    continue
+                self.assertIn(
+                    "network-traffic:extensions.'icmp-ext'.icmp_type_hex = '08'",
+                    comparisons
+                )
+
+    # A stix2-pattern object goes out as an Indicator holding its pattern,
+    # its version as the pattern version and its comment as the description.
+    # A further version is carried under the relation's custom property. Not
+    # one of the repeated relations: the pattern is the object's own value,
+    # which a further version adds no comparison to
+
+    def _test_stix2_pattern_object(self, parser_class):
+        from .test_events import get_event_with_stix2_pattern_object
+        for further_versions, custom_properties in (
+                ((), {}),
+                (('stix 2.0',), {'x_misp_version': 'stix 2.0'})):
+            with self.subTest(further_versions=further_versions):
+                event = get_event_with_stix2_pattern_object()
+                misp_object = self._spell_object_relations(
+                    event, 'stix2-pattern', {},
+                    *(('text', 'version', value) for value in further_versions)
+                )
+                self.parser = self._export_event(parser_class, event)
+                self.assertEqual(self.parser.errors, {})
+                self.assertEqual(self.parser.warnings, {})
+                indicator, = (
+                    stix_object for stix_object in self.parser.stix_objects
+                    if stix_object.id == f"indicator--{misp_object['uuid']}"
+                )
+                self.assertEqual(
+                    indicator.pattern,
+                    "[network-traffic:dst_port = '443' AND "
+                    "network-traffic:dst_ref.value = '8.8.8.8']"
+                )
+                self.assertEqual(indicator.pattern_version, '2.1')
+                self.assertEqual(
+                    indicator.description,
+                    'HTTPS traffic to the Google public DNS'
+                )
+                self.assertEqual(
+                    {
+                        key: value for key, value in indicator.items()
+                        if key.startswith('x_misp_')
+                    },
+                    custom_properties
+                )
+
+    def _export_event(self, parser_class, event):
+        parser = parser_class()
+        parser.parse_misp_event(self._parser_input(event))
+        return parser
+
+    @staticmethod
+    def _without_custom_values(stix_objects):
+        # The STIX objects as written, without their custom properties nor
+        # their pattern
+        def strip(content):
+            if isinstance(content, dict):
+                return {
+                    key: strip(value) for key, value in content.items()
+                    if not key.startswith('x_misp_')
+                }
+            if isinstance(content, list):
+                return [strip(value) for value in content]
+            return content
+        stripped = []
+        for stix_object in stix_objects:
+            content = strip(json.loads(stix_object.serialize()))
+            content.pop('pattern', None)
+            stripped.append(content)
+        return stripped
+
+    @staticmethod
+    def _custom_values(stix_objects, feature):
+        # Every value a custom property carries, on any STIX object or any
+        # dictionary in it - the value of a value carried with its data
+        values = []
+        def collect(content):
+            if isinstance(content, dict):
+                for key, value in content.items():
+                    if key != feature:
+                        collect(value)
+                        continue
+                    for item in value if isinstance(value, list) else [value]:
+                        values.append(
+                            item['value'] if isinstance(item, dict) else item
+                        )
+            elif isinstance(content, list):
+                for value in content:
+                    collect(value)
+        for stix_object in stix_objects:
+            collect(json.loads(stix_object.serialize()))
+        return values
+
+    @staticmethod
+    def _pattern_comparisons(parser, indicator_id):
+        # The comparisons of an indicator's STIX pattern, when there is one
+        for stix_object in parser.stix_objects:
+            if stix_object.id == indicator_id:
+                if stix_object.get('pattern_type', 'stix') != 'stix':
+                    return None
+                return set(stix_object.pattern.strip('[]').split(' AND '))
+
+    @staticmethod
+    def _compared_value(comparison):
+        # The value a pattern comparison is made with, as written
+        value, = re.findall(r"= '((?:[^'\\]|\\.)*)'\)?$", comparison)
+        return value
+
+    @staticmethod
+    def _comparable(value):
+        # A value without the escapes a pattern adds, a date as the date it
+        # names whichever way it is written
+        value = value.replace('\\', '')
+        try:
+            return datetime.fromisoformat(value.replace('Z', '+00:00'))
+        except ValueError:
+            return value
 
     def _add_metacharacter_relation(self, event, relation, value):
         misp_object = event['Event']['Object'][0]
@@ -600,6 +1010,24 @@ class TestSTIX2Export(TestSTIX):
         )
         self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
         self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
+        if 'meta' in cluster:
+            # `x_misp_meta` is a dictionary: keys keep case and `-` (STIX §2.3),
+            # every other character outside the dictionary charset folds to `_`
+            self.assertEqual(
+                stix_object.x_misp_meta,
+                {
+                    _DICTIONARY_META_KEYS[key]: value
+                    for key, value in cluster['meta'].items()
+                }
+            )
+            self._check_original_names(
+                stix_object,
+                {
+                    _DICTIONARY_META_KEYS[key]: key
+                    for key in cluster['meta']
+                    if _DICTIONARY_META_KEYS[key] != key
+                }
+            )
 
     def _check_email_address(self, address_object, address, display_name=None):
         self.assertEqual(address_object.type, 'email-addr')
@@ -636,7 +1064,13 @@ class TestSTIX2Export(TestSTIX):
          invalid_size, _, _, invalid_x509_md5) = initial_attributes
         (_, _, domain_ip, _, _, ip_port, _, network_connection,
          network_socket, *_) = misp_objects
-        validation_errors = self.parser.warnings.get('misp event', [])
+        # Filed under the event they come from, never under 'misp event',
+        # next to the conversion warnings of that event.
+        validation_errors = [
+            warning for warning in self.parser.warnings.get(
+                self.parser._misp_event['uuid'], []
+            ) if warning.startswith('Failed validation')
+        ]
         self.assertEqual(len(validation_errors), 17)
         connection_src_ip, connection_dst_ip = network_connection['Attribute']
         error_messages = list(
@@ -1004,6 +1438,70 @@ class TestSTIX2Export(TestSTIX):
             )
         )
 
+    def _test_pe_object_falling_back_keeps_its_sections(self, parser_class):
+        # A pe the export fails to build goes out as the custom object, with
+        # an Error, and its sections go out as theirs: nothing of the pe
+        # sections is left behind, whether a file carries the pe or not, and
+        # the file stays a file, with or without custom properties of its own
+        from .test_events import (
+            get_event_with_file_and_pe_objects, get_event_with_pe_objects)
+
+        def get_event_with_native_file_and_pe_objects():
+            event = get_event_with_file_and_pe_objects()
+            file_object = event['Event']['Object'][0]
+            file_object['Attribute'] = [
+                attribute for attribute in file_object['Attribute']
+                if attribute['object_relation'] != 'entropy'
+            ]
+            return event
+
+        for fixture in (get_event_with_file_and_pe_objects,
+                        get_event_with_native_file_and_pe_objects,
+                        get_event_with_pe_objects):
+            for to_ids in (False, True):
+                with self.subTest(fixture=fixture.__name__, to_ids=to_ids):
+                    event = fixture()
+                    for misp_object in event['Event']['Object']:
+                        for attribute in misp_object['Attribute']:
+                            attribute['to_ids'] = to_ids
+                    pe, section = (
+                        next(
+                            misp_object
+                            for misp_object in event['Event']['Object']
+                            if misp_object['name'] == name
+                        ) for name in ('pe', 'pe-section')
+                    )
+                    self.parser = parser_class()
+                    with patch.object(
+                            self.parser, '_create_PE_extension',
+                            side_effect=RuntimeError('PE extension')):
+                        self.parser.parse_misp_event(
+                            self._parser_input(event)
+                        )
+                    self.assertEqual(len(self._object_errors(pe)), 1)
+                    custom_objects = {
+                        stix_object.x_misp_name: stix_object
+                        for stix_object in self.parser.stix_objects
+                        if stix_object.type == 'x-misp-object'
+                    }
+                    self.assertEqual(
+                        sorted(custom_objects), ['pe', 'pe-section']
+                    )
+                    custom_section = custom_objects['pe-section']
+                    self.assertEqual(
+                        custom_section.id, f"x-misp-object--{section['uuid']}"
+                    )
+                    self.assertEqual(
+                        [
+                            attribute['value'] for attribute
+                            in custom_section.x_misp_attributes
+                        ],
+                        [
+                            attribute['value']
+                            for attribute in section['Attribute']
+                        ]
+                    )
+
     def _check_pe_and_section_observable(self, extension, pe, section):
         (_type, compilation, entrypoint, original, internal, desc, version,
          lang, prod_name, prod_version, company, _copyright, sections, imphash,
@@ -1126,6 +1624,19 @@ class TestSTIX2Export(TestSTIX):
         for field in ('primary_motivation', 'resource_level', 'roles'):
             if field in meta:
                 self.assertEqual(getattr(stix_object, field), meta[field])
+        if 'cfr-type-of-incident' in meta:
+            # unmapped meta key with a dash: folded custom property name, its
+            # spelling carried on the channel
+            self.assertEqual(
+                stix_object.x_misp_cfr_type_of_incident,
+                meta['cfr-type-of-incident']
+            )
+            self.assertFalse(hasattr(stix_object, 'x_misp_cfr-type-of-incident'))
+            self._check_custom_property_names(stix_object)
+            self.assertEqual(
+                stix_object.x_misp_original_names['x_misp_cfr_type_of_incident'],
+                'cfr-type-of-incident'
+            )
 
     def _check_tool_meta_fields(self, stix_object, meta):
         aliases = [
@@ -1148,6 +1659,9 @@ class TestSTIX2Export(TestSTIX):
             self.assertEqual(
                 stix_object.x_misp_mitre_platforms, meta['mitre_platforms']
             )
+            # The fold leaves every leftover key of this cluster as it is, so
+            # there is no spelling to carry and no channel
+            self.assertFalse(hasattr(stix_object, 'x_misp_original_names'))
         if meta.get('tool_version') is not None:
             self.assertEqual(stix_object.tool_version, meta['tool_version'])
         if meta.get('kill_chain') is not None:
@@ -1253,6 +1767,36 @@ class TestSTIX2Export(TestSTIX):
             for attribute in misp_object['Attribute']:
                 attribute['to_ids'] = False
 
+    def _check_custom_property_names(self, stix_object):
+        # STIX 2.0 §7.1 / STIX 2.1 §11.1.1: custom property names are ASCII,
+        # limited to a-z, 0-9 and `_`, 3 to 250 characters long - the prefix
+        # already guarantees the minimum.
+        custom_properties = [
+            key for key in stix_object if key.startswith('x_misp_')
+        ]
+        self.assertTrue(custom_properties)
+        for key in custom_properties:
+            self.assertRegex(key, r'^x_misp_[a-z0-9_]+$')
+            self.assertLessEqual(len(key), 250)
+
+    def _check_original_names(self, stix_object, expected):
+        # `x_misp_original_names` maps a wire name the fold changed - a custom
+        # property name, or an `x_misp_meta` key - to the MISP spelling, and
+        # lists nothing the fold left alone. Its keys are dictionary keys:
+        # STIX 2.0 / 2.1 §2.3, `A-Z`, `a-z`, `0-9`, `-` and `_`; a custom
+        # property name is always one.
+        if not expected:
+            self.assertFalse(hasattr(stix_object, 'x_misp_original_names'))
+            return
+        original_names = stix_object.x_misp_original_names
+        self.assertEqual(original_names, expected)
+        carried = set(stix_object) | set(getattr(stix_object, 'x_misp_meta', ()))
+        for name, original in original_names.items():
+            self.assertRegex(name, r'^[A-Za-z0-9_-]+$')
+            self.assertIn(name, carried)
+            self.assertNotEqual(name, original)
+            self.assertNotEqual(name, f'x_misp_{original}')
+
     def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
         attribute_type = attribute['type']
         category = attribute['category']
@@ -1308,6 +1852,66 @@ class TestSTIX2Export(TestSTIX):
         ]
         self.assertEqual(len(name_warnings), 1)
         self.assertIn(rejected_name, name_warnings[0])
+
+    def _check_diagnostics_count_error_occurrences(self):
+        # Three attributes with nothing to tell them apart failing the same
+        # way are one distinct message: how many times it happened is the
+        # volume signal, and the total counts every occurrence.
+        self.parser.parse_json_content(
+            {'Attribute': deepcopy(_VALUELESS_ATTRIBUTES)}
+        )
+        recorded = self.parser.errors['attributes collection']
+        self.assertEqual(len(recorded), 3)
+        self.assertEqual(len(set(recorded)), 1)
+        diagnostics = self.parser.diagnostics()
+        self.assertEqual(
+            diagnostics['errors'],
+            {'attributes collection': [f'{recorded[0]} (3 times)']}
+        )
+        self.assertEqual(diagnostics['warnings'], {})
+        self.assertEqual(diagnostics['counts'], {'warnings': 0, 'errors': 3})
+
+    def _check_diagnostics_keep_recording_order(self):
+        # The same two warnings recorded one way round, then the other: the
+        # Diagnostics follow the recording, not the hash of the messages, so
+        # they read the same across runs.
+        for attributes, expected in (
+                ((_UNMAPPED_PDB_ATTRIBUTE, _UNMAPPED_ATTRIBUTE),
+                 [_UNMAPPED_PDB_WARNING, _RECORDED_EXPORT_WARNING]),
+                ((_UNMAPPED_ATTRIBUTE, _UNMAPPED_PDB_ATTRIBUTE),
+                 [_RECORDED_EXPORT_WARNING, _UNMAPPED_PDB_WARNING])):
+            parser = type(self.parser)()
+            parser.parse_json_content({'Attribute': deepcopy(list(attributes))})
+            diagnostics = parser.diagnostics()
+            self.assertEqual(
+                diagnostics['warnings'], {'attributes collection': expected}
+            )
+            self.assertEqual(
+                parser.warnings, {'attributes collection': expected}
+            )
+            self.assertEqual(diagnostics['counts'], {'warnings': 2, 'errors': 0})
+
+    def _check_entry_result_carries_no_counts(self, version: str):
+        # The entry functions keep their result shape: what they merge is the
+        # parser's Diagnostics minus the totals, so a caller reading `errors`
+        # and `warnings` back gets the capped lists and nothing new next to
+        # them.
+        content = {'Attribute': [*_VALUELESS_ATTRIBUTES, _UNMAPPED_ATTRIBUTE]}
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'attributes.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                json.dump(content, f)
+            results = misp_stix_converter.misp_to_stix2(
+                filename, version=version, output_dir=Path(tmp_dir)
+            )
+        self.assertEqual(results['success'], 1)
+        [error] = results['errors']['attributes collection']
+        self.assertTrue(error.endswith(' (3 times)'), error)
+        self.assertEqual(
+            results['warnings'],
+            {'attributes collection': [_RECORDED_EXPORT_WARNING]}
+        )
+        self.assertNotIn('counts', results)
 
     def _run_custom_object_tests(self, misp_object, custom_object, object_ref, identity_id):
         name = misp_object['name']
