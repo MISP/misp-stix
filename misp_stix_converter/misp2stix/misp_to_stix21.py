@@ -705,6 +705,17 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     object_refs[object_ref] = None
         if not object_refs:
             return self._parse_custom_object(misp_object)
+        attributes, repeated = self._split_single_field_values(
+            self._extract_multiple_object_attributes_with_data(
+                misp_object['Attribute'],
+                with_data=self._mapping.annotation_data_fields()
+            ),
+            self._mapping.annotation_single_fields()
+        )
+        if not attributes.get('text'):
+            # `Note.content` is required in STIX 2.1; without a `text`
+            # attribute the object cannot be represented as a `Note`.
+            return self._parse_custom_object(misp_object)
         note_id = self._parse_stix_object_id('object', 'note', misp_object)
         timestamp = self._parse_timestamp_value(misp_object)
         note_args = {
@@ -717,15 +728,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         if markings:
             self._handle_markings(note_args, markings)
-        attributes, repeated = self._split_single_field_values(
-            self._extract_multiple_object_attributes_with_data(
-                misp_object['Attribute'],
-                with_data=self._mapping.annotation_data_fields()
-            ),
-            self._mapping.annotation_single_fields()
-        )
-        if attributes.get('text'):
-            note_args['content'] = attributes.pop('text')
+        note_args['content'] = attributes.pop('text')
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             note_args['allow_custom'] = True
