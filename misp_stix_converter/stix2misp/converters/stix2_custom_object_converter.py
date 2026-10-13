@@ -68,7 +68,7 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
         attribute = {
             "type": custom_attribute.x_misp_type,
             "timestamp": self._timestamp_from_date(custom_attribute.modified),
-            "value": self._sanitise_value(custom_attribute.x_misp_value)
+            "value": custom_attribute.x_misp_value
         }
         for field in _attribute_additional_fields:
             if hasattr(custom_attribute, f'x_misp_{field}'):
@@ -102,10 +102,14 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
             cluster_args = {
                 'type': galaxy_type, 'value': custom_galaxy.x_misp_value,
                 'description': custom_galaxy.x_misp_description,
-                'uuid': self.main_parser._sanitise_uuid(custom_galaxy.id)
+                'uuid': self.main_parser._sanitise_cluster_uuid(
+                    custom_galaxy.id
+                )
             }
             if hasattr(custom_galaxy, 'x_misp_meta'):
-                cluster_args['meta'] = custom_galaxy.x_misp_meta
+                cluster_args['meta'] = self._restore_meta_dictionary(
+                    custom_galaxy
+                )
             clusters[custom_ref] = {
                 'used': {self.event_uuid: False},
                 'cluster': self.main_parser._create_misp_galaxy_cluster(
@@ -159,6 +163,18 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
             )
         self.main_parser._add_misp_object(misp_object, custom_object)
 
+    def _restore_meta_dictionary(
+            self, custom_galaxy: _CUSTOM_OBJECT_TYPING) -> dict:
+        # The `x_misp_meta` keys the export folded to the STIX dictionary
+        # charset come back as MISP spelled them, from the channel - which
+        # keys on the dictionary key here, not on a property name; the others
+        # were written verbatim.
+        meta = custom_galaxy.x_misp_meta
+        original_names = self._read_original_names(custom_galaxy, meta) or {}
+        return {
+            original_names.get(key, key): value for key, value in meta.items()
+        }
+
     @staticmethod
     def _record_rejected_template_name(misp_object: MISPObject, name: Any):
         # Nothing is silently dropped: the name the object cannot carry is
@@ -167,7 +183,3 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
         note = _rejected_name_note(name)
         comment = getattr(misp_object, 'comment', None)
         misp_object.comment = f'{comment}\n{note}' if comment else note
-
-    @staticmethod
-    def _sanitise_value(value: str) -> str:
-        return value.replace('\\\\', '\\')
