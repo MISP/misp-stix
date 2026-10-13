@@ -103,21 +103,21 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         super()._load_opinion(opinion['id'], opinion_dict)
 
     def _load_custom_attribute(self, custom_attribute: _CUSTOM_TYPING):
-        self._check_uuid(custom_attribute['id'])
+        self._register_uuid(custom_attribute['id'])
         try:
             self._custom_attribute[custom_attribute['id']] = custom_attribute
         except AttributeError:
             self._custom_attribute = {custom_attribute['id']: custom_attribute}
 
     def _load_custom_galaxy_cluster(self, custom_galaxy: _CUSTOM_TYPING):
-        self._check_uuid(custom_galaxy['id'])
+        self._register_uuid(custom_galaxy['id'])
         try:
             self._custom_galaxy_cluster[custom_galaxy['id']] = custom_galaxy
         except AttributeError:
             self._custom_galaxy_cluster = {custom_galaxy['id']: custom_galaxy}
 
     def _load_custom_object(self, custom_object: _CUSTOM_TYPING):
-        self._check_uuid(custom_object['id'])
+        self._register_uuid(custom_object['id'])
         try:
             self._custom_object[custom_object['id']] = custom_object
         except AttributeError:
@@ -155,11 +155,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._analyst_data[note['object_refs'][0]].append(note['id'])
             super()._load_note(note['id'], note_dict)
         else:
-            self._check_uuid(note['id'])
+            self._register_uuid(note['id'])
             super()._load_note(note['id'], note)
 
     def _load_observable_object(self, observable: _OBSERVABLE_TYPING):
-        self._check_uuid(observable['id'])
+        self._register_uuid(observable['id'])
         try:
             self._observable[observable['id']] = observable
         except AttributeError:
@@ -335,6 +335,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _add_event_report(
             self, event_report: MISPEventReport, stix_object_id: str):
+        # The Note and the 2.0 custom object MISP writes an Event Report as
+        # both funnel here, keeping the uuid part of their id.
+        self._check_record_uuid_collision(
+            'event report', event_report.uuid, stix_object_id
+        )
         if stix_object_id in self._analyst_data:
             for reference in self._analyst_data[stix_object_id]:
                 self._add_analyst_data(event_report, reference)

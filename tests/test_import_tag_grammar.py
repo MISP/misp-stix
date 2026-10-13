@@ -8,7 +8,7 @@ from misp_stix_converter.stix2misp import importparser
 from pathlib import Path
 
 _IMPORT_SOURCES = Path(importparser.__file__).parent
-# Where every MISP taxonomy tag an import writes is built (ADR-0012).
+# Where every MISP taxonomy tag an import writes is built.
 _TAG_BUILDER_SOURCE = 'importparser.py'
 
 # The two shapes a MISP taxonomy tag literal takes, as the source reads once
@@ -97,7 +97,7 @@ def _tags_written_in(source: str) -> list:
 class TestImportTagGrammar(unittest.TestCase):
 
     def test_no_taxonomy_tag_is_written_outside_the_tag_builder(self):
-        """One function writes every tag an import produces (ADR-0012).
+        """One function writes every tag an import produces.
 
         The number of places text a converted document supplied can reach the
         MISP taxonomy grammar is then a property of the design rather than of
@@ -114,7 +114,7 @@ class TestImportTagGrammar(unittest.TestCase):
         self.assertEqual(written_elsewhere, [])
 
     def test_every_way_of_writing_a_tag_is_caught(self):
-        """The guard above is worth what it catches (ADR-0012 §5).
+        """The guard above is worth what it catches.
 
         A grep misses `str.format`, `%`, concatenation and a variable prefix,
         which is why the guard reads the sources as syntax - but reading them

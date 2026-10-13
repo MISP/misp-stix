@@ -7,6 +7,12 @@ from typing import Union
 
 
 class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
+    # The STIX 2.0 export writes an event note when it finds nothing else to
+    # write for the event: the note holds no MISP content to read back, as
+    # the STIX 2.1 Note written in its place holds none either
+    __object_type_refs_to_skip = (
+        'x-misp-event-note', *STIX2toMISPMapping.object_type_refs_to_skip()
+    )
     __stix_object_loading_mapping = Mapping(
         **{
             'note': '_load_note',
@@ -21,6 +27,10 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             **STIX2toMISPMapping.stix_object_loading_mapping()
         }
     )
+
+    @classmethod
+    def object_type_refs_to_skip(cls) -> tuple:
+        return cls.__object_type_refs_to_skip
 
     @classmethod
     def stix_object_loading_mapping(cls, field: str) -> Union[str, None]:
