@@ -1181,7 +1181,7 @@ class InternalSTIX2ObservableConverter(
             yield attribute
         else:
             content = {
-                'value': value.split('=').strip("'"),
+                'value': value.split('=', 1)[-1].strip("'"),
                 'data': observable.payload_bin
             }
             mapping = f'{feature}_attribute'
