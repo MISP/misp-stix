@@ -9,7 +9,7 @@ from ._test_stix import TestSTIX21
 from ._test_stix_import import (
     SANITISED_TAG_PREDICATE, SANITISED_TAG_VALUE, SMUGGLING_TAG_PREDICATE,
     SMUGGLING_TAG_VALUE, UNUSABLE_TAG_SLOT, TestInternalSTIX2Import,
-    TestSTIX21Import, UUIDv4)
+    TestSTIX21Import, UUIDv4, _shipped_object_templates)
 
 
 class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Import):
@@ -468,6 +468,63 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
     def test_stix21_static_custom_property_entries_agree_with_the_template(self):
         self._check_static_custom_property_entries_agree_with_the_template()
+
+    def test_stix21_extension_property_names_read_as_custom_properties(self):
+        from misp_stix_converter.tools.misp_object_templates import (
+            _custom_property_name_from_extension)
+        for name, field in (
+                # The escape comes off: the prefix before an unusable rest
+                ('misp_ip', 'x_misp_ip'), ('misp_id', 'x_misp_id'),
+                ('misp_2fa_device_ip', 'x_misp_2fa_device_ip'),
+                ('misp_extension_type', 'x_misp_extension_type'),
+                ('misp_original_names', 'x_misp_original_names'),
+                ('misp_windows_pebinary_ext', 'x_misp_windows_pebinary_ext'),
+                ('misp_sections', 'x_misp_sections'),
+                ('misp_values', 'x_misp_values'),
+                # the trailing `_` after a typed suffix
+                ('origin_temp_hex_', 'x_misp_origin_temp_hex'),
+                ('payload_bin_', 'x_misp_payload_bin'),
+                # and both
+                ('misp__hex_', 'x_misp__hex'),
+                # A prefix before a usable rest is part of the name
+                ('misp_uuid', 'x_misp_misp_uuid'),
+                ('knownmalicious', 'x_misp_knownmalicious'),
+                ('ransomnotes_refs', 'x_misp_ransomnotes_refs'),
+                # The ambiguity of the strip: relations spelled `misp-xy` or
+                # `foo-hex-` the template does not know read back as `xy` and
+                # `foo_hex`
+                ('misp_xy', 'x_misp_xy'), ('foo_hex_', 'x_misp_foo_hex'),
+                # The fixed MISP fields, read under their custom property
+                ('filename', 'x_misp_filename'), ('url', 'x_misp_url'),
+                ('malware_sample', 'x_misp_malware_sample'),
+                ('attachment', 'x_misp_attachment'),
+                ('opinion', 'x_misp_opinion'),
+                ('author_ref', 'x_misp_author_ref')):
+            with self.subTest(name=name):
+                self.assertEqual(_custom_property_name_from_extension(name), field)
+
+    def test_stix21_every_template_relation_reads_back_from_its_extension_name(self):
+        # The strip runs before the template lookup, with no template: a
+        # relation reads back as the template spells it only if the strip
+        # leaves its fold as it is. None may fold to the prefix before a rest
+        # the escape would prefix (`misp-id`), nor to a typed suffix followed
+        # by `_`. No template pymisp ships has one, and an update bringing one
+        # fails here.
+        from misp_stix_converter.tools.misp_object_templates import (
+            _custom_property_name_from_extension, _custom_property_name,
+            _extension_property_name)
+        relations = 0
+        for name, attributes in _shipped_object_templates():
+            for relation in attributes:
+                self.assertEqual(
+                    _custom_property_name_from_extension(
+                        _extension_property_name(relation)
+                    ),
+                    _custom_property_name(relation),
+                    f'{name}: {relation}'
+                )
+                relations += 1
+        self.assertGreater(relations, 0)
 
     def test_stix21_bundle_with_tlp_1_0_markings(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_tlp_1_0_markings()

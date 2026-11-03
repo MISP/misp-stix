@@ -36,6 +36,23 @@ from .test_events import (
 
 _REPEAT_NAMESPACE = UUID('0b4c5e64-6c8c-4f3e-9b1a-7f0d6c2e8a51')
 
+# The fixed ids of the four MISP Extensions and of the MISP Project identity
+# authoring them, spelled apart from the library: every bundle using one names
+# it, so none may ever change.
+MISP_ATTRIBUTE_EXTENSION_ID = (
+    'extension-definition--c1f2c0fa-3786-4f27-bf57-cf050ecfc104'
+)
+MISP_OBJECT_EXTENSION_ID = (
+    'extension-definition--a093107b-933f-4d72-a9a6-6d7318adadda'
+)
+MISP_GALAXY_CLUSTER_EXTENSION_ID = (
+    'extension-definition--573a76d8-f8a0-4f53-bc93-f2777576b7b9'
+)
+MISP_PROPERTY_EXTENSION_ID = (
+    'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'
+)
+MISP_PROJECT_IDENTITY_ID = 'identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f'
+
 
 def append_further_values(misp_object: dict, relation: str, values: tuple,
                           to_ids: bool) -> list:

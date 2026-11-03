@@ -10,7 +10,10 @@ from .test_events import *
 from .update_documentation import (
     AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
     ObjectsDocumentationUpdater)
-from ._test_stix import TestSTIX21
+from ._test_stix import (
+    MISP_ATTRIBUTE_EXTENSION_ID, MISP_GALAXY_CLUSTER_EXTENSION_ID,
+    MISP_OBJECT_EXTENSION_ID, MISP_PROJECT_IDENTITY_ID,
+    MISP_PROPERTY_EXTENSION_ID, TestSTIX21)
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export, TestSTIX21Export
 
 
@@ -328,6 +331,63 @@ class TestSTIX21Diagnostics(TestSTIX21GenericExport):
 
     def test_entry_result_carries_no_counts(self):
         self._check_entry_result_carries_no_counts('2.1')
+
+
+class TestSTIX21ExtensionPropertyNames(TestSTIX21):
+    def test_unusable_extension_property_names_are_escaped(self):
+        from misp_stix_converter.tools.misp_object_templates import (
+            _extension_property_name)
+        for relation, name in (
+                # Too short, or not starting with a letter: the prefix
+                ('ip', 'misp_ip'), ('id', 'misp_id'),
+                ('2fa-device-ip', 'misp_2fa_device_ip'),
+                # A name the extension body uses for itself: the prefix
+                ('Original Names', 'misp_original_names'),
+                ('extension_type', 'misp_extension_type'),
+                ('original_names', 'misp_original_names'),
+                ('windows_pebinary_ext', 'misp_windows_pebinary_ext'),
+                ('sections', 'misp_sections'), ('values', 'misp_values'),
+                # A suffix STIX types as hex or base64: a trailing `_`
+                ('origin:Temp.Hex', 'origin_temp_hex_'),
+                ('payload_bin', 'payload_bin_'),
+                # Both: the prefix, then the suffix
+                ('-hex', 'misp__hex_')):
+            with self.subTest(relation=relation):
+                self.assertEqual(_extension_property_name(relation), name)
+
+    def test_usable_extension_property_names_are_the_bare_fold(self):
+        from misp_stix_converter.tools.misp_object_templates import (
+            _extension_property_name)
+        # Over 250 characters is left unenforced, as for custom properties
+        long_name = 'a' * 251
+        for relation, name in (
+                ('KnownMalicious', 'knownmalicious'),
+                ('ransomnotes_refs', 'ransomnotes_refs'),
+                ('misp-uuid', 'misp_uuid'), (long_name, long_name),
+                # The fixed MISP fields satisfy the rule already
+                ('filename', 'filename'), ('url', 'url'),
+                ('malware_sample', 'malware_sample'),
+                ('attachment', 'attachment'), ('opinion', 'opinion'),
+                ('author_ref', 'author_ref')):
+            with self.subTest(relation=relation):
+                self.assertEqual(_extension_property_name(relation), name)
+
+    def test_misp_extension_ids_are_fixed(self):
+        from misp_stix_converter.tools import misp_object_templates
+        self.assertEqual(
+            (
+                misp_object_templates._MISP_ATTRIBUTE_EXTENSION_ID,
+                misp_object_templates._MISP_OBJECT_EXTENSION_ID,
+                misp_object_templates._MISP_GALAXY_CLUSTER_EXTENSION_ID,
+                misp_object_templates._MISP_PROPERTY_EXTENSION_ID,
+                misp_object_templates._MISP_PROJECT_IDENTITY_ID
+            ),
+            (
+                MISP_ATTRIBUTE_EXTENSION_ID, MISP_OBJECT_EXTENSION_ID,
+                MISP_GALAXY_CLUSTER_EXTENSION_ID, MISP_PROPERTY_EXTENSION_ID,
+                MISP_PROJECT_IDENTITY_ID
+            )
+        )
 
 
 class TestSTIX21EventExport(TestSTIX21GenericExport):
