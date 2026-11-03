@@ -41,6 +41,58 @@ _CUSTOM_PROPERTY_FORBIDDEN_RE = re.compile(r'[^a-z0-9_]')
 # channel does not list was written as MISP had it.
 _ORIGINAL_NAMES_PROPERTY = 'x_misp_original_names'
 
+# Inside the MISP property extension of a STIX 2.1 object, the same fold names
+# the value with no prefix: no producer prefixes the names inside an extension
+# body. The base schema every extension body falls under is stricter than the
+# custom property rule, so a bare fold is escaped where it is unusable there.
+# A name shorter than three characters, not starting with a letter, or one the
+# extension body uses for itself takes the prefix; a name ending with a suffix
+# the base schema types as hex or base64 takes a trailing `_`. The 250
+# characters limit is left unenforced, as it is for custom properties. The
+# fixed MISP fields the extension holds (`filename`, `url`, `malware_sample`,
+# `attachment`, `opinion`, `author_ref`) satisfy the rule, and go through the
+# escape and its inverse unchanged.
+_EXTENSION_PROPERTY_PREFIX = 'misp_'
+_EXTENSION_PROPERTY_NAME_RE = re.compile(r'[a-z][a-z0-9_]{2,}')
+_EXTENSION_RESERVED_NAMES = frozenset(
+    (
+        'extension_type', 'original_names',
+        'windows_pebinary_ext', 'sections', 'values'
+    )
+)
+_EXTENSION_TYPED_SUFFIXES = ('_hex', '_bin')
+
+# The MISP Extensions: the STIX 2.1 extension definitions of the three MISP
+# custom types and of the property extension holding the MISP values of a
+# standard object. Both directions know them by these fixed ids only, whatever
+# version of the definition a bundle carries. The MISP Project organisation
+# authors them, under the identity MISP exports already carry for its uuid -
+# the same organisation the import defaults to when it is given none.
+MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
+_MISP_PROJECT_IDENTITY_ID = f'identity--{MISP_org_uuid}'
+_MISP_ATTRIBUTE_EXTENSION_ID = (
+    'extension-definition--c1f2c0fa-3786-4f27-bf57-cf050ecfc104'
+)
+_MISP_OBJECT_EXTENSION_ID = (
+    'extension-definition--a093107b-933f-4d72-a9a6-6d7318adadda'
+)
+_MISP_GALAXY_CLUSTER_EXTENSION_ID = (
+    'extension-definition--573a76d8-f8a0-4f53-bc93-f2777576b7b9'
+)
+_MISP_PROPERTY_EXTENSION_ID = (
+    'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'
+)
+
+
+def _fold_relation(relation: str) -> str:
+    """Fold a MISP relation or meta key to the STIX property name charset.
+
+    :param relation: a MISP object relation or galaxy cluster meta key
+    :return: the relation lowercased, every character outside `a-z`, `0-9`
+        and `_` turned into `_`
+    """
+    return _CUSTOM_PROPERTY_FORBIDDEN_RE.sub('_', relation.lower())
+
 
 def _custom_property_name(relation: str) -> str:
     """Name the custom property carrying a MISP relation or meta key.
@@ -48,8 +100,56 @@ def _custom_property_name(relation: str) -> str:
     :param relation: a MISP object relation or galaxy cluster meta key
     :return: the `x_misp_` name, folded to the STIX custom property charset
     """
-    folded = _CUSTOM_PROPERTY_FORBIDDEN_RE.sub('_', relation.lower())
-    return f'{_CUSTOM_PROPERTY_PREFIX}{folded}'
+    return f'{_CUSTOM_PROPERTY_PREFIX}{_fold_relation(relation)}'
+
+
+def _needs_extension_prefix(name: str) -> bool:
+    """Tell whether a folded name takes the extension property prefix.
+
+    :param name: a folded MISP relation or meta key
+    :return: whether the name is too short, does not start with a letter, or
+        is a name the extension body uses for itself
+    """
+    return (
+        _EXTENSION_PROPERTY_NAME_RE.fullmatch(name) is None
+        or name in _EXTENSION_RESERVED_NAMES
+    )
+
+
+def _extension_property_name(relation: str) -> str:
+    """Name the MISP property extension property carrying a relation or key.
+
+    :param relation: a MISP object relation or galaxy cluster meta key
+    :return: the folded name, escaped where an extension body cannot hold it
+    """
+    name = _fold_relation(relation)
+    if _needs_extension_prefix(name):
+        name = f'{_EXTENSION_PROPERTY_PREFIX}{name}'
+    if name.endswith(_EXTENSION_TYPED_SUFFIXES):
+        name = f'{name}_'
+    return name
+
+
+def _custom_property_name_from_extension(name: str) -> str:
+    """Name the custom property a MISP property extension property stands for.
+
+    The escape is stripped by rule, with no template: a trailing `_` after a
+    typed suffix, then the prefix when the rest would take it. So a relation
+    the template does not know reads back without what looks like an escape:
+    `misp-xy` as `xy`, `foo-hex-` as `foo_hex` - the same kind of loss the
+    fold accepts. The custom property name then goes through the template
+    inverse and the mapping tables as written.
+
+    :param name: a property name inside the MISP property extension
+    :return: the `x_misp_` name the custom property syntax gives the value
+    """
+    if name.endswith('_') and name[:-1].endswith(_EXTENSION_TYPED_SUFFIXES):
+        name = name[:-1]
+    if name.startswith(_EXTENSION_PROPERTY_PREFIX):
+        rest = name[len(_EXTENSION_PROPERTY_PREFIX):]
+        if _needs_extension_prefix(rest):
+            name = rest
+    return f'{_CUSTOM_PROPERTY_PREFIX}{name}'
 
 
 def _custom_property_relation(field: str) -> str:
