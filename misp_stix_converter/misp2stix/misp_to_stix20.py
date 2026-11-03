@@ -4,6 +4,8 @@
 from .exceptions import InvalidHashValueError
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix20_mapping import MISPtoSTIX20Mapping
+from ..tools.misp_object_templates import (
+    _CUSTOM_PROPERTY_PREFIX, _ORIGINAL_NAMES_PROPERTY)
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
@@ -25,7 +27,7 @@ from stix2.v20.sdo import (
     Vulnerability)
 from stix2.v20.sro import Relationship, Sighting
 from stix2.v20.vocab import HASHING_ALGORITHM
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 _ANALYST_DATA_REFERENCE_TYPES = (
     'attack-pattern', 'campaign', 'course-of-action', 'identity', 'indicator',
@@ -809,10 +811,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         # STIX 2.0 Artifact has no encryption_algorithm/decryption_key
         # properties, so those relations fall through to x_misp_* fields.
         if attributes:
-            artifact_args.update(
-                self._handle_observable_multiple_properties_with_data(
-                    attributes, 'artifact'
-                )
+            self._handle_observable_multiple_properties_with_data(
+                artifact_args, attributes, 'artifact'
             )
         return self._handle_object_observable(
             misp_object, {'0': Artifact(**artifact_args)}
@@ -860,9 +860,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             # The hostname is the one relation of a standard domain-ip that
             # holds one value
             if repeated:
-                args.update(
-                    self._handle_observable_multiple_properties(repeated)
-                )
+                self._handle_observable_multiple_properties(args, repeated)
             observable[str(index)] = DomainName(**args)
             index += 1
         if attributes.get('domain'):
@@ -997,11 +995,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             file_args['_valid_refs'][str_index] = 'artifact'
             index += 1
             if attributes.get('attachment'):
-                file_args.update(
-                    self._parse_custom_attachment(
-                        attributes.pop('attachment'),
-                        *repeated.pop('attachment', [])
-                    )
+                self._parse_custom_attachment(
+                    file_args, attributes.pop('attachment'),
+                    *repeated.pop('attachment', [])
                 )
         elif isinstance(attributes.get('attachment'), tuple):
             args = self._create_attachment_args(*attributes.pop('attachment'))
@@ -1065,8 +1061,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             self._mapping.identity_single_fields()
         )
         if repeated:
-            identity_args.update(
-                self._handle_observable_multiple_properties(repeated)
+            self._handle_observable_multiple_properties(
+                identity_args, repeated
             )
         if 'roles' in identity_args:
             roles = identity_args.pop('roles')
@@ -1107,10 +1103,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             file_args['name'] = attributes.pop('filename')
         self._restore_repeated_values(attributes, repeated)
         if attributes:
-            file_args.update(
-                self._handle_observable_multiple_properties_with_data(
-                    attributes, 'image'
-                )
+            self._handle_observable_multiple_properties_with_data(
+                file_args, attributes, 'image'
             )
         if artifact_args is not None:
             file_args['content_ref'] = '1'
@@ -1359,10 +1353,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 if parent_attributes.get(key):
                     parent_args[feature] = parent_attributes.pop(key)
             if parent_attributes:
-                parent_args.update(
-                    self._handle_parent_process_properties(
-                        parent_attributes
-                    )
+                self._handle_parent_process_properties(
+                    parent_args, parent_attributes
                 )
             observable_object[str_index] = Process(**parent_args)
             process_args['parent_ref'] = str_index
@@ -1669,6 +1661,51 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_process_image_pattern(image: str) -> str:
         return f"process:binary_ref.name = '{image}'"
+
+    ############################################################################
+    #                      MISP VALUES WRITING FUNCTIONS                       #
+    ############################################################################
+
+    # STIX 2.0 writes the MISP values as custom properties, on the object or
+    # on its nested part they belong to
+
+    def _attach_nested_rooms(self, args: dict, name: str, rooms: dict | list):
+        # The nested parts hold their custom properties: no room is filled
+        pass
+
+    @staticmethod
+    def _is_misp_value_property(name: str, value: Any) -> bool:
+        return name.startswith(_CUSTOM_PROPERTY_PREFIX)
+
+    @staticmethod
+    def _set_fixed_value(args: dict, name: str, value: Any):
+        args.update(
+            {'allow_custom': True, f'{_CUSTOM_PROPERTY_PREFIX}{name}': value}
+        )
+
+    def _set_leftovers(
+            self, args: dict, leftovers: dict, room: Optional[dict] = None):
+        args['allow_custom'] = True
+        for relation, value in leftovers.items():
+            args[self._custom_property_name(relation)] = value
+
+    def _set_meta_value(
+            self, meta_args: dict, key: str, values: Any, cluster_value: str):
+        feature = self._custom_property_name(key)
+        if feature == _ORIGINAL_NAMES_PROPERTY:
+            # The channel owns this name: handing it a meta value would
+            # destroy the spelling record of every other key on the cluster.
+            # Reported rather than dropped in silence, as for a collision.
+            self._galaxy_meta_key_reserved_warning(
+                cluster_value, key, feature
+            )
+            return
+        if feature in meta_args:
+            self._galaxy_meta_key_collision_warning(
+                cluster_value, key, feature
+            )
+        meta_args.update({'allow_custom': True, feature: values})
+        self._record_original_name(meta_args, feature, key)
 
     ############################################################################
     #                            UTILITY FUNCTIONS.                            #
