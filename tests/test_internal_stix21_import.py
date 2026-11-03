@@ -10,6 +10,8 @@ from ._test_stix_import import (
     SANITISED_TAG_PREDICATE, SANITISED_TAG_VALUE, SMUGGLING_TAG_PREDICATE,
     SMUGGLING_TAG_VALUE, UNUSABLE_TAG_SLOT, TestInternalSTIX2Import,
     TestSTIX21Import, UUIDv4)
+from misp_stix_converter import InternalSTIX2toMISPParser
+from stix2.parsing import dict_to_stix2
 
 
 class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Import):
@@ -2639,6 +2641,42 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         # `sighting_of_ref` lookups resolve references - never MISP records
         # claiming a uuid - so nothing here is a collision to report.
         self._check_uuid_collision_warning_absence(self.parser.warnings)
+
+    def test_stix21_bundle_with_unresolvable_sighting(self):
+        """`where_sighted_refs` is optional in STIX 2.1, and a reference can
+        point at an identity the bundle never carried. Either way the sighting
+        cannot be converted, and skipping it must not abort the whole import."""
+        for label, mutate in (
+            ('missing', lambda sighting: sighting.pop('where_sighted_refs')),
+            (
+                'dangling',
+                lambda sighting: sighting.__setitem__(
+                    'where_sighted_refs',
+                    [f'identity--{UUIDv4}']
+                )
+            )
+        ):
+            with self.subTest(where_sighted_refs=label):
+                raw = json.loads(
+                    TestInternalSTIX21Bundles.get_bundle_with_sightings().serialize()
+                )
+                for stix_object in raw['objects']:
+                    if stix_object['type'] == 'sighting':
+                        mutate(stix_object)
+                        break
+                else:
+                    self.fail('no sighting object in the test bundle')
+
+                parser = InternalSTIX2toMISPParser()
+                parser.load_stix_bundle(dict_to_stix2(raw, allow_custom=True))
+                parser.parse_stix_bundle()
+                event = parser.misp_event
+                self.assertEqual(len(event.attributes), 2)
+                # the unconvertible sighting is dropped, the other seven stay
+                self.assertEqual(
+                    sum(len(attribute.sightings) for attribute in event.attributes),
+                    7
+                )
 
     def test_stix21_bundle_with_single_report(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_single_report()

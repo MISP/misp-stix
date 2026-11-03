@@ -200,7 +200,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             attribute_uuid = self.replacement_uuids[attribute_uuid]
         if attribute_uuid in self._sighting.get('sighting', {}):
             for sighting in self._sighting['sighting'][attribute_uuid]:
-                attribute.add_sighting(self._parse_sighting(sighting))
+                misp_sighting = self._parse_sighting(sighting)
+                if misp_sighting is not None:
+                    attribute.add_sighting(misp_sighting)
         if attribute_uuid in self._sighting.get('opinion', {}):
             for opinion in self._sighting['opinion'][attribute_uuid]:
                 attribute.add_sighting(self._parse_opinion(opinion))
@@ -238,8 +240,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if object_uuid in self._sighting.get('sighting', {}):
             for sighting in self._sighting['sighting'][object_uuid]:
                 misp_sighting = self._parse_sighting(sighting)
-                for attribute in misp_object.attributes:
-                    attribute.add_sighting(misp_sighting)
+                if misp_sighting is not None:
+                    for attribute in misp_object.attributes:
+                        attribute.add_sighting(misp_sighting)
         if object_uuid in self._sighting.get('opinion', {}):
             for sighting in self._sighting['opinion'][object_uuid]:
                 misp_sighting = self._parse_opinion(sighting)
