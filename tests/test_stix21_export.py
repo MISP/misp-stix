@@ -1,12 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import inspect
+import json
 from datetime import datetime
+from jsonschema import Draft202012Validator
 from misp_stix_converter import (
     InternalSTIX2toMISPParser, InvalidMISPInputError, MISPtoSTIX21Mapping,
     MISPtoSTIX21Parser, misp_collection_to_stix2, misp_to_stix2)
+from pathlib import Path
 from pymisp import MISPAttribute, MISPEvent
+from referencing import Registry, Resource
+from stix2.parsing import parse as stix2_parse
+from . import test_events
 from .test_events import *
+from .test_internal_stix21_bundles import TestInternalSTIX21Bundles
 from .update_documentation import (
     AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
     ObjectsDocumentationUpdater)
@@ -16,6 +24,24 @@ from ._test_stix import (
     MISP_PROPERTY_EXTENSION_ID, TestSTIX21)
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export, TestSTIX21Export
 
+
+_TESTS = Path(__file__).resolve().parent
+_REPOSITORY = _TESTS.parent
+# What the Export loads and embeds: packaged, unlike the schemas
+_PACKAGED_MISP_EXTENSIONS = (
+    _REPOSITORY / 'misp_stix_converter' / 'data' / 'misp_extensions'
+)
+# The suite is named from the property extension's id, and the `schema` URL of
+# each definition is where its schema file sits on the main branch
+_MISP_EXTENSION_SUITE = (
+    _REPOSITORY / 'data' / 'misp-extensions' /
+    'extension-definition-specifications' /
+    f"misp-{MISP_PROPERTY_EXTENSION_ID.split('--')[1][:3]}"
+)
+_MAIN_BRANCH_URL = 'https://raw.githubusercontent.com/MISP/misp-stix/main'
+# The STIX 2.1 base schemas, from the cti-stix2-json-schemas submodule
+_STIX2_BASE_SCHEMAS_SUBMODULE = _REPOSITORY / 'data' / 'cti-stix2-json-schemas'
+_STIX2_BASE_SCHEMAS = _STIX2_BASE_SCHEMAS_SUBMODULE / 'schemas' / 'common'
 
 _COUNTRY_META_PROPERTY_NAMES = {
     'Capital': 'x_misp_capital',
@@ -388,6 +414,451 @@ class TestSTIX21ExtensionPropertyNames(TestSTIX21):
                 MISP_PROJECT_IDENTITY_ID
             )
         )
+
+
+class TestSTIX21MISPExtensions(TestSTIX21):
+    _MISP_TYPES = {
+        MISP_ATTRIBUTE_EXTENSION_ID: 'misp-attribute',
+        MISP_OBJECT_EXTENSION_ID: 'misp-object',
+        MISP_GALAXY_CLUSTER_EXTENSION_ID: 'misp-galaxy-cluster'
+    }
+    _TIMESTAMP = '2020-10-25T16:22:00.000Z'
+
+    @classmethod
+    def setUpClass(cls):
+        if not (_STIX2_BASE_SCHEMAS / 'core.json').exists():
+            submodule = _STIX2_BASE_SCHEMAS_SUBMODULE.relative_to(_REPOSITORY)
+            raise FileNotFoundError(
+                f'No STIX 2.1 base schemas in {_STIX2_BASE_SCHEMAS}: run '
+                f'`git submodule update --init {submodule.as_posix()}`'
+            )
+        # The `misp-*` schemas reference the STIX base schemas by their
+        # published URLs: with the submodule's copies registered under those
+        # URLs, nothing is fetched
+        schema_files = (
+            *_STIX2_BASE_SCHEMAS.glob('*.json'),
+            *cls._misp_extension_schema_files()
+        )
+        cls._registry = Registry().with_resources(
+            (schema['$id'], Resource.from_contents(schema))
+            for schema in map(cls._load, schema_files)
+        )
+        cls._type_validators = {
+            type_name: cls._validator(cls._schema_file(identifier))
+            for identifier, type_name in cls._MISP_TYPES.items()
+        }
+        cls._property_extension_validator = cls._validator(
+            cls._schema_file(MISP_PROPERTY_EXTENSION_ID)
+        )
+
+    @staticmethod
+    def _load(path: Path) -> dict:
+        return json.loads(path.read_text(encoding='utf-8'))
+
+    @classmethod
+    def _schema_file(cls, identifier: str) -> Path:
+        # The property extension's first schema file sits at the top of the
+        # suite, each `misp-*` type's schema in a directory named after it
+        if identifier in cls._MISP_TYPES:
+            return (
+                _MISP_EXTENSION_SUITE / cls._MISP_TYPES[identifier] /
+                f'{identifier}.json'
+            )
+        return _MISP_EXTENSION_SUITE / f'{identifier}.json'
+
+    @staticmethod
+    def _misp_extension_schema_files() -> list:
+        examples = _MISP_EXTENSION_SUITE / 'examples'
+        return [
+            path for path in _MISP_EXTENSION_SUITE.rglob('*.json')
+            if not path.is_relative_to(examples)
+        ]
+
+    @classmethod
+    def _validator(cls, path: Path) -> Draft202012Validator:
+        return Draft202012Validator(cls._load(path), registry=cls._registry)
+
+    def _misp_extension_errors(self, stix_object: dict) -> list:
+        # A `misp-*` object against its type schema, a standard object
+        # carrying the property extension against the extension's first
+        # schema file, which holds the body schema
+        validators = []
+        if stix_object['type'] in self._type_validators:
+            validators.append(self._type_validators[stix_object['type']])
+        if MISP_PROPERTY_EXTENSION_ID in stix_object.get('extensions', {}):
+            validators.append(self._property_extension_validator)
+        return [
+            f'{error.json_path}: {error.message}' for validator in validators
+            for error in validator.iter_errors(stix_object)
+        ]
+
+    def _assert_accepted(self, stix_object: dict):
+        self.assertEqual(self._misp_extension_errors(stix_object), [])
+
+    def _assert_rejected(self, stix_object: dict):
+        self.assertNotEqual(self._misp_extension_errors(stix_object), [])
+
+    ############################################################################
+    #                   PACKAGED MISP EXTENSION OBJECTS TESTS                  #
+    ############################################################################
+
+    def test_packaged_misp_extensions_carry_the_fixed_ids(self):
+        identifiers = (
+            *self._MISP_TYPES, MISP_PROPERTY_EXTENSION_ID,
+            MISP_PROJECT_IDENTITY_ID
+        )
+        self.assertEqual(
+            sorted(path.name for path in _PACKAGED_MISP_EXTENSIONS.glob('*')),
+            sorted(f'{identifier}.json' for identifier in identifiers)
+        )
+        for identifier in identifiers:
+            with self.subTest(identifier=identifier):
+                stix_object = stix2_parse(
+                    self._load(_PACKAGED_MISP_EXTENSIONS / f'{identifier}.json')
+                )
+                self.assertEqual(stix_object.id, identifier)
+
+    def test_packaged_misp_extension_definitions(self):
+        base_validator = self._validator(
+            _STIX2_BASE_SCHEMAS / 'extension-definition.json'
+        )
+        definitions = (
+            (MISP_ATTRIBUTE_EXTENSION_ID, 'MISP Attribute Extension',
+             'new-sdo'),
+            (MISP_OBJECT_EXTENSION_ID, 'MISP Object Extension', 'new-sdo'),
+            (MISP_GALAXY_CLUSTER_EXTENSION_ID, 'MISP Galaxy Cluster Extension',
+             'new-sdo'),
+            (MISP_PROPERTY_EXTENSION_ID, 'MISP Property Extension',
+             'property-extension')
+        )
+        for identifier, name, extension_type in definitions:
+            with self.subTest(name=name):
+                definition = self._load(
+                    _PACKAGED_MISP_EXTENSIONS / f'{identifier}.json'
+                )
+                self.assertEqual(list(base_validator.iter_errors(definition)), [])
+                schema = self._schema_file(identifier)
+                url = f'{_MAIN_BRANCH_URL}/{schema.relative_to(_REPOSITORY).as_posix()}'
+                self.assertEqual(self._load(schema)['$id'], url)
+                # The date of the first release carrying them, at midnight
+                created = definition.pop('created')
+                self.assertRegex(created, r'^\d{4}-\d{2}-\d{2}T00:00:00\.000Z$')
+                description = definition.pop('description')
+                self.assertRegex(description, r'^[A-Z][^.]+\.$')
+                self.assertEqual(
+                    definition,
+                    {
+                        'type': 'extension-definition', 'spec_version': '2.1',
+                        'id': identifier,
+                        'created_by_ref': MISP_PROJECT_IDENTITY_ID,
+                        'modified': created, 'name': name, 'schema': url,
+                        'version': '1.0.0', 'extension_types': [extension_type]
+                    }
+                )
+
+    def test_packaged_misp_project_identity(self):
+        # What MISP exports already carry for this id, at the time its uuid
+        # encodes
+        self.assertEqual(
+            self._load(
+                _PACKAGED_MISP_EXTENSIONS / f'{MISP_PROJECT_IDENTITY_ID}.json'
+            ),
+            {
+                'type': 'identity', 'spec_version': '2.1',
+                'id': MISP_PROJECT_IDENTITY_ID,
+                'created': '2015-09-14T15:40:21.000Z',
+                'modified': '2015-09-14T15:40:21.000Z', 'name': 'MISP',
+                'identity_class': 'organization'
+            }
+        )
+
+    ############################################################################
+    #                     MISP EXTENSION SCHEMAS SELF TESTS                    #
+    ############################################################################
+
+    def _misp_attribute(self) -> dict:
+        return {
+            'type': 'misp-attribute', 'spec_version': '2.1',
+            'id': 'misp-attribute--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
+            'created_by_ref': 'identity--a0c22599-9e58-4da4-96ac-7051603fa951',
+            'created': self._TIMESTAMP, 'modified': self._TIMESTAMP,
+            'labels': [
+                'misp:type="malware-sample"', 'misp:category="Payload delivery"'
+            ],
+            'extensions': {
+                MISP_ATTRIBUTE_EXTENSION_ID: {'extension_type': 'new-sdo'}
+            },
+            'attribute_type': 'malware-sample', 'value': 'oui|not an md5',
+            'category': 'Payload delivery', 'comment': 'Invalid MD5',
+            'to_ids': False, 'first_seen': self._TIMESTAMP,
+            'last_seen': self._TIMESTAMP, 'data': 'b3Vp'
+        }
+
+    def _misp_galaxy_cluster(self) -> dict:
+        return {
+            'type': 'misp-galaxy-cluster', 'spec_version': '2.1',
+            'id': 'misp-galaxy-cluster--24430dc6-9c27-4b3c-a5e7-6dda478fffa0',
+            'created': self._TIMESTAMP, 'modified': self._TIMESTAMP,
+            'labels': ['misp:galaxy-name="Tea Matrix"'],
+            'extensions': {
+                MISP_GALAXY_CLUSTER_EXTENSION_ID: {'extension_type': 'new-sdo'}
+            },
+            'galaxy_name': 'Tea Matrix', 'galaxy_type': 'tea-matrix',
+            'galaxy_description': 'Tea Matrix', 'value': 'Milk in tea',
+            'description': 'Milk in tea',
+            'meta': {
+                'supported': 'Yes', 'kill_chain': ['tea:black', 'tea:green'],
+                'origin_Temp_Hex': 'Chai'
+            },
+            'original_names': {'origin_Temp_Hex': 'origin:Temp.Hex'}
+        }
+
+    def _misp_object(self) -> dict:
+        return {
+            'type': 'misp-object', 'spec_version': '2.1',
+            'id': 'misp-object--695e7924-2518-4054-9cea-f82853a37410',
+            'created_by_ref': 'identity--a0c22599-9e58-4da4-96ac-7051603fa951',
+            'created': self._TIMESTAMP, 'modified': self._TIMESTAMP,
+            'labels': ['misp:name="bank-account"', 'misp:category="financial"'],
+            'extensions': {
+                MISP_OBJECT_EXTENSION_ID: {'extension_type': 'new-sdo'}
+            },
+            'name': 'bank-account', 'meta_category': 'financial',
+            'comment': 'Bank account', 'first_seen': self._TIMESTAMP,
+            'last_seen': self._TIMESTAMP,
+            'attributes': [
+                {
+                    'type': 'iban', 'object_relation': 'iban',
+                    'value': 'LU1234567890ABCDEF1234567890',
+                    'category': 'Financial fraud', 'comment': 'IBAN',
+                    'to_ids': True,
+                    'uuid': 'e7ad2f3a-4fd8-4a4e-8c34-2a6e3f4c1b55',
+                    'first_seen': self._TIMESTAMP,
+                    'last_seen': self._TIMESTAMP
+                },
+                {
+                    'type': 'attachment', 'object_relation': 'statement',
+                    'value': 'statement.pdf', 'to_ids': False, 'data': 'b3Vp'
+                }
+            ]
+        }
+
+    @staticmethod
+    def _standard_object(stix_type: str = 'file', **body) -> dict:
+        # The first schema file reads nothing but the extension
+        return {
+            'type': stix_type, 'spec_version': '2.1',
+            'id': f'{stix_type}--5e384ae7-672c-4250-9cda-3b4da964451a',
+            'extensions': {
+                MISP_PROPERTY_EXTENSION_ID: {
+                    'extension_type': 'property-extension', **body
+                }
+            }
+        }
+
+    def test_misp_extension_schemas_are_valid_schemas(self):
+        for path in self._misp_extension_schema_files():
+            with self.subTest(schema=path.name):
+                Draft202012Validator.check_schema(self._load(path))
+
+    def test_property_extension_schema_accepts_the_shapes_the_export_writes(self):
+        for case, stix_object in (
+                ('scalar', self._standard_object(text='oui', is_ca=True)),
+                ('list of two', self._standard_object(text=['oui', 'non'])),
+                ('value with data',
+                 self._standard_object(
+                     attachment={'value': 'oui.txt', 'data': 'b3Vp'}
+                 )),
+                ('list mixing both',
+                 self._standard_object(
+                     attachment=[
+                         'oui.txt', {'value': 'non.txt', 'data': 'bm9u'}
+                     ]
+                 )),
+                ('fixed fields',
+                 self._standard_object(
+                     'opinion', opinion=50,
+                     author_ref='identity--a0c22599-9e58-4da4-96ac-7051603fa951'
+                 )),
+                ('escaped names and their spellings',
+                 self._standard_object(
+                     'attack-pattern', misp_ip='1.2.3.4',
+                     origin_temp_hex_='Chai',
+                     original_names={'origin_temp_hex_': 'origin:Temp.Hex'}
+                 )),
+                ('sections room with placeholders',
+                 self._standard_object(
+                     windows_pebinary_ext={
+                         'text': 'PE leftover',
+                         'sections': [{'text': 'Section 0 leftover'}, {}, {}]
+                     }
+                 )),
+                ('sections room alone',
+                 self._standard_object(
+                     windows_pebinary_ext={'sections': [{}, {'text': 'oui'}]}
+                 )),
+                ('values room',
+                 self._standard_object(
+                     'windows-registry-key', text='Key leftover',
+                     values=[{}, {'text': ['Value 1', 'leftovers']}]
+                 ))):
+            with self.subTest(case=case):
+                self._assert_accepted(stix_object)
+
+    def test_property_extension_schema_rejects_what_the_export_never_writes(self):
+        for case, stix_object in (
+                ('list of one', self._standard_object(text=['oui'])),
+                ('empty list', self._standard_object(text=[])),
+                ('value with no data',
+                 self._standard_object(attachment={'value': 'oui.txt'})),
+                ('all-empty values room',
+                 self._standard_object(
+                     'windows-registry-key', values=[{}, {}]
+                 )),
+                ('all-empty sections room',
+                 self._standard_object(
+                     windows_pebinary_ext={'text': 'oui', 'sections': [{}]}
+                 )),
+                ('empty windows_pebinary_ext',
+                 self._standard_object(windows_pebinary_ext={})),
+                ('uppercase name', self._standard_object(Text='oui')),
+                ('two-character name', self._standard_object(ip='1.2.3.4')),
+                ('two-character name in a room',
+                 self._standard_object(
+                     'windows-registry-key', values=[{'ip': '1.2.3.4'}]
+                 )),
+                ('opinion over 100',
+                 self._standard_object('opinion', opinion=101)),
+                ('author_ref to another type',
+                 self._standard_object(
+                     'note',
+                     author_ref='indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f'
+                 )),
+                ('another extension type',
+                 {
+                     **self._standard_object(),
+                     'extensions': {
+                         MISP_PROPERTY_EXTENSION_ID: {
+                             'extension_type': 'new-sdo', 'text': 'oui'
+                         }
+                     }
+                 })):
+            with self.subTest(case=case):
+                self._assert_rejected(stix_object)
+
+    def test_misp_type_schemas_accept_the_objects_the_export_writes(self):
+        for stix_object in (
+                self._misp_attribute(), self._misp_object(),
+                self._misp_galaxy_cluster()):
+            with self.subTest(type=stix_object['type']):
+                self._assert_accepted(stix_object)
+
+    def test_misp_type_schemas_reject_what_the_export_never_writes(self):
+        for build in (
+                self._misp_attribute, self._misp_object,
+                self._misp_galaxy_cluster):
+            type_name = build()['type']
+            with self.subTest(type=type_name, case='unknown property'):
+                stix_object = build()
+                stix_object['unknown_property'] = 'oui'
+                self._assert_rejected(stix_object)
+            with self.subTest(type=type_name, case='no extension'):
+                stix_object = build()
+                stix_object['extensions'] = {
+                    MISP_PROPERTY_EXTENSION_ID: {
+                        'extension_type': 'property-extension'
+                    }
+                }
+                self._assert_rejected(stix_object)
+        with self.subTest(case='no attributes'):
+            misp_object = self._misp_object()
+            del misp_object['attributes']
+            self._assert_rejected(misp_object)
+        with self.subTest(case='empty attributes'):
+            misp_object = self._misp_object()
+            misp_object['attributes'] = []
+            self._assert_rejected(misp_object)
+        with self.subTest(case='unknown attribute field'):
+            misp_object = self._misp_object()
+            misp_object['attributes'][1]['distribution'] = 0
+            self._assert_rejected(misp_object)
+        with self.subTest(case='meta list of one'):
+            galaxy_cluster = self._misp_galaxy_cluster()
+            galaxy_cluster['meta']['kill_chain'] = ['tea:black']
+            self._assert_rejected(galaxy_cluster)
+
+    ############################################################################
+    #                    STIX 2.1 OUTPUT AGAINST THE SCHEMAS                   #
+    ############################################################################
+
+    @staticmethod
+    def _exported_test_events():
+        # Every test event and attributes collection, exported to 2.1. A
+        # getter takes its required arguments by name, the object name being
+        # the one its own tests give; a getter needing another argument fails
+        # here rather than going unchecked. The getters of a lone attribute or
+        # object build parts of other events
+        arguments = {'version': '2.1', 'name': '../../../../../../../../planted'}
+        for name, getter in inspect.getmembers(test_events, inspect.isfunction):
+            if not name.startswith('get_') or getter.__module__ != test_events.__name__:
+                continue
+            content = getter(
+                *(
+                    arguments[parameter.name] for parameter
+                    in inspect.signature(getter).parameters.values()
+                    if parameter.default is parameter.empty
+                )
+            )
+            parser = MISPtoSTIX21Parser()
+            if 'Event' in content:
+                parser.parse_misp_event(content)
+            elif name.startswith('get_attributes_collection'):
+                parser.parse_misp_attributes(content)
+            else:
+                continue
+            yield name, json.loads(parser.bundle.serialize())['objects']
+
+    @staticmethod
+    def _exported_collection_files():
+        for kind in ('events', 'attributes', 'objects'):
+            for index in (1, 2):
+                filename = f'test_{kind}_collection_{index}.json'
+                parser = MISPtoSTIX21Parser()
+                parser.parse_json_file(_TESTS / filename)
+                yield filename, json.loads(parser.bundle.serialize())['objects']
+
+    def _misp_extension_examples(self):
+        for path in sorted((_MISP_EXTENSION_SUITE / 'examples').glob('*.json')):
+            content = self._load(path)
+            yield path.name, content.get('objects', [content])
+
+    @staticmethod
+    def _extension_syntax_import_fixtures():
+        # The malformed Extension Syntax fixtures are named otherwise: the
+        # schema could not see all their defects anyway, such as a room whose
+        # length differs from its STIX list
+        for name in dir(TestInternalSTIX21Bundles):
+            if name.startswith('get_extension_syntax_bundle'):
+                bundle = getattr(TestInternalSTIX21Bundles, name)()
+                yield name, json.loads(bundle.serialize())['objects']
+
+    def test_misp_extension_content_matches_the_schemas(self):
+        # Standard objects are not checked against the STIX base schemas:
+        # stix2 checks them already
+        for source, stix_objects in (
+                *self._exported_test_events(),
+                *self._exported_collection_files(),
+                *self._misp_extension_examples(),
+                *self._extension_syntax_import_fixtures()):
+            with self.subTest(source=source):
+                self.assertEqual(
+                    [
+                        f"{stix_object['id']} {error}"
+                        for stix_object in stix_objects
+                        for error in self._misp_extension_errors(stix_object)
+                    ],
+                    []
+                )
 
 
 class TestSTIX21EventExport(TestSTIX21GenericExport):

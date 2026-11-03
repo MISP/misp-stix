@@ -57,6 +57,7 @@ stix2 = "^3.0.2"
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.4.1"
 pytest = "^9.0.3"
+jsonschema = "^4.26.0"
 
 [build-system]
 requires = ["poetry_core>=1.2", "setuptools>=83"]
