@@ -10,7 +10,8 @@ from .stix2_observable_converter import (
     _AUTONOMOUS_SYSTEM_TYPING, _EMAIL_ADDRESS_TYPING, _EXTENSION_TYPING,
     _NETWORK_TRAFFIC_TYPING, _PROCESS_TYPING)
 from .stix2converter import (
-    ExternalSTIX2Converter, InternalSTIX2Converter, _MAIN_PARSER_TYPING)
+    ExternalSTIX2Converter, InternalSTIX2Converter, _MAIN_PARSER_TYPING,
+    _as_custom_syntax)
 from abc import ABCMeta
 from collections import defaultdict, deque
 from collections.abc import Generator
@@ -3252,7 +3253,10 @@ class InternalSTIX2ObservedDataConverter(
         for object_ref in observed_data.object_refs:
             if object_ref.startswith('domain-name--'):
                 observable = self.main_parser._fetch_observable(object_ref)
-                for attribute in self._observables._parse_domain_ip_observable(observable):
+                attributes = self._observables._parse_domain_ip_observable(
+                    observable, observed_data.id
+                )
+                for attribute in attributes:
                     misp_object.add_attribute(**attribute)
                 if hasattr(observable, 'resolves_to_refs'):
                     for reference in observable.resolves_to_refs:
@@ -3394,18 +3398,23 @@ class InternalSTIX2ObservedDataConverter(
                     )
                 )
             if hasattr(observable, 'content_ref'):
-                artifact = observables[observable.content_ref]
+                artifact = _as_custom_syntax(
+                    observables[observable.content_ref], self.main_parser
+                )
                 attribute = {
-                    'value': artifact.x_misp_filename,
-                    'data': artifact.payload_bin
+                    'value': artifact['x_misp_filename'],
+                    'data': artifact['payload_bin']
                 }
-                if getattr(artifact, 'hashes', {}).get('MD5') is not None:
-                    attribute['value'] += f"|{artifact.hashes['MD5']}"
+                if artifact.get('hashes', {}).get('MD5') is not None:
+                    attribute['value'] += f"|{artifact['hashes']['MD5']}"
                     attribute.update(self._mapping.malware_sample_attribute())
                 else:
                     attribute.update(self._mapping.attachment_attribute())
-                attribute['uuid'] = self.main_parser._create_v5_uuid(
-                    f"{object_id} - {attribute['type']} - {attribute['value']}"
+                attribute.update(
+                    self._observables._handle_object_id(
+                        attribute['value'], object_id,
+                        attribute['object_relation']
+                    )
                 )
                 file_object.add_attribute(**attribute)
             misp_object = self.main_parser._add_misp_object(
@@ -3655,19 +3664,30 @@ class InternalSTIX2ObservedDataConverter(
                     )
                 )
             if hasattr(observable, 'content_ref'):
-                artifact = observables[observable.content_ref]
-                value = f"{artifact.x_misp_filename}|{artifact.hashes['MD5']}"
+                artifact = _as_custom_syntax(
+                    observables[observable.content_ref], self.main_parser
+                )
+                value = f"{artifact['x_misp_filename']}|{artifact['hashes']['MD5']}"
                 attribute = {
-                    'data': artifact.payload_bin, 'value': value,
+                    'data': artifact['payload_bin'], 'value': value,
                     **self._mapping.malware_sample_attribute()
                 }
-                if hasattr(artifact, 'id'):
+                if 'id' in artifact:
                     attribute.update(
-                        self.main_parser._sanitise_attribute_uuid(artifact.id)
+                        self.main_parser._sanitise_attribute_uuid(artifact['id'])
+                    )
+                    attribute['to_ids'] = (
+                        self._observables._check_indicator_reference(
+                            self.main_parser._extract_uuid(observed_data.id),
+                            value
+                        )
                     )
                 else:
-                    attribute['uuid'] = self.main_parser._create_v5_uuid(
-                        f'{observed_data.id} - malware-sample - {value}'
+                    attribute.update(
+                        self._observables._handle_object_id(
+                            value, observed_data.id,
+                            attribute['object_relation']
+                        )
                     )
                 misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, observed_data)
@@ -3889,9 +3909,10 @@ class InternalSTIX2ObservedDataConverter(
         if hasattr(main_process, 'parent_ref'):
             parent_process = observables[main_process.parent_ref]
             mapping = self._mapping.parent_process_object_mapping
+            parent_fields = _as_custom_syntax(parent_process, self.main_parser)
             for feature, attribute in mapping().items():
-                if hasattr(parent_process, feature):
-                    value = getattr(parent_process, feature)
+                if feature in parent_fields:
+                    value = parent_fields[feature]
                     misp_object.add_attribute(
                         **self._populate_object_attribute(
                             value, attribute, self._observables._handle_object_id(

@@ -3,7 +3,8 @@
 
 from ...misp_stix_mapping import Mapping
 from .stix2converter import (
-    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter)
+    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,
+    _as_custom_syntax, _CustomSyntaxView)
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
@@ -1103,12 +1104,12 @@ class InternalSTIX2ObservableConverter(
             'uuid': self.main_parser._create_v5_uuid(reference)
         }
 
-    def _has_domain_custom_fields(self, observable: DomainName_v21) -> bool:
+    def _has_domain_custom_fields(self, observable: _CustomSyntaxView) -> bool:
         mapping = self._mapping.domain_ip_object_mapping()
         for feature in mapping:
             if feature == 'value':
                 continue
-            if hasattr(observable, feature):
+            if feature in observable:
                 return True
         return any(self._unlisted_custom_properties(observable, mapping))
 
@@ -1117,21 +1118,30 @@ class InternalSTIX2ObservableConverter(
         yield from self._parse_generic_observable(observable, 'asn', object_id)
 
     def _parse_domain_ip_observable(
-            self, observable: _DOMAIN_TYPING) -> Iterator[dict]:
+            self, observable: _DOMAIN_TYPING,
+            observed_data_id: str) -> Iterator[dict]:
+        observable = _as_custom_syntax(observable, self.main_parser)
         if self._has_domain_custom_fields(observable):
             fields = self._parse_object_fields(
                 observable, 'domain-ip',
-                self._mapping.domain_ip_object_mapping(), observable.id
+                self._mapping.domain_ip_object_mapping(), observable['id']
             )
-            for attribute, value in fields:
-                yield from self._populate_object_attributes(
-                    attribute, value, observable.id
-                )
+            # The values' `to_ids` comes from the Indicator sharing the
+            # Observed Data's uuid, which the domain does not always share
+            for attribute, values in fields:
+                for value in values if isinstance(values, list) else [values]:
+                    yield self._populate_object_attribute(
+                        value, attribute, self._handle_object_id(
+                            value, observed_data_id,
+                            attribute['object_relation'],
+                            feature=observable['id']
+                        )
+                    )
         else:
             yield {
-                'value': observable.value,
+                'value': observable['value'],
                 **self._mapping.domain_attribute(),
-                **self.main_parser._sanitise_attribute_uuid(observable.id)
+                **self.main_parser._sanitise_attribute_uuid(observable['id'])
             }
 
     def _parse_email_observable(self, observable: _EMAIL_MESSAGE_TYPING,
@@ -1283,7 +1293,9 @@ class InternalSTIX2ObservableConverter(
 
         The table's fields come first, in table order, each custom one
         resolved against the object template; then the custom properties the
-        table does not list, which used to be dropped in silence.
+        table does not list, which used to be dropped in silence. The MISP
+        property extension values are read with them, under the custom
+        property names they stand for.
 
         :param observable: the observable carrying the object's attributes
         :param name: the MISP object template name
@@ -1292,17 +1304,21 @@ class InternalSTIX2ObservableConverter(
             deep prefix naming the part of it - what a warning points at
         :return: the attribute mapping and the value of every property read
         """
+        observable = _as_custom_syntax(observable, self.main_parser)
         for field, attribute in mapping.items():
-            if hasattr(observable, field):
+            if field in observable:
                 yield (
                     self._object_relation_mapping(
                         name, field, attribute, object_id
                     ),
-                    getattr(observable, field)
+                    observable[field]
                 )
         for field in self._unlisted_custom_properties(observable, mapping):
             yield (
-                self._object_relation_mapping(name, field, None, object_id),
+                self._object_relation_mapping(
+                    name, field, None, object_id,
+                    path=observable.path(field)
+                ),
                 observable[field]
             )
 
@@ -1331,17 +1347,19 @@ class InternalSTIX2ObservableConverter(
     def _parse_image_attachment_observable(
             self, observable: _ARTIFACT_TYPING,
             observed_data_id: str) -> Iterator[dict]:
+        observable = _as_custom_syntax(observable, self.main_parser)
         attribute = {
-            'value': observable.x_misp_filename, 'data': observable.payload_bin
+            'value': observable['x_misp_filename'],
+            'data': observable['payload_bin']
         }
         yield from self._handle_object_attributes_with_data(
             self._mapping.attachment_attribute(),
             attribute, observed_data_id
         )
-        if hasattr(observable, 'x_misp_url'):
-            yield from self._populate_object_attributes(
+        if 'x_misp_url' in observable:
+            yield from self._handle_object_attributes(
                 self._mapping.url_attribute(),
-                observable.x_misp_url, observed_data_id
+                observable['x_misp_url'], observed_data_id
             )
     
     def _parse_image_url_observable(self, observable: _ARTIFACT_TYPING,

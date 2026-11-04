@@ -117,8 +117,14 @@ def _as_custom_syntax(
     value the readers cannot read costs the whole object, as a malformed
     custom property does, and nothing is salvaged from it.
 
+    Only an object with an id carries the extension. A part of one - a PE
+    extension, a section, a registry value - is presented with no MISP
+    value of its own, whatever its `extensions` hold, and so is a STIX 2.0
+    observable, which no producer writes the extension on.
+
     The object is read through the Mapping interface only, as a typed object
-    and a Dict-Form Object both offer it.
+    and a Dict-Form Object both offer it. An object already presented is
+    returned as it is, so what its values meet is reported once.
 
     :param stix_object: the standard STIX object whose MISP values are read
     :param main_parser: the parser reporting what the reading meets
@@ -127,7 +133,11 @@ def _as_custom_syntax(
     :raise InvalidMISPExtensionError: the MISP property extension holds
         content the readers cannot read
     """
+    if isinstance(stix_object, _CustomSyntaxView):
+        return stix_object
     values, paths = {}, {}
+    if 'id' not in stix_object:
+        return _CustomSyntaxView(stix_object, values, paths)
     path = f"extensions.'{_MISP_PROPERTY_EXTENSION_ID}'"
     extension = stix_object.get('extensions', {}).get(
         _MISP_PROPERTY_EXTENSION_ID, {}
@@ -614,8 +624,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         """Walk the custom properties a static mapping table does not list.
 
         :param stix_object: the STIX object being read, with its MISP property
-            extension values under their custom property names, or the
-            observable being read
+            extension values under their custom property names
         :param mapping: the static table the reader iterates
         :return: the `x_misp_` properties the table would skip
         """
