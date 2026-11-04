@@ -1556,6 +1556,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             f'Unknown STIX Marking Definition extension: {identifier}'
         )
 
+    def _custom_syntax_collision_warning(
+            self, object_id: str, field: str, path: str):
+        self._add_warning(
+            f'Both syntaxes carry the MISP value "{field}" on the STIX object '
+            f'with id {object_id}: the value of {path} in the MISP property '
+            'extension is read, the custom property is ignored.'
+        )
+
     def _unknown_custom_property_warning(
             self, name: str, object_id: str, field: str, relation: str):
         self._add_warning(

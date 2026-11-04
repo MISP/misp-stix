@@ -12,6 +12,7 @@ from .converters import (
     InternalSTIX2ObservableConverter, InternalSTIX2ObservedDataConverter,
     InternalSTIX2ThreatActorConverter, InternalSTIX2ToolConverter,
     InternalSTIX2VulnerabilityConverter, STIX2CustomObjectConverter)
+from .converters.stix2converter import _as_custom_syntax
 from .stix2_to_misp import (
     STIX2toMISPParser, _BUNDLE_TYPING, _NOTE_TYPING, _OBSERVABLE_TYPING,
     _OPINION_TYPING, _SDO_TYPING)
@@ -166,6 +167,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._observable = {observable['id']: observable}
 
     def _load_opinion(self, opinion: _OPINION_TYPING):
+        # MISP values are read here, before any converter runs: an Analyst
+        # Opinion's level now, the author of the Opinion a sighting is written
+        # as when the sightings are parsed, from the Opinion as presented here
+        opinion = _as_custom_syntax(opinion, self)
         if 'misp:context-layer="Analyst Opinion"' in opinion.get('labels', []):
             opinion_dict = {
                 'opinion': opinion['x_misp_opinion'],

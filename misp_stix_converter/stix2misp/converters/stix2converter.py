@@ -2,13 +2,15 @@
 # -*- coding: utf-8 -*-
 
 from ._galaxy_definitions import GALAXY_DEFINITIONS
-from ..exceptions import UndefinedSTIXObjectError
+from ..exceptions import InvalidMISPExtensionError, UndefinedSTIXObjectError
 from ...tools.misp_object_templates import (
-    _custom_property_name, _custom_property_relation,
-    _CUSTOM_PROPERTY_PREFIX, _ORIGINAL_NAMES_PROPERTY,
-    _template_custom_properties)
+    _custom_property_name, _custom_property_name_from_extension,
+    _custom_property_relation, _CUSTOM_PROPERTY_PREFIX,
+    _EXTENSION_RESERVED_NAMES, _MISP_PROPERTY_EXTENSION_ID,
+    _ORIGINAL_NAMES_PROPERTY, _template_custom_properties)
 from abc import ABCMeta
 from collections import defaultdict
+from collections.abc import Mapping
 from datetime import datetime
 from pymisp import AbstractMISP, MISPGalaxyCluster, MISPObject
 from stix2.v20.sdo import (
@@ -51,6 +53,133 @@ _SDO_TYPING = Union[
     Malware_v20, Malware_v21,
     ObservedData_v20, ObservedData_v21, dict
 ]
+
+
+class _CustomSyntaxView(Mapping):
+    """A standard STIX object as the custom property syntax spells its MISP
+    values.
+
+    The object's own properties come first, its MISP property extension
+    values next, each under the custom property name it stands for.
+    """
+
+    def __init__(self, stix_object, values: dict, paths: dict):
+        self.__stix_object = stix_object
+        self.__values = values
+        self.__paths = paths
+
+    def __contains__(self, key: object) -> bool:
+        return key in self.__values or key in self.__stix_object
+
+    def __getitem__(self, key: str) -> Any:
+        if key in self.__values:
+            return self.__values[key]
+        return self.__stix_object[key]
+
+    def __iter__(self) -> Iterator[str]:
+        yield from self.__stix_object
+        for key in self.__values:
+            if key not in self.__stix_object:
+                yield key
+
+    def __len__(self) -> int:
+        return sum(1 for _ in self)
+
+    def path(self, field: str) -> str:
+        """Spell a property as the bundle does, for the messages naming it.
+
+        :param field: a property name, as the readers read it
+        :return: the path of a MISP property extension value, the name
+            itself for a property of the object
+        """
+        return self.__paths.get(field, field)
+
+
+def _as_custom_syntax(
+        stix_object, main_parser: _MAIN_PARSER_TYPING) -> _CustomSyntaxView:
+    """Present a standard STIX object's MISP values as the readers name them.
+
+    The Internal import reads the MISP values of a standard object under
+    their custom property names, the `x_misp_` properties of the custom
+    property syntax. A STIX 2.1 bundle may carry them in the MISP property
+    extension instead, which is recognised by its fixed id as a key of
+    `extensions`, and by nothing else: neither the extension definition
+    objects, nor `extension_type`, nor the STIX version are read. Each
+    extension property name is translated into the custom property name it
+    stands for, so every reader keeps its names. The names the extension body
+    uses for itself are no MISP value.
+
+    An object may carry both syntaxes, and each value is read. The export
+    never writes a value in both, so when both give the same custom property
+    name, the extension's value is read and the other one reported.
+
+    Every value is checked as the view is built, before any reader runs: a
+    value the readers cannot read costs the whole object, as a malformed
+    custom property does, and nothing is salvaged from it.
+
+    The object is read through the Mapping interface only, as a typed object
+    and a Dict-Form Object both offer it.
+
+    :param stix_object: the standard STIX object whose MISP values are read
+    :param main_parser: the parser reporting what the reading meets
+    :return: the object, with its MISP property extension values next to its
+        own properties
+    :raise InvalidMISPExtensionError: the MISP property extension holds
+        content the readers cannot read
+    """
+    values, paths = {}, {}
+    path = f"extensions.'{_MISP_PROPERTY_EXTENSION_ID}'"
+    extension = stix_object.get('extensions', {}).get(
+        _MISP_PROPERTY_EXTENSION_ID, {}
+    )
+    if not isinstance(extension, Mapping):
+        _unreadable_misp_value(path, 'a dictionary')
+    if not isinstance(extension.get('original_names', {}), Mapping):
+        _unreadable_misp_value(f'{path}.original_names', 'a dictionary')
+    for name, value in extension.items():
+        if name in _EXTENSION_RESERVED_NAMES:
+            continue
+        field = _custom_property_name_from_extension(name)
+        paths[field] = f'{path}.{name}'
+        _check_misp_value(name, value, paths[field])
+        if field in stix_object:
+            main_parser._custom_syntax_collision_warning(
+                stix_object['id'], field, paths[field]
+            )
+        values[field] = value
+    return _CustomSyntaxView(stix_object, values, paths)
+
+
+def _check_misp_value(name: str, value: Any, path: str):
+    # The two fixed MISP fields with a type of their own, then the values of
+    # every other name: an item, or a list of items
+    if name == 'opinion':
+        if not isinstance(value, int) or isinstance(value, bool):
+            _unreadable_misp_value(path, 'an integer')
+    elif name == 'author_ref':
+        if not isinstance(value, str):
+            _unreadable_misp_value(path, 'an identifier')
+    elif not all(
+            _is_misp_value_item(item)
+            for item in (value if isinstance(value, list) else (value,))):
+        _unreadable_misp_value(
+            path, 'a string, a boolean, a value and its data, or a list of them'
+        )
+
+
+def _is_misp_value_item(item: Any) -> bool:
+    if isinstance(item, (bool, str)):
+        return True
+    return (
+        isinstance(item, Mapping) and set(item) == {'value', 'data'}
+        and all(isinstance(item[key], str) for key in item)
+    )
+
+
+def _unreadable_misp_value(path: str, expected: str):
+    raise InvalidMISPExtensionError(
+        f'Unreadable MISP Extension content {path}: {expected} is expected.'
+    )
 
 
 class STIX2Converter(metaclass=ABCMeta):
@@ -406,6 +535,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         # The walk the base converter does, with every custom property
         # resolved against the object template first, and the ones the static
         # table does not list read after them instead of being dropped.
+        stix_object = _as_custom_syntax(stix_object, self.main_parser)
         if feature is None:
             feature = stix_object['type'].replace('-', '_')
         if name is None:
@@ -422,7 +552,10 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
                 )
         for field in self._unlisted_custom_properties(stix_object, mapping):
             yield from self._populate_object_attributes_with_data(
-                self._object_relation_mapping(name, field, None, object_id),
+                self._object_relation_mapping(
+                    name, field, None, object_id,
+                    path=stix_object.path(field)
+                ),
                 stix_object[field], object_id
             )
 
@@ -440,7 +573,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     def _object_relation_mapping(
             self, name: str, field: str, mapping: Optional[dict],
-            object_id: str) -> Optional[dict]:
+            object_id: str, path: Optional[str] = None) -> Optional[dict]:
         """Pick the MISP attribute a property of an object's STIX form maps to.
 
         A custom property carries a MISP object relation folded to the STIX
@@ -455,6 +588,8 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         :param field: the STIX property, or pattern segment, being read
         :param mapping: the static table entry for that property, if any
         :param object_id: the STIX object the property comes from
+        :param path: the property as the bundle spells it, when it is not
+            `field` - a MISP property extension value - for the warning
         :return: the `type` and `object_relation` the attribute takes
         """
         if not field.startswith(_CUSTOM_PROPERTY_PREFIX):
@@ -469,7 +604,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             return mapping
         relation = _custom_property_relation(folded)
         self.main_parser._unknown_custom_property_warning(
-            name, object_id, field, relation
+            name, object_id, path or field, relation
         )
         return {'type': 'text', 'object_relation': relation}
 
@@ -478,7 +613,9 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             stix_object, mapping: dict) -> Iterator[str]:
         """Walk the custom properties a static mapping table does not list.
 
-        :param stix_object: the STIX object, or observable, being read
+        :param stix_object: the STIX object being read, with its MISP property
+            extension values under their custom property names, or the
+            observable being read
         :param mapping: the static table the reader iterates
         :return: the `x_misp_` properties the table would skip
         """
