@@ -4,6 +4,9 @@
 import ipaddress
 import re
 from ...misp_stix_mapping import Mapping
+from ...tools.misp_object_templates import (
+    _custom_property_name_from_extension, _EXTENSION_RESERVED_NAMES,
+    _MISP_PROPERTY_EXTENSION_ID)
 from ..exceptions import (
     AttributeFromPatternParsingError, InvalidSTIXPatternError,
     UndefinedIndicatorError, UndefinedSTIXObjectError,
@@ -53,6 +56,18 @@ _PATTERN_FIELDS_TO_SKIP = (
 # escaped inside
 _PATTERN_STRING_RE = re.compile(r"'((?:[^'\\]|\\.)*)'")
 _PATTERN_ESCAPE_RE = re.compile(r"\\(['\\])")
+# The object path of a comparison on a MISP value in the MISP property
+# extension: behind any reference step, at the top level of the extension or
+# in one of its Nested Rooms - the pe extension, a section of it, or a
+# registry value - the value name, `[*]` when the observable holds a list,
+# and the key of a value with its data
+_MISP_EXTENSION_PATTERN_PATH_RE = re.compile(
+    r"(?P<reference>(?:\w+_ref\.)*)"
+    rf"extensions\.'{re.escape(_MISP_PROPERTY_EXTENSION_ID)}'\."
+    r"(?:(?P<pe>windows_pebinary_ext\.)(?P<section>sections\[\d+\]\.)?"
+    r"|(?P<registry_value>values\[\d+\]\.))?"
+    r"(?P<name>\w+)(?:\[\*\])?(?P<key>\.(?:data|value))?"
+)
 
 
 class STIX2IndicatorMapping(STIX2Mapping, metaclass=ABCMeta):
@@ -1735,6 +1750,7 @@ class InternalSTIX2IndicatorConverter(
     def __init__(self, main: 'InternalSTIX2toMISPParser'):
         super().__init__(main)
         self._mapping = InternalSTIX2IndicatorMapping
+        self.__misp_extension_paths: dict = {}
 
     def parse(self, indicator_ref: str):
         object_id = self.main_parser._extract_uuid(indicator_ref)
@@ -1763,6 +1779,7 @@ class InternalSTIX2IndicatorConverter(
             parser = getattr(self, f"{feature}_indicator")
         except AttributeError:
             raise UnknownParsingFunctionError(f"{feature}_indicator")
+        self.__misp_extension_paths = {}
         try:
             parser(indicator)
         except AttributeFromPatternParsingError as indicator_id:
@@ -2166,9 +2183,11 @@ class InternalSTIX2IndicatorConverter(
             )
             for attribute in attributes:
                 pe_object.add_attribute(**attribute)
+        prefix = "extensions.'windows-pebinary-ext'."
         for feature, values in extension['pe'].items():
             attributes = self._handle_object_attributes(
-                values, self._pattern_attribute('pe', feature, object_id),
+                values,
+                self._pattern_attribute('pe', feature, object_id, prefix),
                 object_id
             )
             for attribute in attributes:
@@ -2181,7 +2200,8 @@ class InternalSTIX2IndicatorConverter(
             )
             for feature, values in section.items():
                 mapping = self._pattern_attribute(
-                    'pe-section', feature, section_id
+                    'pe-section', feature, section_id,
+                    f'{prefix}sections[{section_index}].'
                 )
                 if mapping is None:
                     mapping = self._mapping.file_hashes_mapping(
@@ -2597,9 +2617,7 @@ class InternalSTIX2IndicatorConverter(
             for feature, value in comparisons:
                 if 'values[' in feature:
                     index = feature.split('values[')[1].split(']')[0]
-                    registry_values[index].append(
-                        (feature.split('.')[-1], value)
-                    )
+                    registry_values[index].append((feature, value))
                     continue
                 mapping = self._pattern_attribute(
                     'registry-key', feature, indicator.id
@@ -2621,8 +2639,8 @@ class InternalSTIX2IndicatorConverter(
             return
         for feature, value in comparisons:
             if 'values[' in feature:
-                mapping = self._mapping.registry_key_values_pattern_mapping(
-                    feature.split('.')[-1]
+                mapping = self._registry_key_value_attribute(
+                    'registry-key', feature, indicator.id
                 )
             else:
                 mapping = self._pattern_attribute(
@@ -2640,7 +2658,9 @@ class InternalSTIX2IndicatorConverter(
             'registry-key-value', indicator, object_id=object_id
         )
         for feature, value in value_features:
-            mapping = self._mapping.registry_key_values_pattern_mapping(feature)
+            mapping = self._registry_key_value_attribute(
+                'registry-key-value', feature, object_id
+            )
             for attribute in self._handle_object_attributes(
                     value, mapping, object_id):
                 misp_object.add_attribute(**attribute)
@@ -2651,12 +2671,8 @@ class InternalSTIX2IndicatorConverter(
         misp_object = self._create_misp_object('registry-key-value', indicator)
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
-            mapping = self._object_relation_mapping(
-                'registry-key-value', feature,
-                self._mapping.registry_key_values_pattern_mapping(
-                    feature.split('.')[-1]
-                ),
-                indicator.id
+            mapping = self._registry_key_value_attribute(
+                'registry-key-value', feature, indicator.id
             )
             attributes = self._handle_object_attributes(
                 value, mapping, indicator.id
@@ -2664,6 +2680,23 @@ class InternalSTIX2IndicatorConverter(
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, indicator)
+
+    def _registry_key_value_attribute(
+            self, name: str, feature: str, object_id: str) -> Optional[dict]:
+        # A registry value's table, read through the object relation resolver
+        # of the MISP object `name` the value converts to, for the MISP values
+        # its Nested Room holds. `feature` is a registry value's property,
+        # `values[n].` included, or a property of a key holding one value:
+        # any other path is one the table does not know
+        field = (
+            feature.split('.', 1)[1] if feature.startswith('values[')
+            else feature
+        )
+        return self._object_relation_mapping(
+            name, field,
+            self._mapping.registry_key_values_pattern_mapping(field),
+            object_id, path=self.__misp_extension_paths.get(feature)
+        )
 
     @staticmethod
     def _collect_custom_data(
@@ -2934,27 +2967,69 @@ class InternalSTIX2IndicatorConverter(
     ############################################################################
 
     def _pattern_attribute(
-            self, name: str, feature: str, object_id: str) -> Optional[dict]:
+            self, name: str, feature: str, object_id: str,
+            prefix: str = '') -> Optional[dict]:
         # The object's static pattern table, read through the object relation
-        # resolver so a custom segment comes back from the template first
+        # resolver so a custom segment comes back from the template first. A
+        # reader naming the feature without the path in front of it gives
+        # that `prefix`, for a message to name the value by its whole path
         mapping = getattr(
             self._mapping, f"{name.replace('-', '_')}_pattern_mapping"
         )
         return self._object_relation_mapping(
-            name, feature, mapping(feature), object_id
+            name, feature, mapping(feature), object_id,
+            path=self.__misp_extension_paths.get(f'{prefix}{feature}')
         )
 
     @classmethod
     def _extract_value_from_pattern(cls, pattern: str) -> str:
         return cls._pattern_comparison_value(*pattern.split(' = ', 1))
 
-    @classmethod
-    def _extract_features_from_pattern(cls, pattern: str) -> tuple[str]:
+    def _extract_features_from_pattern(self, pattern: str) -> tuple[str]:
         identifier, constant = pattern.split(' = ', 1)
         return (
-            identifier.split(':')[1],
-            cls._pattern_comparison_value(identifier, constant)
+            self._custom_syntax_path(identifier.split(':')[1]),
+            self._pattern_comparison_value(identifier, constant)
         )
+
+    def _custom_syntax_path(self, path: str) -> str:
+        """Read the object path of a comparison as the custom property syntax
+        spells it.
+
+        A path into the MISP property extension, recognised by its fixed id
+        and by nothing else, is read as the custom property path it stands
+        for, so every reader keeps its paths. The reference step stays in
+        front, and the name becomes the custom property name it stands for.
+        A Nested Room becomes the place the custom property syntax gives the
+        values of the part it holds: the pe extension and its sections, or
+        the registry value. `[*]` goes, since a comparison carries one value,
+        and a value with its data keeps its `.data` or `.value` key. The path
+        as the bundle spells it, up to the value's name, is kept for the
+        messages naming the value: they name the property, whether the
+        comparison reaches one of its values through `[*]` or by its key.
+
+        A path into another extension definition, or naming what the
+        extension body uses for itself, is read as it stands: no reader knows
+        it, as for any other path a reader does not know.
+
+        :param path: the object path of a comparison, without its type
+        :return: the object path the readers read
+        """
+        match = _MISP_EXTENSION_PATTERN_PATH_RE.fullmatch(path)
+        if match is None or match['name'] in _EXTENSION_RESERVED_NAMES:
+            return path
+        prefix = match['registry_value'] or ''
+        if match['pe'] is not None:
+            prefix = (
+                "extensions.'windows-pebinary-ext'."
+                f"{match['section'] or ''}"
+            )
+        feature = (
+            f"{match['reference']}{prefix}"
+            f"{_custom_property_name_from_extension(match['name'])}"
+        )
+        self.__misp_extension_paths[feature] = path[:match.end('name')]
+        return f"{feature}{match['key'] or ''}"
 
     @staticmethod
     def _pattern_comparison_value(identifier: str, constant: str) -> str:
