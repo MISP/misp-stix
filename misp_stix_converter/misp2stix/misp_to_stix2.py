@@ -42,7 +42,7 @@ from stix2.v21.sdo import (
     IntrusionSet as IntrusionSet_v21, Location, Malware as Malware_v21, Note,
     ObservedData as ObservedData_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
-from typing import Any, Callable, Iterator, Optional, Union
+from typing import Any, Callable, Iterator, NamedTuple, Optional, Union
 
 try:
     from datetime import UTC
@@ -76,6 +76,21 @@ _STIX_OBJECT_TYPING = Union[
     Note, ObservedData_v20, ObservedData_v21, Tool_v20, Tool_v21,
     Vulnerability_v20, Vulnerability_v21, dict
 ]
+
+
+class _PatternLocation(NamedTuple):
+    """Where a MISP value sits on the observable an Indicator pattern
+    compares, which each version turns into the object path of the
+    comparison."""
+    # The STIX type of the observable
+    stix_type: str
+    # The reference the comparison steps through: `parent_ref` or
+    # `content_ref`
+    reference_step: Optional[str] = None
+    # The Nested Room holding the value, as the keys and list indexes that
+    # reach it: `('windows_pebinary_ext',)`,
+    # `('windows_pebinary_ext', 'sections', n)` or `('values', n)`
+    room_path: tuple = ()
 
 
 class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
@@ -1708,15 +1723,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_observable_multiple_properties(args, parent_attributes)
 
     def _handle_pattern_multiple_properties(
-            self, attributes: dict, prefix: str,
-            separator: Optional[str] = ':') -> list:
+            self, attributes: dict, location: _PatternLocation) -> list:
         pattern = []
         for key, values in attributes.items():
             for value in values if isinstance(values, list) else [values]:
                 pattern.extend(
-                    self._handle_custom_data_pattern(
-                        prefix, key, value, separator=separator
-                    )
+                    self._handle_custom_data_pattern(location, key, value)
                 )
         return pattern
 
@@ -1759,7 +1771,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._restore_repeated_values(attributes, repeated)
             if attributes:
                 pattern.extend(
-                    self._handle_pattern_multiple_properties(attributes, prefix)
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
@@ -1794,7 +1808,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._restore_repeated_values(attributes, repeated)
             if attributes:
                 pattern.extend(
-                    self._handle_pattern_multiple_properties(attributes, prefix)
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
@@ -1822,7 +1838,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._restore_repeated_values(attributes, repeated)
             if attributes:
                 pattern.extend(
-                    self._handle_pattern_multiple_properties(attributes, prefix)
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
@@ -1850,7 +1868,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._restore_repeated_values(attributes, repeated)
             if attributes:
                 pattern.extend(
-                    self._handle_pattern_multiple_properties(attributes, prefix)
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
@@ -1935,7 +1955,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._restore_repeated_values(attributes, repeated)
             if attributes:
                 pattern.extend(
-                    self._handle_pattern_multiple_properties(attributes, prefix)
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
@@ -1959,7 +1981,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if attributes:
                 pattern.extend(
                     self._handle_pattern_multiple_properties(
-                        attributes, 'user-account'
+                        attributes, _PatternLocation('user-account')
                     )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
@@ -2010,7 +2032,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             pattern.extend(
-                self._handle_pattern_multiple_properties(attributes, 'artifact')
+                self._handle_pattern_multiple_properties(
+                    attributes, _PatternLocation('artifact')
+                )
             )
         return pattern
 
@@ -2048,7 +2072,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attributes:
             pattern.extend(
                 self._handle_pattern_multiple_properties(
-                    attributes, 'directory'
+                    attributes, _PatternLocation('directory')
                 )
             )
         return pattern
@@ -2139,13 +2163,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 for key, field in self._mapping.domain_ip_object_mapping().items():
                     if attributes.get(key):
                         if key == 'hostname' and special_case:
-                            field = 'x_misp_hostname'
+                            pattern.extend(
+                                self._handle_pattern_multiple_properties(
+                                    {key: attributes.pop(key)},
+                                    _PatternLocation(prefix)
+                                )
+                            )
+                            continue
                         for value in attributes.pop(key):
                             pattern.append(f"{prefix}:{field} = '{value}'")
                 if attributes:
                     pattern.extend(
                         self._handle_pattern_multiple_properties(
-                            attributes, prefix
+                            attributes, _PatternLocation(prefix)
                         )
                     )
                 indicator = self._handle_object_indicator(misp_object, pattern)
@@ -2214,7 +2244,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                         )
                         n += 1
                 pattern.extend(
-                    self._handle_pattern_multiple_properties(attributes, prefix)
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
@@ -2339,19 +2371,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 value, data = value
                 if not isinstance(data, str):
                     data = b64encode(data.getvalue()).decode()
-                filename_pattern = self._create_content_ref_pattern(
-                    value, 'x_misp_filename'
+                filename_pattern = self._create_content_ref_filename_pattern(
+                    value
                 )
                 data_pattern = self._create_content_ref_pattern(data)
                 pattern.append(f'({data_pattern} AND {filename_pattern})')
             else:
-                pattern.append(
-                    self._create_content_ref_pattern(value, 'x_misp_filename')
-                )
+                pattern.append(self._create_content_ref_filename_pattern(value))
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             pattern.extend(
-                self._handle_pattern_multiple_properties(attributes, prefix)
+                self._handle_pattern_multiple_properties(
+                    attributes, _PatternLocation(prefix)
+                )
             )
         return pattern
 
@@ -2400,7 +2432,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if attributes:
                 patterns.extend(
                     self._handle_pattern_multiple_properties(
-                        attributes, 'network-traffic'
+                        attributes, _PatternLocation('network-traffic')
                     )
                 )
             indicator = self._handle_object_indicator(misp_object, patterns)
@@ -2451,7 +2483,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             pattern.extend(
-                self._handle_pattern_multiple_properties(attributes, 'file')
+                self._handle_pattern_multiple_properties(
+                    attributes, _PatternLocation('file')
+                )
             )
         return pattern
 
@@ -2484,9 +2518,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                         f'image/{extension}', 'mime_type')
                     )
                 pattern.append(
-                    self._create_content_ref_pattern(
-                        attachment, 'x_misp_filename'
-                    )
+                    self._create_content_ref_filename_pattern(attachment)
                 )
             if attributes.get('url'):
                 pattern.append(
@@ -2497,7 +2529,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._restore_repeated_values(attributes, repeated)
             if attributes:
                 pattern.extend(
-                    self._handle_pattern_multiple_properties(attributes, 'file')
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation('file')
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
@@ -2567,7 +2601,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                             patterns.append(f"{prefix}:{feature} = '{value}'")
             if attributes:
                 patterns.extend(
-                    self._handle_pattern_multiple_properties(attributes, prefix)
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, patterns)
             self._parse_indicator_relationship(
@@ -2666,7 +2702,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._restore_repeated_values(attributes, repeated)
             if attributes:
                 pattern.extend(
-                    self._handle_pattern_multiple_properties(attributes, prefix)
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
@@ -2702,9 +2740,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if separator in malware_sample:
                 filename, md5 = malware_sample.split(separator)
                 pattern.append(
-                    self._create_content_ref_pattern(
-                        filename, 'x_misp_filename'
-                    )
+                    self._create_content_ref_filename_pattern(filename)
                 )
                 if not self._check_hash_value('MD5', md5):
                     raise InvalidHashValueError(
@@ -2722,9 +2758,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 'malware-sample', malware_sample
             )
             pattern.append(
-                self._create_content_ref_pattern(
-                    malware_sample, 'x_misp_filename'
-                )
+                self._create_content_ref_filename_pattern(malware_sample)
             )
         return f"({' AND '.join(pattern)})"
 
@@ -2744,7 +2778,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._restore_repeated_values(attributes, repeated)
             if attributes:
                 pattern.extend(
-                    self._handle_pattern_multiple_properties(attributes, prefix)
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
@@ -2799,7 +2835,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if attributes:
                 pattern.extend(
                     self._handle_pattern_multiple_properties(
-                        attributes, 'network-traffic'
+                        attributes, _PatternLocation('network-traffic')
                     )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
@@ -2837,7 +2873,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._restore_repeated_values(attributes, repeated)
             if attributes:
                 pattern.extend(
-                    self._handle_pattern_multiple_properties(attributes, prefix)
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
@@ -2901,7 +2939,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attributes:
             pattern.extend(
                 self._handle_pattern_multiple_properties(
-                    attributes, 'network-traffic'
+                    attributes, _PatternLocation('network-traffic')
                 )
             )
         return pattern
@@ -3105,12 +3143,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attributes:
             pattern.extend(
                 self._handle_pattern_multiple_properties(
-                    attributes, prefix, separator='.'
+                    attributes, _PatternLocation(
+                        'file', room_path=('windows_pebinary_ext',)
+                    )
                 )
             )
         if uuids is not None:
             for section_uuid in uuids:
-                section_prefix = f"{prefix}.sections[{uuids.index(section_uuid)}]"
+                index = uuids.index(section_uuid)
+                section_prefix = f"{prefix}.sections[{index}]"
                 section_object = self._objects_to_parse['pe-section'][section_uuid]['misp_object']
                 attributes, repeated = self._split_single_field_values(
                     self._extract_multiple_indicator_object_attributes(
@@ -3141,7 +3182,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if attributes:
                     pattern.extend(
                         self._handle_pattern_multiple_properties(
-                            attributes, section_prefix, separator='.'
+                            attributes, _PatternLocation(
+                                'file', room_path=(
+                                    'windows_pebinary_ext', 'sections', index
+                                )
+                            )
                         )
                     )
         return pattern
@@ -3176,7 +3221,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             }
             pattern.extend(
                 self._handle_pattern_multiple_properties(
-                    parent_attributes, prefix, separator=':parent_ref.'
+                    parent_attributes,
+                    _PatternLocation(prefix, reference_step='parent_ref')
                 )
             )
         if attributes.get('child-pid'):
@@ -3189,7 +3235,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._restore_repeated_values(attributes, repeated)
         if attributes:
             pattern.extend(
-                self._handle_pattern_multiple_properties(attributes, prefix)
+                self._handle_pattern_multiple_properties(
+                    attributes, _PatternLocation(prefix)
+                )
             )
         return pattern
 
@@ -3236,7 +3284,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             if attributes:
                 pattern.extend(
                     self._handle_pattern_multiple_properties(
-                        attributes, prefix
+                        attributes, _PatternLocation(prefix)
                     )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
@@ -3312,7 +3360,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._restore_repeated_values(attributes, repeated)
             if attributes:
                 pattern.extend(
-                    self._handle_pattern_multiple_properties(attributes, prefix)
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
@@ -3357,20 +3407,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                         )
             self._restore_repeated_values(attributes, repeated)
             if attributes:
-                for key, values in attributes.items():
-                    if isinstance(values, list):
-                        for value in values:
-                            pattern.extend(
-                                self._handle_custom_data_pattern(
-                                    prefix, key, value
-                                )
-                            )
-                    else:
-                        pattern.extend(
-                            self._handle_custom_data_pattern(
-                                prefix, key, values
-                            )
-                        )
+                pattern.extend(
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
+                )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
                 indicator.id, observed_data.id, indicator.modified
@@ -3467,7 +3508,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._restore_repeated_values(attributes, repeated)
             if attributes:
                 pattern.extend(
-                    self._handle_pattern_multiple_properties(attributes, prefix)
+                    self._handle_pattern_multiple_properties(
+                        attributes, _PatternLocation(prefix)
+                    )
                 )
             indicator = self._handle_object_indicator(misp_object, pattern)
             self._parse_indicator_relationship(
@@ -5170,7 +5213,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return registry_key_args
 
     def _parse_registry_key_value_pattern(
-            self, attributes: list, values_prefix: str) -> list:
+            self, attributes: list, index: int) -> list:
+        values_prefix = f'windows-registry-key:values[{index}]'
         attributes, repeated = self._split_single_field_values(
             self._extract_multiple_indicator_object_attributes(attributes)
         )
@@ -5195,7 +5239,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attributes:
             pattern.extend(
                 self._handle_pattern_multiple_properties(
-                    attributes, 'windows-registry-key'
+                    attributes, _PatternLocation(
+                        'windows-registry-key', room_path=('values', index)
+                    )
                 )
             )
         return pattern
@@ -5203,7 +5249,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_registry_key_value_object_pattern(
             self, misp_object: MISPObject | dict) -> list:
         return self._parse_registry_key_value_pattern(
-            misp_object['Attribute'], 'windows-registry-key:values[0]'
+            misp_object['Attribute'], 0
         )
 
     def _parse_registry_key_with_values_pattern(
@@ -5218,7 +5264,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for index, value_object in enumerate(value_objects):
             pattern.extend(
                 self._parse_registry_key_value_pattern(
-                    value_object['Attribute'], f'{prefix}:values[{index}]'
+                    value_object['Attribute'], index
                 )
             )
         attributes = {
@@ -5230,7 +5276,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         if attributes:
             pattern.extend(
-                self._handle_pattern_multiple_properties(attributes, prefix)
+                self._handle_pattern_multiple_properties(
+                    attributes, _PatternLocation(prefix)
+                )
             )
         return pattern
 
@@ -5338,6 +5386,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _create_AS_pattern(self, number: str) -> str:
         return f"autonomous-system:number = '{self._parse_AS_value(number)}'"
 
+    def _create_content_ref_filename_pattern(self, filename: str) -> str:
+        path = self._misp_value_pattern_path(
+            _PatternLocation('file', reference_step='content_ref'), 'filename'
+        )
+        return f"{path} = '{filename}'"
+
     @staticmethod
     def _create_content_ref_pattern(
             value: str, feature: str = 'payload_bin') -> str:
@@ -5442,6 +5496,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         :param name: the argument name
         :param value: the argument value
         :return: whether the argument carries nothing a STIX property maps
+        """
+
+    @abstractmethod
+    def _misp_value_pattern_path(
+            self, location: _PatternLocation, name: str) -> str:
+        """Give the object path an Indicator pattern compares a MISP value at.
+
+        :param location: where the value sits on the observable
+        :param name: the MISP relation of the value, or its fixed MISP field
+            name: `filename`
+        :return: the object path, from the STIX type on
         """
 
     @abstractmethod
@@ -5624,18 +5689,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         return self._parse_custom_data_value(values)
 
     def _handle_custom_data_pattern(
-            self, prefix: str, key: str, value: str | tuple,
-            separator: Optional[str] = ':') -> list:
-        segment = self._quote_custom_property(key)
+            self, location: _PatternLocation, key: str,
+            value: str | tuple) -> list:
+        path = self._misp_value_pattern_path(location, key)
         if isinstance(value, tuple):
             value, data = value
             if not isinstance(data, str):
                 data = b64encode(data.getvalue()).decode()
-            return [
-                f"{prefix}{separator}{segment}.data = '{data}'",
-                f"{prefix}{separator}{segment}.value = '{value}'"
-            ]
-        return [f"{prefix}{separator}{segment} = '{value}'"]
+            return [f"{path}.data = '{data}'", f"{path}.value = '{value}'"]
+        return [f"{path} = '{value}'"]
 
     def _handle_indicator_time_fields(
             self, data_layer: MISPAttribute | MISPObject | dict) -> dict:
@@ -5967,6 +6029,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if _KEYWORD_RE.match(segment):
             return segment
         return f"'{MISPtoSTIX2Parser._escape_pattern_value(segment)}'"
+
+    @staticmethod
+    def _render_room_path(room_path: tuple) -> str:
+        # Each key of the path goes behind a dot, each list index in brackets
+        return ''.join(
+            f'[{step}]' if isinstance(step, int) else f'.{step}'
+            for step in room_path
+        )
 
     def _sanitise_registry_key_value(self, value: str) -> str:
         sanitized = value.strip()

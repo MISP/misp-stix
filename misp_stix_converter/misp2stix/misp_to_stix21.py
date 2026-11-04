@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from .exceptions import InvalidHashValueError, _UnbuildableRecordError
-from .misp_to_stix2 import MISPtoSTIX2Parser
+from .misp_to_stix2 import MISPtoSTIX2Parser, _PatternLocation
 from .stix21_mapping import MISPtoSTIX21Mapping
 from ..tools.misp_object_templates import (
     _CUSTOM_PROPERTY_PREFIX, _ORIGINAL_NAMES_PROPERTY)
@@ -2142,6 +2142,20 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _is_misp_value_property(name: str, value: Any) -> bool:
         return name.startswith(_CUSTOM_PROPERTY_PREFIX)
+
+    def _misp_value_pattern_path(
+            self, location: _PatternLocation, name: str) -> str:
+        steps = [location.reference_step] if location.reference_step else []
+        if location.room_path[:1] == ('windows_pebinary_ext',):
+            # The PE values sit on the predefined extension and its sections
+            steps.append(
+                "extensions.'windows-pebinary-ext'"
+                f'{self._render_room_path(location.room_path[1:])}'
+            )
+        # The MISP values of a registry value are compared at the top level of
+        # the key, not in the value where the observable writes them
+        steps.append(self._quote_custom_property(name))
+        return f"{location.stix_type}:{'.'.join(steps)}"
 
     @staticmethod
     def _set_fixed_value(args: dict, name: str, value: Any):
