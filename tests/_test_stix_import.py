@@ -530,6 +530,14 @@ class TestSTIX2Import(TestSTIX):
             self._reports_matching(warnings, 'Colliding MISP'), []
         )
 
+    def _check_absent_identity_report(
+            self, reports: dict, object_id: str, identity_id: str):
+        """A sighting whose organisation the bundle does not carry is
+        reported once, naming both the object and the identity."""
+        object_reports = self._reports_matching(reports, object_id)
+        self.assertEqual(len(object_reports), 1)
+        self.assertIn(identity_id, object_reports[0])
+
     def _reports_matching(self, reports: dict, message: str) -> list:
         return [
             report for report in self._reported_messages(reports)

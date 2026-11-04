@@ -11588,6 +11588,45 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         ]
         return dict_to_stix2(bundle, allow_custom = True)
 
+    @staticmethod
+    def __sightings_missing_identities(content: list) -> dict:
+        # The sightings content, keyed by id, without the identity of Oscorp
+        # Industries, the author of the first Opinion and where the last
+        # Sighting was seen. The first Sighting has no where_sighted_refs, as
+        # MISP writes a sighting with no Organisation, and the last Opinion no
+        # authors: the caller points its author reference at the absent
+        # identity, in the syntax the content uses.
+        objects = {
+            stix_object['id']: deepcopy(stix_object)
+            for stix_object in content
+            if stix_object['id'] != 'identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90'
+        }
+        del objects['sighting--5125aa81-ab95-4cdf-83f9-3c467207307d']['where_sighted_refs']
+        del objects['opinion--3ab7497e-39f5-4a0a-b797-dc08bf80631d']['authors']
+        return objects
+
+    @classmethod
+    def get_bundle_with_sightings_missing_identities(cls):
+        objects = cls.__sightings_missing_identities(_BUNDLE_WITH_SIGHTINGS)
+        objects['opinion--3ab7497e-39f5-4a0a-b797-dc08bf80631d'][
+            'x_misp_author_ref'
+        ] = 'identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90'
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [cls.__identity, *objects.values()]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_bundle_with_sighting_opinion_author_ref_not_an_identifier(cls):
+        objects = deepcopy(_BUNDLE_WITH_SIGHTINGS)
+        opinion = next(
+            stix_object for stix_object in objects
+            if stix_object['id'] == 'opinion--7ea813e5-6dd5-4241-83a7-37fb56da2d78'
+        )
+        opinion['x_misp_author_ref'] = [opinion['x_misp_author_ref']]
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [cls.__identity, *objects]
+        return dict_to_stix2(bundle, allow_custom=True)
+
     @classmethod
     def get_bundle_with_single_report(cls):
         return cls.__assemble_bundle(*_BUNDLE_WITH_NO_REPORT)
@@ -12366,6 +12405,22 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
             deepcopy(cls.__identity),
             *cls.__misp_extensions(*_EXTENSION_SYNTAX_BUNDLE_WITH_SIGHTINGS),
             *deepcopy(_EXTENSION_SYNTAX_BUNDLE_WITH_SIGHTINGS)
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_extension_syntax_bundle_with_sightings_missing_identities(cls):
+        objects = cls.__sightings_missing_identities(
+            _EXTENSION_SYNTAX_BUNDLE_WITH_SIGHTINGS
+        )
+        objects['opinion--3ab7497e-39f5-4a0a-b797-dc08bf80631d']['extensions'][
+            MISP_PROPERTY_EXTENSION_ID
+        ]['author_ref'] = 'identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90'
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [
+            deepcopy(cls.__identity),
+            *cls.__misp_extensions(*objects.values()),
+            *objects.values()
         ]
         return dict_to_stix2(bundle, allow_custom=True)
 

@@ -2870,6 +2870,83 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_sightings()
         )
 
+    def _check_bundle_with_sightings_missing_identities(self, bundle):
+        # The sightings are parsed once every object is: a sighting whose
+        # organisation the bundle does not carry costs at most itself, never
+        # the rest of the document
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, *stix_objects, identity1, identity2, identity4 = self._bundle_objects(bundle)
+        self.assertEqual(event.uuid, grouping.id.split('--')[1])
+        self.assertEqual(len(event.attributes), 2)
+        AS, domain = event.attributes
+        observed_data, _, sighting1, sighting2, opinion1, opinion2, indicator, sighting3, opinion3, sighting4, opinion4 = stix_objects
+        absent_id = 'identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90'
+        self.assertEqual(AS.uuid, observed_data.id.split('--')[1])
+        self.assertEqual(len(AS.sightings), 4)
+        stix_objects = (sighting1, sighting2, opinion1, opinion2)
+        for sighting, stix_object in zip(AS.sightings, stix_objects):
+            self.assertEqual(sighting.date_sighting, self._timestamp_from_datetime(stix_object.modified))
+            self.assertEqual(sighting.type, '0' if stix_object.type == 'sighting' else '1')
+        no_organisation, *sightings = AS.sightings
+        # MISP writes a sighting with no Organisation with no where_sighted_refs
+        self.assertNotIn('Organisation', no_organisation.to_dict())
+        # The Opinion keeps the organisation its author reference and the
+        # first of its authors name, with a warning
+        organisations = (
+            (identity2.id, identity2.name),
+            (absent_id, 'Oscorp Industries'),
+            (identity4.id, identity4.name)
+        )
+        for sighting, (identity_id, name) in zip(sightings, organisations):
+            self.assertEqual(sighting.Organisation['uuid'], identity_id.split('--')[1])
+            self.assertEqual(sighting.Organisation['name'], name)
+        self._check_absent_identity_report(self.parser.warnings, opinion1.id, absent_id)
+        self.assertEqual(self._reports_matching(self.parser.errors, opinion1.id), [])
+        # The Sighting, and the Opinion with no authors, have no organisation
+        # to give: each is dropped, with an error
+        self.assertEqual(domain.uuid, indicator.id.split('--')[1])
+        self.assertEqual(len(domain.sightings), 2)
+        stix_objects = (sighting3, opinion3)
+        identities = (identity1, identity2)
+        for sighting, stix_object, identity in zip(domain.sightings, stix_objects, identities):
+            self.assertEqual(sighting.date_sighting, self._timestamp_from_datetime(stix_object.modified))
+            self.assertEqual(sighting.type, '0' if stix_object.type == 'sighting' else '1')
+            self.assertEqual(sighting.Organisation['uuid'], identity.id.split('--')[1])
+            self.assertEqual(sighting.Organisation['name'], identity.name)
+        for stix_object in (sighting4, opinion4):
+            self._check_absent_identity_report(self.parser.errors, stix_object.id, absent_id)
+
+    def test_stix21_bundle_with_sightings_missing_identities(self):
+        self._check_bundle_with_sightings_missing_identities(
+            TestInternalSTIX21Bundles.get_bundle_with_sightings_missing_identities()
+        )
+
+    def test_stix21_bundle_with_sightings_missing_identities_extension_syntax(self):
+        self._check_bundle_with_sightings_missing_identities(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_sightings_missing_identities()
+        )
+
+    def test_stix21_bundle_with_sighting_opinion_author_ref_not_an_identifier(self):
+        # Only the custom property syntax reaches the sightings with such a
+        # reference: the MISP property extension refuses it as it loads
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_sighting_opinion_author_ref_not_an_identifier()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+        AS, domain = self.parser.misp_event.attributes
+        _, _, _, _, sighting1, sighting2, opinion1, opinion2, *_ = self._bundle_objects(bundle)
+        self.assertEqual(
+            [sighting.date_sighting for sighting in AS.sightings],
+            [
+                self._timestamp_from_datetime(stix_object.modified)
+                for stix_object in (sighting1, sighting2, opinion1)
+            ]
+        )
+        self.assertEqual(len(domain.sightings), 4)
+        self.assertEqual(len(self._reports_matching(self.parser.errors, opinion2.id)), 1)
+
     def test_stix21_bundle_with_single_report(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_single_report()
         self.parser.load_stix_bundle(bundle)

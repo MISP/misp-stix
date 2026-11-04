@@ -8668,6 +8668,39 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return dict_to_stix2(bundle, allow_custom = True)
 
     @classmethod
+    def get_bundle_with_sightings_missing_identities(cls):
+        # Without the identity of Oscorp Industries, the author of the first
+        # Opinion and where the last Sighting was seen. The first Sighting
+        # has no where_sighted_refs, as MISP writes a sighting with no
+        # Organisation, and the last Opinion names the absent identity with
+        # no author name.
+        objects = {
+            stix_object['id']: deepcopy(stix_object)
+            for stix_object in _BUNDLE_WITH_SIGHTINGS
+            if stix_object['id'] != 'identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90'
+        }
+        del objects['sighting--5125aa81-ab95-4cdf-83f9-3c467207307d']['where_sighted_refs']
+        opinion = objects['x-misp-opinion--3ab7497e-39f5-4a0a-b797-dc08bf80631d']
+        del opinion['x_misp_author']
+        opinion['x_misp_author_ref'] = 'identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90'
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [cls.__identity, *objects.values()]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_bundle_with_sighting_opinion_author_ref_missing(cls):
+        # An Opinion naming its author with no reference to the identity
+        objects = deepcopy(_BUNDLE_WITH_SIGHTINGS)
+        opinion = next(
+            stix_object for stix_object in objects
+            if stix_object['id'] == 'x-misp-opinion--7ea813e5-6dd5-4241-83a7-37fb56da2d78'
+        )
+        del opinion['x_misp_author_ref']
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [cls.__identity, *objects]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
     def get_bundle_with_single_report(cls):
         return cls.__assemble_bundle(*_BUNDLE_WITH_NO_REPORT)
 
