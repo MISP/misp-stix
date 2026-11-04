@@ -460,6 +460,190 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(legacy['budapest-convention'], ['Ratified'])
         self.assertEqual(legacy['capital'], 'Stockholm')
 
+    @staticmethod
+    def _with_edited_last_object(bundle, edit):
+        # The bundle, with its last object edited as a dictionary, for the
+        # content no fixture holds as it is
+        from stix2.parsing import dict_to_stix2
+        content = json.loads(bundle.serialize())
+        edit(content['objects'][-1])
+        return dict_to_stix2(content, allow_custom=True)
+
+    def test_stix21_escaped_galaxy_meta_keys_in_the_extension(self):
+        # The channel spells back the names the fold or the escape changed,
+        # the reserved one included, and a name it does not list is read as
+        # written: no escape is stripped from a meta key
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_threat_actor_galaxy_with_escaped_meta_keys()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        cluster = self.parser.misp_event.galaxies[0].clusters[0]
+        self.assertEqual(
+            cluster.meta,
+            {
+                'origin:Temp.Hex': 'Microsoft',
+                'Original Names': 'Vixen Panda',
+                'misp_xy': 'unchanged by the fold'
+            }
+        )
+        self.assertEqual(dict(self.parser.warnings), {})
+        self.assertEqual(dict(self.parser.errors), {})
+
+    def test_stix21_first_and_last_seen_galaxy_meta_in_the_extension(self):
+        # The four types with no `first_seen` / `last_seen` of their own carry
+        # them in the extension, read back as meta like any other key. The
+        # custom property syntax writes the same keys unprefixed, and those
+        # are still dropped
+        from misp_stix_converter import InternalSTIX2toMISPParser
+        from stix2.parsing import dict_to_stix2
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_galaxies_with_first_and_last_seen()
+        content = json.loads(bundle.serialize())
+        for stix_object in content['objects']:
+            extension = stix_object.get('extensions', {}).pop(
+                MISP_PROPERTY_EXTENSION_ID, None
+            )
+            if extension is not None:
+                del stix_object['extensions']
+                for field in ('first_seen', 'last_seen'):
+                    stix_object[field] = extension[field]
+        expected = {
+            stix_object.id: {
+                field: self._custom_value(stix_object, f'x_misp_{field}')
+                for field in ('first_seen', 'last_seen')
+            }
+            for stix_object in self._bundle_objects(bundle)[2:]
+        }
+        self.assertEqual(len(expected), 4)
+        for syntax, stix_bundle, seen in (
+                ('extension', bundle, True),
+                ('custom', dict_to_stix2(content, allow_custom=True), False)):
+            with self.subTest(syntax=syntax):
+                parser = InternalSTIX2toMISPParser()
+                parser.load_stix_bundle(stix_bundle)
+                parser.parse_stix_bundle()
+                clusters = {
+                    cluster.uuid: cluster
+                    for galaxy in parser.misp_event.galaxies
+                    for cluster in galaxy.clusters
+                }
+                self.assertEqual(len(clusters), 4)
+                for object_id, timestamps in expected.items():
+                    meta = clusters[object_id.split('--')[1]].meta
+                    for field, value in timestamps.items():
+                        if seen:
+                            self.assertEqual(meta[field], value)
+                        else:
+                            self.assertNotIn(field, meta)
+                self.assertEqual(dict(parser.errors), {})
+
+    def test_stix21_galaxy_meta_keys_named_as_fixed_misp_fields(self):
+        # A meta key is free-form: one named as a fixed MISP field of another
+        # object type is a meta key like any other, with no type of its own
+        bundle = self._with_edited_last_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_threat_actor_galaxy(),
+            lambda threat_actor: threat_actor['extensions'][
+                MISP_PROPERTY_EXTENSION_ID
+            ].update({'opinion': 'Moderate', 'author_ref': ['Someone']})
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        meta = self.parser.misp_event.galaxies[0].clusters[0].meta
+        self.assertEqual(meta['opinion'], 'Moderate')
+        self.assertEqual(meta['author_ref'], ['Someone'])
+        self.assertEqual(dict(self.parser.errors), {})
+
+    def test_stix21_galaxy_meta_keys_in_both_syntaxes(self):
+        # Each channel spells the names of its own syntax
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_threat_actor_galaxy_with_both_channels()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        cluster = self.parser.misp_event.galaxies[0].clusters[0]
+        self.assertEqual(
+            cluster.meta,
+            {'origin:Storm-0558': 'Microsoft', 'origin:Temp.Hex': 'Microsoft'}
+        )
+        self.assertEqual(dict(self.parser.warnings), {})
+        self.assertEqual(dict(self.parser.errors), {})
+
+    def test_stix21_galaxy_meta_channels_spell_their_own_syntax_only(self):
+        # The extension's channel neither spells a custom property nor stands
+        # for the channel the custom property syntax lacks: with none of its
+        # own, the custom property is still restored by `dash_meta_fields`
+        def edit(threat_actor):
+            del threat_actor['x_misp_origin_storm_0558']
+            del threat_actor['x_misp_original_names']
+            threat_actor['x_misp_cfr_type_of_incident'] = 'Denial of service'
+            threat_actor['extensions'][MISP_PROPERTY_EXTENSION_ID][
+                'original_names']['cfr_type_of_incident'] = 'CFR Type'
+
+        bundle = self._with_edited_last_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_threat_actor_galaxy_with_both_channels(),
+            edit
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        cluster = self.parser.misp_event.galaxies[0].clusters[0]
+        self.assertEqual(
+            cluster.meta,
+            {
+                'cfr-type-of-incident': 'Denial of service',
+                'origin:Temp.Hex': 'Microsoft'
+            }
+        )
+        warning, = self._reported_messages(self.parser.warnings)
+        for text in (
+                f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.original_names",
+                '"cfr_type_of_incident"'):
+            self.assertIn(text, warning)
+        self.assertEqual(dict(self.parser.errors), {})
+
+    def test_stix21_unknown_original_names_entry_in_the_extension(self):
+        # An entry naming nothing is ignored, and reported as the bundle
+        # spells it: the keys the object does carry are unaffected
+        bundle = self._with_edited_last_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_threat_actor_galaxy_with_escaped_meta_keys(),
+            lambda threat_actor: threat_actor['extensions'][
+                MISP_PROPERTY_EXTENSION_ID
+            ]['original_names'].update({'never_written': 'Never Written'})
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        meta = self.parser.misp_event.galaxies[0].clusters[0].meta
+        self.assertNotIn('Never Written', meta)
+        self.assertEqual(meta['origin:Temp.Hex'], 'Microsoft')
+        warning, = self._reported_messages(self.parser.warnings)
+        for text in (
+                f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.original_names",
+                '"never_written"', bundle.objects[-1].id):
+            self.assertIn(text, warning)
+        self.assertNotIn('x_misp_', warning)
+        self.assertEqual(dict(self.parser.errors), {})
+
+    def test_stix21_dash_meta_fields_serve_the_custom_syntax_only(self):
+        # The list restores the `-` of a custom property exported before the
+        # channel existed. The extension came with the channel, so a name it
+        # carries with no channel is read as written
+        from misp_stix_converter import InternalSTIX2toMISPParser
+        without_channel = self._with_edited_last_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_threat_actor_galaxy(),
+            lambda threat_actor: threat_actor['extensions'][
+                MISP_PROPERTY_EXTENSION_ID
+            ].pop('original_names')
+        )
+        for syntax, bundle, key in (
+                ('custom',
+                 TestInternalSTIX21Bundles.get_bundle_with_threat_actor_galaxy(),
+                 'cfr-type-of-incident'),
+                ('extension', without_channel, 'cfr_type_of_incident')):
+            with self.subTest(syntax=syntax):
+                parser = InternalSTIX2toMISPParser()
+                parser.load_stix_bundle(bundle)
+                parser.parse_stix_bundle()
+                meta = parser.misp_event.galaxies[0].clusters[0].meta
+                self.assertIn(key, meta)
+                self.assertEqual(
+                    [field for field in meta if field.startswith('cfr')], [key]
+                )
+
     def test_stix21_every_template_relation_folds_back(self):
         self._check_every_template_relation_folds_back()
 
@@ -638,6 +822,8 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
                  'references'),
                 ('identity--868037d5-d804-4f1d-8016-f296361f9c68',
                  'original_names'),
+                ('threat-actor--11e17436-6ede-4733-8547-4ce0254ea19e',
+                 'original_names'),
                 ('opinion--e6039f2f-d705-41d0-859d-89845546cd7b', 'opinion'),
                 ('opinion--c7d12059-6a07-4423-a82a-f3bceaae33c8',
                  'author_ref')):
@@ -658,6 +844,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(list(self.parser.invalid_objects), [invalid_id])
         self._check_dangling_object_ref_error(invalid_id, self.parser.errors)
         self.assertEqual(self.parser.misp_event.objects, [])
+        self.assertEqual(self.parser.misp_event.galaxies, [])
         attribute, = self.parser.misp_event.attributes
         self.assertEqual(attribute.value, '194.78.89.250')
         self.assertEqual(attribute.opinions, [])
@@ -3179,12 +3366,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
     #                        MISP GALAXIES IMPORT TESTS                        #
     ############################################################################
 
-    def test_stix21_bundle_with_attack_pattern_galaxy(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_attack_pattern_galaxy()
+    def _check_bundle_with_attack_pattern_galaxy(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, attack_pattern = bundle.objects
+        _, grouping, attack_pattern = self._bundle_objects(bundle)
         self._check_misp_event_features_from_grouping(event, grouping)
         galaxy = event.galaxies[0]
         self._check_attack_pattern_galaxy(galaxy, attack_pattern)
@@ -3193,8 +3379,20 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertIn(
             f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names
         )
-        self._populate_galaxy_documentation(
-            galaxy=event.galaxies[0], attack_pattern=attack_pattern
+        if documented:
+            self._populate_galaxy_documentation(
+                galaxy=event.galaxies[0], attack_pattern=attack_pattern
+            )
+
+    def test_stix21_bundle_with_attack_pattern_galaxy(self):
+        self._check_bundle_with_attack_pattern_galaxy(
+            TestInternalSTIX21Bundles.get_bundle_with_attack_pattern_galaxy()
+        )
+
+    def test_stix21_bundle_with_attack_pattern_galaxy_extension_syntax(self):
+        self._check_bundle_with_attack_pattern_galaxy(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_attack_pattern_galaxy(),
+            documented=True
         )
 
     def test_stix21_bundle_with_course_of_action_galaxy(self):
@@ -3213,28 +3411,36 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             galaxy=event.galaxies[0], course_of_action=course_of_action
         )
 
-    def test_stix21_bundle_with_colliding_acs_marking_cluster_uuid(self):
+    def _check_bundle_with_colliding_acs_marking_cluster_uuid(self, bundle):
         # An ACS marking's cluster carries the raw uuid part of the marking
         # id, so it collides with the cluster of a galaxy Malware sharing
         # that part. No 2.0 twin: STIX 2.0 markings carry no extensions.
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_colliding_acs_marking_cluster_uuid()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
-        _, _, malware, marking = bundle.objects
+        _, _, malware, marking = self._bundle_objects(bundle)
         self._check_uuid_collision_warning(
             malware.id.split('--')[1], (malware.id, marking.id),
             self.parser.warnings
         )
 
-    def test_stix21_bundle_with_colliding_galaxy_cluster_uuids(self):
+    def test_stix21_bundle_with_colliding_acs_marking_cluster_uuid(self):
+        self._check_bundle_with_colliding_acs_marking_cluster_uuid(
+            TestInternalSTIX21Bundles.get_bundle_with_colliding_acs_marking_cluster_uuid()
+        )
+
+    def test_stix21_bundle_with_colliding_acs_marking_cluster_uuid_extension_syntax(self):
+        self._check_bundle_with_colliding_acs_marking_cluster_uuid(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_colliding_acs_marking_cluster_uuid()
+        )
+
+    def _check_bundle_with_colliding_galaxy_cluster_uuids(self, bundle):
         # A cluster keeps only the part after `--` of the STIX id it comes
         # from, so 2 galaxy-mapped objects of different types sharing a uuid
         # part yield 2 clusters carrying one uuid: the collision is reported.
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_colliding_galaxy_cluster_uuids()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, _, malware, threat_actor = bundle.objects
+        _, _, malware, threat_actor = self._bundle_objects(bundle)
         record_uuid = malware.id.split('--')[1]
         clusters = [
             cluster for galaxy in event.galaxies
@@ -3245,6 +3451,16 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.assertEqual(cluster.uuid, record_uuid)
         self._check_uuid_collision_warning(
             record_uuid, (malware.id, threat_actor.id), self.parser.warnings
+        )
+
+    def test_stix21_bundle_with_colliding_galaxy_cluster_uuids(self):
+        self._check_bundle_with_colliding_galaxy_cluster_uuids(
+            TestInternalSTIX21Bundles.get_bundle_with_colliding_galaxy_cluster_uuids()
+        )
+
+    def test_stix21_bundle_with_colliding_galaxy_cluster_uuids_extension_syntax(self):
+        self._check_bundle_with_colliding_galaxy_cluster_uuids(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_colliding_galaxy_cluster_uuids()
         )
 
     def test_stix21_bundle_with_colliding_custom_galaxy_cluster_uuid(self):
@@ -3376,12 +3592,12 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.uuid}"', tag_names)
         self.assertNotIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
 
-    def test_stix21_bundle_with_galaxy_embedded_in_attribute(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_galaxy_embedded_in_attribute()
+    def _check_bundle_with_galaxy_embedded_in_attribute(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, report, attack_pattern, course_of_action, _, malware, _, _ = bundle.objects
+        (_, report, attack_pattern, course_of_action, _, malware,
+         _, _) = self._bundle_objects(bundle)
         attribute = self._check_misp_event_features(event, report)[0]
         for galaxy in attribute.galaxies:
             if galaxy['type'] == 'mitre-attack-pattern':
@@ -3414,6 +3630,16 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event_tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', event_tag_names)
 
+    def test_stix21_bundle_with_galaxy_embedded_in_attribute(self):
+        self._check_bundle_with_galaxy_embedded_in_attribute(
+            TestInternalSTIX21Bundles.get_bundle_with_galaxy_embedded_in_attribute()
+        )
+
+    def test_stix21_bundle_with_galaxy_embedded_in_attribute_extension_syntax(self):
+        self._check_bundle_with_galaxy_embedded_in_attribute(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_galaxy_embedded_in_attribute()
+        )
+
     def test_stix21_bundle_with_intrusion_set_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_intrusion_set_galaxy()
         self.parser.load_stix_bundle(bundle)
@@ -3430,46 +3656,75 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             galaxy=event.galaxies[0], intrusion_set=intrusion_set
         )
 
-    def test_stix21_bundle_with_location_galaxies(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_location_galaxies()
+    def _check_bundle_with_location_galaxies(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, location1, location2 = bundle.objects
+        _, grouping, location1, location2 = self._bundle_objects(bundle)
         self._check_misp_event_features_from_grouping(event, grouping)
         country, region = event.galaxies
         self._check_galaxy_fields(country, location1, 'country', 'Country')
         meta = country.clusters[0].meta
+        self.assertEqual(
+            sorted(meta),
+            [
+                'Capital', 'Continent', 'CurrencyCode', 'CurrencyName', 'ISO',
+                'ISO3', 'Languages', 'Population', 'tld'
+            ]
+        )
         for field, value in meta.items():
-            self.assertEqual(value, getattr(location1, f'x_misp_{field}'))
+            self.assertEqual(
+                value, self._custom_value(location1, f'x_misp_{field}')
+            )
         cluster = region.clusters[0]
         self._assert_multiple_equal(region.type, cluster.type, 'region')
         self.assertEqual(region.name, 'Regions UN M49')
         self.assertEqual(cluster.value, f'154 - {location2.name}')
         self.assertEqual(cluster.description, location2.description)
         self.assertEqual(
-            region.clusters[0].meta['subregion'], location2.x_misp_subregion
+            region.clusters[0].meta['subregion'],
+            self._custom_value(location2, 'x_misp_subregion')
         )
         tag_names = {tag.name for tag in event.tags}
         for galaxy in (country, region):
             cluster = galaxy.clusters[0]
             self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
 
-    def test_stix21_bundle_with_malformed_galaxy_labels(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_malformed_galaxy_labels(
-            ['misp:galaxy-type="mitre-malware"']
+    def test_stix21_bundle_with_location_galaxies(self):
+        self._check_bundle_with_location_galaxies(
+            TestInternalSTIX21Bundles.get_bundle_with_location_galaxies()
         )
+
+    def test_stix21_bundle_with_location_galaxies_extension_syntax(self):
+        self._check_bundle_with_location_galaxies(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_location_galaxies()
+        )
+
+    def _check_bundle_with_malformed_galaxy_labels(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, malware = bundle.objects
+        _, grouping, malware = self._bundle_objects(bundle)
         self._check_misp_event_features_from_grouping(event, grouping)
         # The galaxy is the one the type label names, name label or not.
         self._check_malware_galaxy(event.galaxies[0], malware)
         self._check_galaxy_without_name_label(malware, self.parser.warnings)
 
-    def test_stix21_bundle_with_metacharacters_in_galaxy_cluster_value(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_metacharacters_in_galaxy_name()
+    def test_stix21_bundle_with_malformed_galaxy_labels(self):
+        self._check_bundle_with_malformed_galaxy_labels(
+            TestInternalSTIX21Bundles.get_bundle_with_malformed_galaxy_labels(
+                ['misp:galaxy-type="mitre-malware"']
+            )
+        )
+
+    def test_stix21_bundle_with_malformed_galaxy_labels_extension_syntax(self):
+        self._check_bundle_with_malformed_galaxy_labels(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_malformed_galaxy_labels(
+                ['misp:galaxy-type="mitre-malware"']
+            )
+        )
+
+    def _check_bundle_with_metacharacters_in_galaxy_cluster_value(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -3487,8 +3742,17 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             cluster.value, cluster.uuid, self.parser.warnings
         )
 
-    def test_stix21_bundle_with_metacharacters_in_galaxy_name_as_tags(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_metacharacters_in_galaxy_name()
+    def test_stix21_bundle_with_metacharacters_in_galaxy_cluster_value(self):
+        self._check_bundle_with_metacharacters_in_galaxy_cluster_value(
+            TestInternalSTIX21Bundles.get_bundle_with_metacharacters_in_galaxy_name()
+        )
+
+    def test_stix21_bundle_with_metacharacters_in_galaxy_cluster_value_extension_syntax(self):
+        self._check_bundle_with_metacharacters_in_galaxy_cluster_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_metacharacters_in_galaxy_name()
+        )
+
+    def _check_bundle_with_metacharacters_in_galaxy_name_as_tags(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle(galaxies_as_tags=True)
         event = self.parser.misp_event
@@ -3503,8 +3767,17 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             SMUGGLING_TAG_VALUE, SANITISED_TAG_VALUE, self.parser.warnings
         )
 
-    def test_stix21_bundle_with_metacharacters_in_galaxy_type_as_tags(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_metacharacters_in_galaxy_type()
+    def test_stix21_bundle_with_metacharacters_in_galaxy_name_as_tags(self):
+        self._check_bundle_with_metacharacters_in_galaxy_name_as_tags(
+            TestInternalSTIX21Bundles.get_bundle_with_metacharacters_in_galaxy_name()
+        )
+
+    def test_stix21_bundle_with_metacharacters_in_galaxy_name_as_tags_extension_syntax(self):
+        self._check_bundle_with_metacharacters_in_galaxy_name_as_tags(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_metacharacters_in_galaxy_name()
+        )
+
+    def _check_bundle_with_metacharacters_in_galaxy_type_as_tags(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle(galaxies_as_tags=True)
         event = self.parser.misp_event
@@ -3523,8 +3796,17 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.parser.warnings
         )
 
-    def test_stix21_bundle_with_unusable_galaxy_type(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_unusable_galaxy_type()
+    def test_stix21_bundle_with_metacharacters_in_galaxy_type_as_tags(self):
+        self._check_bundle_with_metacharacters_in_galaxy_type_as_tags(
+            TestInternalSTIX21Bundles.get_bundle_with_metacharacters_in_galaxy_type()
+        )
+
+    def test_stix21_bundle_with_metacharacters_in_galaxy_type_as_tags_extension_syntax(self):
+        self._check_bundle_with_metacharacters_in_galaxy_type_as_tags(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_metacharacters_in_galaxy_type()
+        )
+
+    def _check_bundle_with_unusable_galaxy_type(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -3542,10 +3824,17 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             UNUSABLE_TAG_SLOT, self.parser.warnings
         )
 
-    def test_stix21_bundle_with_malformed_galaxy_labels_as_tags(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_malformed_galaxy_labels(
-            ['misp:galaxy-type="mitre-malware"']
+    def test_stix21_bundle_with_unusable_galaxy_type(self):
+        self._check_bundle_with_unusable_galaxy_type(
+            TestInternalSTIX21Bundles.get_bundle_with_unusable_galaxy_type()
         )
+
+    def test_stix21_bundle_with_unusable_galaxy_type_extension_syntax(self):
+        self._check_bundle_with_unusable_galaxy_type(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_unusable_galaxy_type()
+        )
+
+    def _check_bundle_with_malformed_galaxy_labels_as_tags(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle(galaxies_as_tags=True)
         event = self.parser.misp_event
@@ -3555,13 +3844,28 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             {tag.name for tag in event.tags}
         )
 
-    def test_stix21_bundle_with_undefined_galaxy_labels(self):
-        bundles = TestInternalSTIX21Bundles
+    def test_stix21_bundle_with_malformed_galaxy_labels_as_tags(self):
+        self._check_bundle_with_malformed_galaxy_labels_as_tags(
+            TestInternalSTIX21Bundles.get_bundle_with_malformed_galaxy_labels(
+                ['misp:galaxy-type="mitre-malware"']
+            )
+        )
+
+    def test_stix21_bundle_with_malformed_galaxy_labels_as_tags_extension_syntax(self):
+        self._check_bundle_with_malformed_galaxy_labels_as_tags(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_malformed_galaxy_labels(
+                ['misp:galaxy-type="mitre-malware"']
+            )
+        )
+
+    def _check_bundle_with_undefined_galaxy_labels(self, get_bundle):
+        # `get_bundle` builds the bundle carrying the galaxy with the labels
+        # it is given
         for labels in (['misp:galaxy-name="Malware"'],
                        ['misp:galaxy-type=""']):
             with self.subTest(labels=labels):
                 self.setUp()
-                bundle = bundles.get_bundle_with_malformed_galaxy_labels(labels)
+                bundle = get_bundle(labels)
                 self.parser.load_stix_bundle(bundle)
                 self.parser.parse_stix_bundle()
                 self._check_galaxy_with_undefined_labels(
@@ -3569,8 +3873,17 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
                     self.parser.errors
                 )
 
-    def test_stix21_bundle_with_nameless_country_galaxy(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_nameless_country_galaxy()
+    def test_stix21_bundle_with_undefined_galaxy_labels(self):
+        self._check_bundle_with_undefined_galaxy_labels(
+            TestInternalSTIX21Bundles.get_bundle_with_malformed_galaxy_labels
+        )
+
+    def test_stix21_bundle_with_undefined_galaxy_labels_extension_syntax(self):
+        self._check_bundle_with_undefined_galaxy_labels(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_malformed_galaxy_labels
+        )
+
+    def _check_bundle_with_nameless_country_galaxy(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -3581,8 +3894,17 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(cluster.value, location.id)
         self.assertFalse(self.parser.errors)
 
-    def test_stix21_bundle_with_nameless_malware_galaxy(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_nameless_malware_galaxy()
+    def test_stix21_bundle_with_nameless_country_galaxy(self):
+        self._check_bundle_with_nameless_country_galaxy(
+            TestInternalSTIX21Bundles.get_bundle_with_nameless_country_galaxy()
+        )
+
+    def test_stix21_bundle_with_nameless_country_galaxy_extension_syntax(self):
+        self._check_bundle_with_nameless_country_galaxy(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_nameless_country_galaxy()
+        )
+
+    def _check_bundle_with_nameless_malware_galaxy(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -3595,8 +3917,17 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertIn(malware.id, cluster.value)
         self.assertFalse(self.parser.errors)
 
-    def test_stix21_bundle_with_nameless_malware_galaxy_as_tags(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_nameless_malware_galaxy()
+    def test_stix21_bundle_with_nameless_malware_galaxy(self):
+        self._check_bundle_with_nameless_malware_galaxy(
+            TestInternalSTIX21Bundles.get_bundle_with_nameless_malware_galaxy()
+        )
+
+    def test_stix21_bundle_with_nameless_malware_galaxy_extension_syntax(self):
+        self._check_bundle_with_nameless_malware_galaxy(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_nameless_malware_galaxy()
+        )
+
+    def _check_bundle_with_nameless_malware_galaxy_as_tags(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle(galaxies_as_tags=True)
         event = self.parser.misp_event
@@ -3609,8 +3940,17 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertFalse(self.parser.errors)
 
-    def test_stix21_bundle_with_nameless_region_galaxy(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_nameless_region_galaxy()
+    def test_stix21_bundle_with_nameless_malware_galaxy_as_tags(self):
+        self._check_bundle_with_nameless_malware_galaxy_as_tags(
+            TestInternalSTIX21Bundles.get_bundle_with_nameless_malware_galaxy()
+        )
+
+    def test_stix21_bundle_with_nameless_malware_galaxy_as_tags_extension_syntax(self):
+        self._check_bundle_with_nameless_malware_galaxy_as_tags(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_nameless_malware_galaxy()
+        )
+
+    def _check_bundle_with_nameless_region_galaxy(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -3620,20 +3960,41 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(cluster.value, '154 - Northern Europe')
         self.assertFalse(self.parser.errors)
 
-    def test_stix21_bundle_with_malware_galaxy(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_malware_galaxy()
+    def test_stix21_bundle_with_nameless_region_galaxy(self):
+        self._check_bundle_with_nameless_region_galaxy(
+            TestInternalSTIX21Bundles.get_bundle_with_nameless_region_galaxy()
+        )
+
+    def test_stix21_bundle_with_nameless_region_galaxy_extension_syntax(self):
+        self._check_bundle_with_nameless_region_galaxy(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_nameless_region_galaxy()
+        )
+
+    def _check_bundle_with_malware_galaxy(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, malware = bundle.objects
+        _, grouping, malware = self._bundle_objects(bundle)
         self._check_misp_event_features_from_grouping(event, grouping)
         galaxy = event.galaxies[0]
         self._check_malware_galaxy(galaxy, malware)
         cluster = galaxy.clusters[0]
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
-        self._populate_galaxy_documentation(
-            galaxy=event.galaxies[0], malware=malware
+        if documented:
+            self._populate_galaxy_documentation(
+                galaxy=event.galaxies[0], malware=malware
+            )
+
+    def test_stix21_bundle_with_malware_galaxy(self):
+        self._check_bundle_with_malware_galaxy(
+            TestInternalSTIX21Bundles.get_bundle_with_malware_galaxy()
+        )
+
+    def test_stix21_bundle_with_malware_galaxy_extension_syntax(self):
+        self._check_bundle_with_malware_galaxy(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_malware_galaxy(),
+            documented=True
         )
 
     def test_stix21_bundle_with_sector_galaxy(self):
@@ -3652,36 +4013,58 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             galaxy=event.galaxies[0], identity=identity
         )
 
-    def test_stix21_bundle_with_threat_actor_galaxy(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_threat_actor_galaxy()
+    def _check_bundle_with_threat_actor_galaxy(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, threat_actor = bundle.objects
+        _, grouping, threat_actor = self._bundle_objects(bundle)
         self._check_misp_event_features_from_grouping(event, grouping)
         galaxy = event.galaxies[0]
         self._check_threat_actor_galaxy(galaxy, threat_actor)
         cluster = galaxy.clusters[0]
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
-        self._populate_galaxy_documentation(
-            galaxy=event.galaxies[0], threat_actor=threat_actor
+        if documented:
+            self._populate_galaxy_documentation(
+                galaxy=event.galaxies[0], threat_actor=threat_actor
+            )
+
+    def test_stix21_bundle_with_threat_actor_galaxy(self):
+        self._check_bundle_with_threat_actor_galaxy(
+            TestInternalSTIX21Bundles.get_bundle_with_threat_actor_galaxy()
         )
 
-    def test_stix21_bundle_with_tool_galaxy(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_tool_galaxy()
+    def test_stix21_bundle_with_threat_actor_galaxy_extension_syntax(self):
+        self._check_bundle_with_threat_actor_galaxy(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_threat_actor_galaxy(),
+            documented=True
+        )
+
+    def _check_bundle_with_tool_galaxy(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, tool = bundle.objects
+        _, grouping, tool = self._bundle_objects(bundle)
         self._check_misp_event_features_from_grouping(event, grouping)
         galaxy = event.galaxies[0]
         self._check_tool_galaxy(galaxy, tool)
         cluster = galaxy.clusters[0]
         tag_names = {tag.name for tag in event.tags}
         self.assertIn(f'misp-galaxy:{cluster.type}="{cluster.value}"', tag_names)
-        self._populate_galaxy_documentation(
-            galaxy=event.galaxies[0], tool=tool
+        if documented:
+            self._populate_galaxy_documentation(
+                galaxy=event.galaxies[0], tool=tool
+            )
+
+    def test_stix21_bundle_with_tool_galaxy(self):
+        self._check_bundle_with_tool_galaxy(
+            TestInternalSTIX21Bundles.get_bundle_with_tool_galaxy()
+        )
+
+    def test_stix21_bundle_with_tool_galaxy_extension_syntax(self):
+        self._check_bundle_with_tool_galaxy(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_tool_galaxy(),
+            documented=True
         )
 
     def test_stix21_bundle_with_vulnerability_galaxy(self):

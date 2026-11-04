@@ -4571,6 +4571,33 @@ _EXTENSION_SYNTAX_ASN_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f"
     }
 ]
+_EXTENSION_SYNTAX_ATTACK_PATTERN_GALAXY = {
+    "type": "attack-pattern",
+    "spec_version": "2.1",
+    "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Access Token Manipulation",
+    "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
+    "kill_chain_phases": [
+        {"kill_chain_name": "mitre-attack", "phase_name": "defense-evasion"},
+        {"kill_chain_name": "mitre-attack", "phase_name": "privilege-escalation"}
+    ],
+    "labels": [
+        'misp:galaxy-name="Attack Pattern"',
+        'misp:galaxy-type="mitre-attack-pattern"'
+    ],
+    "external_references": [
+        {"source_name": "mitre-attack", "external_id": "T1134"},
+        {"source_name": "url", "url": "https://attack.mitre.org/techniques/T1134"}
+    ],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "mitre_platforms": "Windows"
+        }
+    }
+}
 _EXTENSION_SYNTAX_ATTACK_PATTERN_OBJECT = {
     "type": "attack-pattern",
     "spec_version": "2.1",
@@ -5717,6 +5744,83 @@ _EXTENSION_SYNTAX_FILE_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a"
     }
 ]
+_EXTENSION_SYNTAX_GALAXIES_WITH_FIRST_AND_LAST_SEEN = [
+    {
+        "type": "attack-pattern",
+        "spec_version": "2.1",
+        "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Access Token Manipulation",
+        "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
+        "labels": [
+            'misp:galaxy-name="Attack Pattern"',
+            'misp:galaxy-type="mitre-attack-pattern"'
+        ],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "first_seen": "2017-05-31T21:30:00.000Z",
+                "last_seen": "2020-10-25T16:22:00.000Z"
+            }
+        }
+    },
+    {
+        "type": "tool",
+        "spec_version": "2.1",
+        "id": "tool--bba595da-b73a-4354-aa6c-224d4de7cb4e",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "cmd",
+        "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
+        "labels": ['misp:galaxy-name="Tool"', 'misp:galaxy-type="mitre-tool"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "first_seen": "2017-05-31T21:32:00.000Z",
+                "last_seen": "2020-10-25T16:22:00.000Z"
+            }
+        }
+    },
+    {
+        "type": "vulnerability",
+        "spec_version": "2.1",
+        "id": "vulnerability--a1640081-aa8d-4070-84b2-d23e2ae82799",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Ghost",
+        "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
+        "labels": [
+            'misp:galaxy-name="Branded Vulnerability"',
+            'misp:galaxy-type="branded-vulnerability"',
+        ],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "first_seen": "2015-01-27T00:00:00.000Z",
+                "last_seen": "2020-10-25T16:22:00.000Z"
+            }
+        }
+    },
+    {
+        "type": "location",
+        "spec_version": "2.1",
+        "id": "location--84668357-5a8c-4bdd-9f0f-6b50b2535745",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "sweden",
+        "description": "Sweden",
+        "country": "SE",
+        "labels": ['misp:galaxy-name="Country"', 'misp:galaxy-type="country"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "first_seen": "1995-01-01T00:00:00.000Z",
+                "last_seen": "2020-10-25T16:22:00.000Z"
+            }
+        }
+    }
+]
 _EXTENSION_SYNTAX_GEOLOCATION_OBJECT = {
     "type": "location",
     "spec_version": "2.1",
@@ -6149,6 +6253,101 @@ _EXTENSION_SYNTAX_LNK_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--153ef8d5-9182-45ec-bf1c-5819932b9ab7"
     }
 ]
+_EXTENSION_SYNTAX_LOCATION_GALAXIES = [
+    {
+        "type": "location",
+        "spec_version": "2.1",
+        "id": "location--84668357-5a8c-4bdd-9f0f-6b50b2535745",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "sweden",
+        "description": "Sweden",
+        "country": "SE",
+        "labels": ['misp:galaxy-name="Country"', 'misp:galaxy-type="country"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "capital": "Stockholm",
+                "continent": "EU",
+                "currencycode": "SEK",
+                "currencyname": "Krona",
+                "iso": "SE",
+                "iso3": "SWE",
+                "languages": "sv-SE,se,sma,fi-SE",
+                "population": "9828655",
+                "tld": ".se",
+                "original_names": {
+                    "capital": "Capital",
+                    "continent": "Continent",
+                    "currencycode": "CurrencyCode",
+                    "currencyname": "CurrencyName",
+                    "iso": "ISO",
+                    "iso3": "ISO3",
+                    "languages": "Languages",
+                    "population": "Population"
+                }
+            }
+        }
+    },
+    {
+        "type": "location",
+        "spec_version": "2.1",
+        "id": "location--f93cb275-0366-4ecc-abf0-a17928d1e177",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Northern Europe",
+        "description": "Nothern Europe",
+        "region": "northern-europe",
+        "labels": ['misp:galaxy-name="Regions UN M49"', 'misp:galaxy-type="region"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "subregion": [
+                    "830 - Channel Islands",
+                    "248 - Åland Islands",
+                    "208 - Denmark",
+                    "233 - Estonia",
+                    "234 - Faroe Islands",
+                    "246 - Finland",
+                    "352 - Iceland",
+                    "372 - Ireland",
+                    "833 - Isle of Man",
+                    "428 - Latvia",
+                    "440 - Lithuania",
+                    "578 - Norway",
+                    "744 - Svalbard and Jan Mayen Islands",
+                    "752 - Sweden",
+                    "826 - United Kingdom of Great Britain and Northern Ireland"
+                ]
+            }
+        }
+    }
+]
+_EXTENSION_SYNTAX_MALWARE_GALAXY = {
+    "type": "malware",
+    "spec_version": "2.1",
+    "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "BISCUIT",
+    "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+    "is_family": False,
+    "labels": ['misp:galaxy-name="Malware"', 'misp:galaxy-type="mitre-malware"'],
+    "external_references": [
+        {"source_name": "mitre-attack", "external_id": "S0017"},
+        {"source_name": "url", "url": "https://attack.mitre.org/software/S0017"},
+        {
+            "source_name": "url",
+            "url": "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report-appendix.zip"
+        }
+    ],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "mitre_platforms": "Windows"
+        }
+    }
+}
 _EXTENSION_SYNTAX_MUTEX_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -6880,6 +7079,96 @@ _EXTENSION_SYNTAX_SCRIPT_OBJECTS = [
         }
     }
 ]
+_EXTENSION_SYNTAX_THREAT_ACTOR_GALAXY = {
+    "type": "threat-actor",
+    "spec_version": "2.1",
+    "id": "threat-actor--11e17436-6ede-4733-8547-4ce0254ea19e",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Cutting Kitten",
+    "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
+    "aliases": ["Ghambar"],
+    "labels": ['misp:galaxy-name="Threat Actor"', 'misp:galaxy-type="threat-actor"'],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "cfr_type_of_incident": "Denial of service",
+            "original_names": {
+                "cfr_type_of_incident": "cfr-type-of-incident"
+            }
+        }
+    }
+}
+_EXTENSION_SYNTAX_THREAT_ACTOR_GALAXY_WITH_BOTH_CHANNELS = {
+    "type": "threat-actor",
+    "spec_version": "2.1",
+    "id": "threat-actor--8e2f4a6c-1b3d-4e5f-a7b9-c0d1e2f3a4b5",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Storm-0558",
+    "description": "A threat actor carrying meta keys in both syntaxes.",
+    "labels": ['misp:galaxy-name="Threat Actor"', 'misp:galaxy-type="threat-actor"'],
+    "x_misp_origin_storm_0558": "Microsoft",
+    "x_misp_original_names": {
+        "x_misp_origin_storm_0558": "origin:Storm-0558"
+    },
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "origin_temp_hex_": "Microsoft",
+            "original_names": {
+                "origin_temp_hex_": "origin:Temp.Hex"
+            }
+        }
+    }
+}
+_EXTENSION_SYNTAX_THREAT_ACTOR_GALAXY_WITH_ESCAPED_META_KEYS = {
+    "type": "threat-actor",
+    "spec_version": "2.1",
+    "id": "threat-actor--5b0d3c4e-7f1a-4c2b-9e8d-6a5f4e3d2c1b",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Temp.Hex",
+    "description": "A threat actor whose meta keys need the escape.",
+    "labels": ['misp:galaxy-name="Threat Actor"', 'misp:galaxy-type="threat-actor"'],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "origin_temp_hex_": "Microsoft",
+            "misp_original_names": "Vixen Panda",
+            "misp_xy": "unchanged by the fold",
+            "original_names": {
+                "origin_temp_hex_": "origin:Temp.Hex",
+                "misp_original_names": "Original Names"
+            }
+        }
+    }
+}
+_EXTENSION_SYNTAX_TOOL_GALAXY = {
+    "type": "tool",
+    "spec_version": "2.1",
+    "id": "tool--bba595da-b73a-4354-aa6c-224d4de7cb4e",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "cmd",
+    "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
+    "aliases": ["cmd.exe"],
+    "labels": ['misp:galaxy-name="Tool"', 'misp:galaxy-type="mitre-tool"'],
+    "external_references": [
+        {"source_name": "mitre-attack", "external_id": "S0106"},
+        {"source_name": "url", "url": "https://attack.mitre.org/software/S0106"},
+        {
+            "source_name": "url",
+            "url": "https://technet.microsoft.com/en-us/library/bb490880.aspx"
+        }
+    ],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "mitre_platforms": "Windows"
+        }
+    }
+}
 _EXTENSION_SYNTAX_URL_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -10968,6 +11257,22 @@ _MALFORMED_MISP_EXTENSION_VALUES = [
         }
     },
     {
+        "type": "threat-actor",
+        "spec_version": "2.1",
+        "id": "threat-actor--11e17436-6ede-4733-8547-4ce0254ea19e",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Cutting Kitten",
+        "labels": ['misp:galaxy-name="Threat Actor"', 'misp:galaxy-type="threat-actor"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "cfr_type_of_incident": "Denial of service",
+                "original_names": ["cfr-type-of-incident"]
+            }
+        }
+    },
+    {
         "type": "course-of-action",
         "spec_version": "2.1",
         "id": "course-of-action--2f8c3a1e-6b0d-4c4f-9a57-1e2d3c4b5a69",
@@ -13488,9 +13793,10 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def __bundle_content(cls, *stix_objects, unreferenced=(),
                          misp_extensions=False):
-        # `unreferenced` carries the custom objects MISP only declares for
-        # STIX 2.0 the way `get_bundle_with_dict_form_objects` does: out of
-        # the grouping references, reaching the loaders as plain dicts.
+        # `unreferenced` carries the objects the grouping does not list: a
+        # marking, or the custom objects MISP only declares for STIX 2.0 the
+        # way `get_bundle_with_dict_form_objects` does, reaching the loaders
+        # as plain dicts.
         bundle = deepcopy(cls.__bundle)
         grouping = deepcopy(cls.__grouping)
         grouping.update(
@@ -14263,9 +14569,15 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         marking's cluster keeps the raw uuid part, so both claim it. The
         marking stays out of the grouping references, like every marking."""
         malware = deepcopy(_MALWARE_GALAXY)
-        marking = {
+        return cls.__assemble_bundle(
+            malware, unreferenced=(cls.__acs_marking_sharing_uuid(malware),)
+        )
+
+    @staticmethod
+    def __acs_marking_sharing_uuid(stix_object: dict) -> dict:
+        return {
             "type": "marking-definition", "spec_version": "2.1",
-            "id": f"marking-definition--{malware['id'].split('--')[1]}",
+            "id": f"marking-definition--{stix_object['id'].split('--')[1]}",
             "created": "2020-10-25T16:22:00.000Z",
             "extensions": {
                 "extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce": {
@@ -14274,13 +14586,6 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
                 }
             }
         }
-        bundle = deepcopy(cls.__bundle)
-        grouping = deepcopy(cls.__grouping)
-        grouping.update(cls._populate_references(malware['id']))
-        bundle['objects'] = [
-            deepcopy(cls.__identity), grouping, malware, marking
-        ]
-        return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
     def get_bundle_with_colliding_galaxy_cluster_uuids(cls):
@@ -15086,6 +15391,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_attack_pattern_galaxy(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_ATTACK_PATTERN_GALAXY
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_attack_pattern_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             _EXTENSION_SYNTAX_ATTACK_PATTERN_OBJECT
@@ -15096,6 +15407,20 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_extension_syntax_bundle(
             _EXTENSION_SYNTAX_COURSE_OF_ACTION_WITH_BOTH_SYNTAXES
         )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_colliding_acs_marking_cluster_uuid(cls):
+        malware = deepcopy(_EXTENSION_SYNTAX_MALWARE_GALAXY)
+        return cls.__assemble_extension_syntax_bundle(
+            malware, unreferenced=(cls.__acs_marking_sharing_uuid(malware),)
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_colliding_galaxy_cluster_uuids(cls):
+        malware = deepcopy(_EXTENSION_SYNTAX_MALWARE_GALAXY)
+        threat_actor = deepcopy(_EXTENSION_SYNTAX_THREAT_ACTOR_GALAXY)
+        threat_actor['id'] = f"threat-actor--{malware['id'].split('--')[1]}"
+        return cls.__assemble_extension_syntax_bundle(malware, threat_actor)
 
     @classmethod
     def get_extension_syntax_bundle_with_course_of_action_object(cls):
@@ -15185,6 +15510,19 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
                 _EXTENSION_SYNTAX_FILE_OBSERVABLE_OBJECT,
                 f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.filename"
             )
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_galaxies_with_first_and_last_seen(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_GALAXIES_WITH_FIRST_AND_LAST_SEEN
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_galaxy_embedded_in_attribute(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_ATTACK_PATTERN_GALAXY,
+            *_ATTRIBUTE_WITH_EMBEDDED_GALAXY[1:]
         )
 
     @classmethod
@@ -15370,6 +15708,41 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
+    def get_extension_syntax_bundle_with_location_galaxies(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_LOCATION_GALAXIES
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_malformed_galaxy_labels(
+            cls, labels=None):
+        # With no labels given, the galaxy keeps the labels it is exported
+        # with: the schema sweep reads every Extension Syntax getter with no
+        # argument
+        malware = deepcopy(_EXTENSION_SYNTAX_MALWARE_GALAXY)
+        if labels is not None:
+            malware['labels'] = labels
+        return cls.__assemble_extension_syntax_bundle(malware)
+
+    @classmethod
+    def get_extension_syntax_bundle_with_malware_galaxy(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_MALWARE_GALAXY
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_metacharacters_in_galaxy_name(cls):
+        malware = deepcopy(_EXTENSION_SYNTAX_MALWARE_GALAXY)
+        malware['name'] = SMUGGLING_TAG_VALUE
+        return cls.__assemble_extension_syntax_bundle(malware)
+
+    @classmethod
+    def get_extension_syntax_bundle_with_metacharacters_in_galaxy_type(cls):
+        return cls.get_extension_syntax_bundle_with_malformed_galaxy_labels(
+            [f'misp:galaxy-type="{SMUGGLING_TAG_PREDICATE}"']
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_mutex_indicator_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             _EXTENSION_SYNTAX_MUTEX_INDICATOR_OBJECT
@@ -15380,6 +15753,24 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_MUTEX_OBSERVABLE_OBJECT
         )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_nameless_country_galaxy(cls):
+        location = deepcopy(_EXTENSION_SYNTAX_LOCATION_GALAXIES[0])
+        del location['name']
+        return cls.__assemble_extension_syntax_bundle(location)
+
+    @classmethod
+    def get_extension_syntax_bundle_with_nameless_malware_galaxy(cls):
+        malware = deepcopy(_EXTENSION_SYNTAX_MALWARE_GALAXY)
+        del malware['name']
+        return cls.__assemble_extension_syntax_bundle(malware)
+
+    @classmethod
+    def get_extension_syntax_bundle_with_nameless_region_galaxy(cls):
+        location = deepcopy(_EXTENSION_SYNTAX_LOCATION_GALAXIES[1])
+        del location['name']
+        return cls.__assemble_extension_syntax_bundle(location)
 
     @classmethod
     def get_extension_syntax_bundle_with_network_connection_observable_object(cls):
@@ -15540,9 +15931,39 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_threat_actor_galaxy(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_THREAT_ACTOR_GALAXY
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_threat_actor_galaxy_with_both_channels(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_THREAT_ACTOR_GALAXY_WITH_BOTH_CHANNELS
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_threat_actor_galaxy_with_escaped_meta_keys(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_THREAT_ACTOR_GALAXY_WITH_ESCAPED_META_KEYS
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_tool_galaxy(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_TOOL_GALAXY
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_unknown_extension_property(cls):
         return cls.__assemble_extension_syntax_bundle(
             _EXTENSION_SYNTAX_COURSE_OF_ACTION_WITH_UNKNOWN_PROPERTY
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_unusable_galaxy_type(cls):
+        return cls.get_extension_syntax_bundle_with_malformed_galaxy_labels(
+            [f'misp:galaxy-type="{UNUSABLE_TAG_SLOT}"']
         )
 
     @classmethod

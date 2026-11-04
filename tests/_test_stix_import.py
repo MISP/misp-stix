@@ -4693,13 +4693,18 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self.assertEqual(ref, url.url)
         if hasattr(malware, 'aliases'):
             self.assertEqual(meta['synonyms'], malware.aliases)
-        elif hasattr(malware, 'x_misp_synonyms'):
-            self.assertEqual(meta['synonyms'], malware.x_misp_synonyms)
+        elif self._custom_value(malware, 'x_misp_synonyms') is not None:
+            self.assertEqual(
+                meta['synonyms'], self._custom_value(malware, 'x_misp_synonyms')
+            )
         else:
             self.assertEqual(meta['synonyms'], [malware.name])
         if hasattr(malware, 'is_family'):
             self.assertEqual(meta['is_family'], malware.is_family)
-        self.assertEqual(meta['mitre_platforms'], malware.x_misp_mitre_platforms)
+        self.assertEqual(
+            meta['mitre_platforms'],
+            self._custom_value(malware, 'x_misp_mitre_platforms')
+        )
 
     def _check_sector_galaxy(self, galaxy, identity):
         cluster = galaxy.clusters[0]
@@ -4715,7 +4720,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(meta['synonyms'], threat_actor.aliases)
         self.assertEqual(
             meta['cfr-type-of-incident'],
-            threat_actor.x_misp_cfr_type_of_incident
+            self._custom_value(threat_actor, 'x_misp_cfr_type_of_incident')
         )
 
     def _check_tool_galaxy(self, galaxy, tool):
@@ -4725,12 +4730,17 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         if hasattr(tool, 'aliases'):
             self.assertEqual(meta['synonyms'], tool.aliases)
         else:
-            self.assertEqual(meta['synonyms'], tool.x_misp_synonyms)
+            self.assertEqual(
+                meta['synonyms'], self._custom_value(tool, 'x_misp_synonyms')
+            )
         external_id, *urls = tool.external_references
         self.assertEqual(meta['external_id'], external_id.external_id)
         for ref, url in zip(meta['refs'], urls):
             self.assertEqual(ref, url.url)
-        self.assertEqual(meta['mitre_platforms'], tool.x_misp_mitre_platforms)
+        self.assertEqual(
+            meta['mitre_platforms'],
+            self._custom_value(tool, 'x_misp_mitre_platforms')
+        )
 
     def _check_vulnerability_galaxy(self, galaxy, vulnerability):
         meta = self._check_galaxy_fields(
