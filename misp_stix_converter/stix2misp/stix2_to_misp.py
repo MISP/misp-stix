@@ -1282,7 +1282,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if not self.galaxies_as_tags:
             self._parse_galaxy_relationships()
 
-    def _parse_sighting(self, sighting: _SIGHTING_TYPING) -> MISPSighting:
+    def _create_sighting(
+            self, sighting: _SIGHTING_TYPING,
+            identity: Optional[Identity_v20 | Identity_v21 | dict] = None
+            ) -> MISPSighting:
         misp_sighting = MISPSighting()
         sighting_args = {
             'date_sighting': self._timestamp_from_stix_date(
@@ -1292,17 +1295,21 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         }
         if 'description' in sighting:
             sighting_args['source'] = sighting['description']
-        if 'where_sighted_refs' in sighting:
-            for reference in sighting['where_sighted_refs']:
-                identity = self._identity.get(reference)
-                if identity is None:
-                    continue
-                sighting_args['Organisation'] = {
-                    'uuid': self._sanitise_uuid(identity['id']),
-                    'name': identity['name']
-                }
-                misp_sighting.from_dict(**sighting_args)
-                return misp_sighting
+        if identity is not None:
+            sighting_args['Organisation'] = {
+                'uuid': self._sanitise_uuid(identity['id']),
+                'name': identity['name']
+            }
+        misp_sighting.from_dict(**sighting_args)
+        return misp_sighting
+
+    def _parse_sighting(
+            self, sighting: _SIGHTING_TYPING) -> Optional[MISPSighting]:
+        for reference in sighting.get('where_sighted_refs', []):
+            identity = getattr(self, '_identity', {}).get(reference)
+            if identity is not None:
+                return self._create_sighting(sighting, identity)
+        return None
 
     def _parse_sightings(self):
         for attribute in self.misp_event.attributes:
@@ -1562,6 +1569,37 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             f'Both syntaxes carry the MISP value "{field}" on the STIX object '
             f'with id {object_id}: the value of {path} in the MISP property '
             'extension is read, the custom property is ignored.'
+        )
+
+    def _opinion_author_error(self, opinion_id: str, author_ref: str):
+        self._add_error(
+            'Unable to import the sighting from the STIX object with id '
+            f'{opinion_id}: the bundle carries no identity with id '
+            f'{author_ref}, its author, and the object names no author either.'
+        )
+
+    def _opinion_author_ref_error(self, opinion_id: str, author_ref: Any):
+        self._add_error(
+            'Unable to import the sighting from the STIX object with id '
+            f'{opinion_id}: its author reference, {author_ref!r}, is not an '
+            'identity id.'
+        )
+
+    def _opinion_author_warning(
+            self, opinion_id: str, author_ref: str, author: str):
+        self._add_warning(
+            f'The bundle carries no identity with id {author_ref}, the author '
+            f'of the STIX object with id {opinion_id}: the organisation of '
+            'its sighting takes the uuid of that id and the name '
+            f'"{author}" the object carries.'
+        )
+
+    def _sighting_identity_error(self, sighting_id: str, references: list):
+        self._add_error(
+            'Unable to import the sighting from the STIX object with id '
+            f'{sighting_id}: the bundle carries none of the identities it is '
+            f"sighted where ({', '.join(references)}), so the sighting has no "
+            'organisation.'
         )
 
     def _unknown_custom_property_warning(
