@@ -1291,8 +1291,13 @@
                     "spec_version": "2.1",
                     "id": "software--02782ed5-b27f-4abc-8bae-efebe13a46dd",
                     "name": "Facebook",
-                    "x_misp_certificate": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
-                    "x_misp_domain": "facebook.com"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "certificate": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
+                            "domain": "facebook.com"
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -1301,7 +1306,7 @@
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
-                    "pattern": "[software:name = 'Facebook' AND software:x_misp_certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:x_misp_domain = 'facebook.com']",
+                    "pattern": "[software:name = 'Facebook' AND software:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.domain = 'facebook.com']",
                     "pattern_type": "stix",
                     "pattern_version": "2.1",
                     "valid_from": "2020-10-25T16:22:00Z",
@@ -1402,11 +1407,16 @@
                     "misp:name=\"annotation\"",
                     "misp:meta-category=\"misc\""
                 ],
-                "x_misp_attachment": {
-                    "value": "annotation.attachment",
-                    "data": "OC44LjguOCBpcyB0aGUgR29[...]WRkcmVzc2VzIChJUHY0KS4K"
-                },
-                "x_misp_type": "Executive Summary"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "attachment": {
+                            "value": "annotation.attachment",
+                            "data": "OC44LjguOCBpcyB0aGUgR29[...]WRkcmVzc2VzIChJUHY0KS4K"
+                        },
+                        "type": "Executive Summary"
+                    }
+                }
             }
         }
     },
@@ -1753,10 +1763,15 @@
                     "id": "autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f",
                     "number": 66642,
                     "name": "AS name",
-                    "x_misp_subnet_announced": [
-                        "1.2.3.4",
-                        "8.8.8.8"
-                    ]
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "subnet_announced": [
+                                "1.2.3.4",
+                                "8.8.8.8"
+                            ]
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -2215,7 +2230,12 @@
                     ],
                     "vendor": "Microsoft",
                     "version": "2002",
-                    "x_misp_description": "Microsoft Word is a word processing software developed by Microsoft."
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "description": "Microsoft Word is a word processing software developed by Microsoft."
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -2456,11 +2476,16 @@
                     "id": "user-account--5b1f9378-46d4-494b-a4c1-044e0a00020f",
                     "user_id": "misp",
                     "credential": "Password1234",
-                    "x_misp_format": "clear-text",
-                    "x_misp_notification": "victim-notified",
-                    "x_misp_origin": "malware-analysis",
-                    "x_misp_text": "MISP default credentials",
-                    "x_misp_type": "password"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "format": "clear-text",
+                            "notification": "victim-notified",
+                            "origin": "malware-analysis",
+                            "text": "MISP default credentials",
+                            "type": "password"
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -2469,7 +2494,7 @@
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
-                    "pattern": "[user-account:x_misp_text = 'MISP default credentials']",
+                    "pattern": "[user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.text = 'MISP default credentials']",
                     "pattern_type": "stix",
                     "pattern_version": "2.1",
                     "valid_from": "2020-10-25T16:22:00Z",
@@ -2788,22 +2813,24 @@
                 "uuid": "dc624447-684a-488f-9e16-f78f717d8efd",
                 "Attribute": [
                     {
-                        "uuid": "8b1ca103-25f5-55fd-bdb7-acb7a47adde0",
+                        "uuid": "3e8b5a38-2a98-53c0-88f0-1f513d4c1b7e",
                         "object_relation": "domain",
                         "value": "circl.lu",
                         "type": "domain",
                         "category": "Network activity",
                         "disable_correlation": false,
-                        "to_ids": true
+                        "to_ids": true,
+                        "comment": "Indicator ID: indicator--dc624447-684a-488f-9e16-f78f717d8efd"
                     },
                     {
-                        "uuid": "13e41e43-27b6-56be-b938-428ad0dc2c15",
+                        "uuid": "0a807d61-cdc6-54b3-b153-8a37578f6300",
                         "object_relation": "hostname",
                         "value": "circl.lu",
                         "type": "hostname",
                         "disable_correlation": false,
                         "to_ids": true,
-                        "category": "Network activity"
+                        "category": "Network activity",
+                        "comment": "Indicator ID: indicator--dc624447-684a-488f-9e16-f78f717d8efd"
                     },
                     {
                         "uuid": "64c83027-4029-5d64-afe0-2c67665592a7",
@@ -2856,8 +2883,13 @@
                     "resolves_to_refs": [
                         "ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca"
                     ],
-                    "x_misp_hostname": "circl.lu",
-                    "x_misp_port": "8443"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "hostname": "circl.lu",
+                            "port": "8443"
+                        }
+                    }
                 },
                 {
                     "type": "ipv4-addr",
@@ -2872,7 +2904,7 @@
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
-                    "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+                    "pattern": "[domain-name:value = 'circl.lu' AND domain-name:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
                     "pattern_type": "stix",
                     "pattern_version": "2.1",
                     "valid_from": "2020-10-25T16:22:00Z",
@@ -3339,8 +3371,13 @@
                             "content_disposition": "attachment; filename='attachment2.file'"
                         }
                     ],
-                    "x_misp_mime_boundary": "Test mime boundary",
-                    "x_misp_user_agent": "Test user agent"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "mime_boundary": "Test mime boundary",
+                            "user_agent": "Test user agent"
+                        }
+                    }
                 },
                 {
                     "type": "email-addr",
@@ -3649,10 +3686,15 @@
                     "user_id": "1392781243",
                     "account_login": "octocat",
                     "account_type": "facebook",
-                    "x_misp_link": "https://facebook.com/octocat",
-                    "x_misp_user_avatar": {
-                        "value": "octocat.png",
-                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "link": "https://facebook.com/octocat",
+                            "user_avatar": {
+                                "value": "octocat.png",
+                                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                            }
+                        }
                     }
                 },
                 {
@@ -3918,14 +3960,15 @@
                     },
                     {
                         "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
-                        "uuid": "e668d25a-e269-5c1f-b3f4-2ca7cd08c106",
+                        "uuid": "c017d1fb-8cbd-5ef7-93ea-8cad07705538",
                         "object_relation": "malware-sample",
                         "value": "oui|8764605c6f388c89096b534d33565802",
                         "type": "malware-sample",
                         "disable_correlation": false,
                         "to_ids": true,
                         "category": "Payload delivery",
-                        "malware_filename": "oui"
+                        "malware_filename": "oui",
+                        "comment": "Indicator ID: indicator--5e384ae7-672c-4250-9cda-3b4da964451a"
                     }
                 ],
                 "distribution": "5",
@@ -3969,9 +4012,14 @@
                     "mtime": "2022-10-25T16:22:00Z",
                     "parent_directory_ref": "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
                     "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                    "x_misp_attachment": {
-                        "value": "non",
-                        "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "attachment": {
+                                "value": "non",
+                                "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+                            }
+                        }
                     }
                 },
                 {
@@ -3991,7 +4039,12 @@
                     },
                     "encryption_algorithm": "mime-type-indicated",
                     "decryption_key": "infected",
-                    "x_misp_filename": "oui"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "filename": "oui"
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -4000,7 +4053,7 @@
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
-                    "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+                    "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
                     "pattern_type": "stix",
                     "pattern_version": "2.1",
                     "valid_from": "2020-10-25T16:22:00Z",
@@ -4334,10 +4387,15 @@
                     "account_login": "octocat",
                     "account_type": "github",
                     "display_name": "Octo Cat",
-                    "x_misp_organisation": "GitHub",
-                    "x_misp_profile_image": {
-                        "value": "octocat.png",
-                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "organisation": "GitHub",
+                            "profile_image": {
+                                "value": "octocat.png",
+                                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                            }
+                        }
                     }
                 },
                 {
@@ -4901,14 +4959,19 @@
                     },
                     "size": 35,
                     "name": "oui",
-                    "x_misp_knownmalicious": "hashlookup-known-malicious-source",
-                    "x_misp_packagearch": "amd64",
-                    "x_misp_packagedescription": "GNU core utilities",
-                    "x_misp_packagemaintainer": "Ubuntu Developers",
-                    "x_misp_packagename": "coreutils",
-                    "x_misp_packagerelease": "4.1ubuntu1",
-                    "x_misp_packageversion": "8.32",
-                    "x_misp_source": "https://www.circl.lu/services/hashlookup"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "knownmalicious": "hashlookup-known-malicious-source",
+                            "packagename": "coreutils",
+                            "packageversion": "8.32",
+                            "packagerelease": "4.1ubuntu1",
+                            "packagearch": "amd64",
+                            "packagedescription": "GNU core utilities",
+                            "packagemaintainer": "Ubuntu Developers",
+                            "source": "https://www.circl.lu/services/hashlookup"
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -5186,9 +5249,12 @@
                                 "Content-Type": "JSON",
                                 "User-Agent": "Mozilla Firefox"
                             }
+                        },
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "url": "http://circl.lu/projects/internships/"
                         }
-                    },
-                    "x_misp_url": "http://circl.lu/projects/internships/"
+                    }
                 },
                 {
                     "type": "ipv4-addr",
@@ -5442,13 +5508,14 @@
                         "comment": "Indicator ID: indicator--939b2f03-c487-4f62-a90e-cab7acfee294"
                     },
                     {
-                        "uuid": "958e2620-a436-505b-acb3-76cdf6cb1745",
+                        "uuid": "510dcb5c-b6b0-5354-b906-1a135be93fe2",
                         "object_relation": "url",
                         "value": "https://oasis-open.github.io/cti-documentation/img/STIX.png",
                         "type": "url",
                         "disable_correlation": false,
                         "to_ids": true,
-                        "category": "Network activity"
+                        "category": "Network activity",
+                        "comment": "Indicator ID: indicator--939b2f03-c487-4f62-a90e-cab7acfee294"
                     }
                 ],
                 "distribution": "5",
@@ -5481,7 +5548,12 @@
                     "id": "file--939b2f03-c487-4f62-a90e-cab7acfee294",
                     "name": "STIX.png",
                     "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                    "x_misp_image_text": "STIX"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "image_text": "STIX"
+                        }
+                    }
                 },
                 {
                     "type": "artifact",
@@ -5489,8 +5561,13 @@
                     "id": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
                     "mime_type": "image/png",
                     "payload_bin": "iVBORw0KGgoAAAANSUhEUgA[...]gEefQAAAABJRU5ErkJggg==",
-                    "x_misp_filename": "STIX.png",
-                    "x_misp_url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "filename": "STIX.png",
+                            "url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -5499,7 +5576,7 @@
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
-                    "pattern": "[file:name = 'STIX.png' AND file:content_ref.payload_bin = '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' AND file:content_ref.mime_type = 'image/png' AND file:content_ref.x_misp_filename = 'STIX.png' AND file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png']",
+                    "pattern": "[file:name = 'STIX.png' AND file:content_ref.payload_bin = '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' AND file:content_ref.mime_type = 'image/png' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'STIX.png' AND file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png']",
                     "pattern_type": "stix",
                     "pattern_version": "2.1",
                     "valid_from": "2020-10-25T16:22:00Z",
@@ -5682,7 +5759,12 @@
                     "protocols": [
                         "ipv4"
                     ],
-                    "x_misp_domain": "circl.lu"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "domain": "circl.lu"
+                        }
+                    }
                 },
                 {
                     "type": "ipv4-addr",
@@ -6130,7 +6212,12 @@
                     },
                     "encryption_algorithm": "mime-type-indicated",
                     "decryption_key": "infected",
-                    "x_misp_filename": "oui"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "filename": "oui"
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -6139,7 +6226,7 @@
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
-                    "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+                    "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
                     "pattern_type": "stix",
                     "pattern_version": "2.1",
                     "valid_from": "2020-10-25T16:22:00Z",
@@ -6298,8 +6385,13 @@
                     "spec_version": "2.1",
                     "id": "mutex--b0f55591-6a63-4fbd-a169-064e64738d95",
                     "name": "MutexTest",
-                    "x_misp_description": "Test mutex on unix",
-                    "x_misp_operating_system": "Unix"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "description": "Test mutex on unix",
+                            "operating_system": "Unix"
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -6892,7 +6984,12 @@
                         "tcp",
                         "http"
                     ],
-                    "x_misp_hostname_dst": "circl.lu"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "hostname_dst": "circl.lu"
+                        }
+                    }
                 },
                 {
                     "type": "ipv4-addr",
@@ -7213,10 +7310,13 @@
                             "address_family": "AF_INET",
                             "is_listening": true,
                             "socket_type": "SOCK_RAW"
+                        },
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "domain_family": "PF_INET",
+                            "hostname_dst": "circl.lu"
                         }
-                    },
-                    "x_misp_domain_family": "PF_INET",
-                    "x_misp_hostname_dst": "circl.lu"
+                    }
                 },
                 {
                     "type": "ipv4-addr",
@@ -7734,10 +7834,15 @@
                     "user_id": "42",
                     "account_login": "ParlerOctocat",
                     "account_type": "parler",
-                    "x_misp_human": false,
-                    "x_misp_profile_photo": {
-                        "value": "octocat.png",
-                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "human": false,
+                            "profile_photo": {
+                                "value": "octocat.png",
+                                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                            }
+                        }
                     }
                 },
                 {
@@ -8131,8 +8236,13 @@
                     "child_refs": [
                         "process--518b4bcb-a86b-4783-9457-391d548b605b"
                     ],
-                    "x_misp_name": "TestProcess",
-                    "x_misp_port": "1234"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "name": "TestProcess",
+                            "port": "1234"
+                        }
+                    }
                 },
                 {
                     "type": "file",
@@ -8147,7 +8257,12 @@
                     "pid": 2107,
                     "command_line": "grep -nrG iglocska /home/viktor/friends.txt",
                     "image_ref": "file--d01ef2c6-3154-4f8a-a3dc-9de1f34dd5d0",
-                    "x_misp_process_name": "Friends_From_H"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "process_name": "Friends_From_H"
+                        }
+                    }
                 },
                 {
                     "type": "process",
@@ -8349,11 +8464,16 @@
                     "user_id": "666",
                     "account_login": "RedditOctocat",
                     "account_type": "reddit",
-                    "x_misp_account_avatar": {
-                        "value": "octocat.png",
-                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
-                    },
-                    "x_misp_description": "Reddit account of the OctoCat"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "account_avatar": {
+                                "value": "octocat.png",
+                                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                            },
+                            "description": "Reddit account of the OctoCat"
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -8583,7 +8703,12 @@
                         }
                     ],
                     "modified_time": "2020-10-25T16:22:00Z",
-                    "x_misp_hive": "hklm"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "hive": "hklm"
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -8964,7 +9089,12 @@
                         }
                     ],
                     "modified_time": "2020-10-25T16:22:00Z",
-                    "x_misp_hive": "hklm"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "hive": "hklm"
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -8973,7 +9103,7 @@
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
-                    "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+                    "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.hive = 'hklm']",
                     "pattern_type": "stix",
                     "pattern_version": "2.1",
                     "valid_from": "2020-10-25T16:22:00Z",
@@ -9504,10 +9634,15 @@
                     "user_id": "1234567890",
                     "account_login": "T3l3gr4mUs3r",
                     "account_type": "telegram",
-                    "x_misp_phone": [
-                        "0112233445",
-                        "0556677889"
-                    ]
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "phone": [
+                                "0112233445",
+                                "0556677889"
+                            ]
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -9716,10 +9851,15 @@
                     "account_login": "octocat",
                     "account_type": "twitter",
                     "display_name": "Octo Cat",
-                    "x_misp_followers": "666",
-                    "x_misp_profile_image": {
-                        "value": "octocat.png",
-                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "followers": "666",
+                            "profile_image": {
+                                "value": "octocat.png",
+                                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                            }
+                        }
                     }
                 },
                 {
@@ -9927,10 +10067,15 @@
                     "spec_version": "2.1",
                     "id": "url--5ac347ca-dac4-4562-9775-04120a00020f",
                     "value": "https://www.circl.lu/team",
-                    "x_misp_domain": "circl.lu",
-                    "x_misp_host": "www.circl.lu",
-                    "x_misp_ip": "149.13.33.14",
-                    "x_misp_port": "443"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "domain": "circl.lu",
+                            "host": "www.circl.lu",
+                            "misp_ip": "149.13.33.14",
+                            "port": "443"
+                        }
+                    }
                 },
                 {
                     "type": "indicator",
@@ -9939,7 +10084,7 @@
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
-                    "pattern": "[url:value = 'https://www.circl.lu/team' AND url:x_misp_domain = 'circl.lu' AND url:x_misp_host = 'www.circl.lu' AND url:x_misp_ip = '149.13.33.14']",
+                    "pattern": "[url:value = 'https://www.circl.lu/team' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.domain = 'circl.lu' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.host = 'www.circl.lu' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.misp_ip = '149.13.33.14']",
                     "pattern_type": "stix",
                     "pattern_version": "2.1",
                     "valid_from": "2020-10-25T16:22:00Z",
@@ -10258,11 +10403,14 @@
                                 "donald-fan"
                             ],
                             "home_dir": "/home/iglocska"
+                        },
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "user_avatar": {
+                                "value": "octocat.png",
+                                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                            }
                         }
-                    },
-                    "x_misp_user_avatar": {
-                        "value": "octocat.png",
-                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
                     }
                 },
                 {
@@ -10799,7 +10947,12 @@
                     "subject_public_key_algorithm": "PublicKeyAlgorithm",
                     "subject_public_key_modulus": "C5",
                     "subject_public_key_exponent": 2,
-                    "x_misp_pem": "RawCertificateInPEMFormat"
+                    "extensions": {
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "pem": "RawCertificateInPEMFormat"
+                        }
+                    }
                 },
                 {
                     "type": "indicator",

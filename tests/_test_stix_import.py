@@ -4744,10 +4744,10 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(name.value, observable.name)
         self.assertEqual(certificate.type, 'sha1')
         self.assertEqual(certificate.object_relation, 'certificate')
-        self.assertEqual(certificate.value, observable.x_misp_certificate)
+        self.assertEqual(certificate.value, self._custom_value(observable, 'x_misp_certificate'))
         self.assertEqual(domain.type, 'domain')
         self.assertEqual(domain.object_relation, 'domain')
-        self.assertEqual(domain.value, observable.x_misp_domain)
+        self.assertEqual(domain.value, self._custom_value(observable, 'x_misp_domain'))
 
     def _check_asn_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)
@@ -4777,7 +4777,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(description.type, 'text')
         self.assertEqual(description.object_relation, 'description')
         self.assertEqual(description.value, observable.name)
-        for attribute, subnet in zip(subnets_announced, observable.x_misp_subnet_announced):
+        subnets = self._custom_value(observable, 'x_misp_subnet_announced')
+        for attribute, subnet in zip(subnets_announced, subnets):
             self.assertEqual(attribute.type, 'ip-src')
             self.assertEqual(attribute.object_relation, 'subnet-announced')
             self.assertEqual(attribute.value, subnet)
@@ -4886,7 +4887,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(version.value, observable.version)
         self.assertEqual(description.type, 'text')
         self.assertEqual(description.object_relation, 'description')
-        self.assertEqual(description.value, observable.x_misp_description)
+        self.assertEqual(description.value, self._custom_value(observable, 'x_misp_description'))
 
     def _check_credential_indicator_object(self, attributes, pattern_list):
         self.assertEqual(len(attributes), 7)
@@ -4921,7 +4922,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             )
             self.assertEqual(
                 attribute.value,
-                getattr(observable, f'x_misp_{feature}')
+                self._custom_value(observable, f'x_misp_{feature}')
             )
         return password
 
@@ -5134,10 +5135,10 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(subject.value, message.subject)
         self.assertEqual(boundary.type, 'email-mime-boundary')
         self.assertEqual(boundary.object_relation, 'mime-boundary')
-        self.assertEqual(boundary.value, message.x_misp_mime_boundary)
+        self.assertEqual(boundary.value, self._custom_value(message, 'x_misp_mime_boundary'))
         self.assertEqual(user_agent.type, 'text')
         self.assertEqual(user_agent.object_relation, 'user-agent')
-        self.assertEqual(user_agent.value, message.x_misp_user_agent)
+        self.assertEqual(user_agent.value, self._custom_value(message, 'x_misp_user_agent'))
         additional_header = message.additional_header_fields
         self.assertEqual(reply_to.type, 'email-reply-to')
         self.assertEqual(reply_to.object_relation, 'reply-to')
@@ -5204,13 +5205,15 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(account_name.value, observable.account_login)
         self.assertEqual(link.type, 'link')
         self.assertEqual(link.object_relation, 'link')
-        self.assertEqual(link.value, observable.x_misp_link)
+        self.assertEqual(link.value, self._custom_value(observable, 'x_misp_link'))
         self.assertEqual(avatar.type, 'attachment')
         self.assertEqual(avatar.object_relation, 'user-avatar')
-        self.assertEqual(avatar.value, observable.x_misp_user_avatar['value'])
+        self.assertEqual(
+            avatar.value, self._custom_value(observable, 'x_misp_user_avatar')['value']
+        )
         self.assertEqual(
             self._get_data_value(avatar.data),
-            observable.x_misp_user_avatar['data']
+            self._custom_value(observable, 'x_misp_user_avatar')['data']
         )
 
     def _check_file_and_pe_observable_object(self, file_attributes, pe_attributes, section_attributes, observable, pattern):
@@ -5582,14 +5585,14 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             'SHA-256': hashes['SHA-256'],
             'SSDEEP': hashes.get('SSDEEP', hashes.get('ssdeep')),
             'TLSH': hashes['TLSH'],
-            'KnownMalicious': observable.x_misp_knownmalicious,
-            'PackageName': observable.x_misp_packagename,
-            'PackageVersion': observable.x_misp_packageversion,
-            'PackageRelease': observable.x_misp_packagerelease,
-            'PackageArch': observable.x_misp_packagearch,
-            'PackageDescription': observable.x_misp_packagedescription,
-            'PackageMaintainer': observable.x_misp_packagemaintainer,
-            'source': observable.x_misp_source
+            'KnownMalicious': self._custom_value(observable, 'x_misp_knownmalicious'),
+            'PackageName': self._custom_value(observable, 'x_misp_packagename'),
+            'PackageVersion': self._custom_value(observable, 'x_misp_packageversion'),
+            'PackageRelease': self._custom_value(observable, 'x_misp_packagerelease'),
+            'PackageArch': self._custom_value(observable, 'x_misp_packagearch'),
+            'PackageDescription': self._custom_value(observable, 'x_misp_packagedescription'),
+            'PackageMaintainer': self._custom_value(observable, 'x_misp_packagemaintainer'),
+            'source': self._custom_value(observable, 'x_misp_source')
         }
         attributes_by_relation = {
             attribute.object_relation: attribute for attribute in attributes
@@ -5680,10 +5683,12 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(size_in_bytes.value, file_object.size)
         self.assertEqual(attachment.type, 'attachment')
         self.assertEqual(attachment.object_relation, 'attachment')
-        self.assertEqual(attachment.value, file_object.x_misp_attachment['value'])
+        self.assertEqual(
+            attachment.value, self._custom_value(file_object, 'x_misp_attachment')['value']
+        )
         self.assertEqual(
             self._get_data_value(attachment.data),
-            file_object.x_misp_attachment['data']
+            self._custom_value(file_object, 'x_misp_attachment')['data']
         )
         self.assertEqual(_path.type, 'text')
         self.assertEqual(_path.object_relation, 'path')
@@ -5692,7 +5697,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(malware_sample.object_relation, 'malware-sample')
         self.assertEqual(
             malware_sample.value,
-            f"{artifact.x_misp_filename}|{artifact.hashes['MD5']}"
+            f"{self._custom_value(artifact, 'x_misp_filename')}|{artifact.hashes['MD5']}"
         )
         self.assertEqual(self._get_data_value(malware_sample.data), artifact.payload_bin)
         return creation_time.value, modification_time.value
@@ -5738,13 +5743,17 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(fullname.value, observable.display_name)
         self.assertEqual(organisation_attribute.type, 'github-organisation')
         self.assertEqual(organisation_attribute.object_relation, 'organisation')
-        self.assertEqual(organisation_attribute.value, observable.x_misp_organisation)
+        self.assertEqual(
+            organisation_attribute.value, self._custom_value(observable, 'x_misp_organisation')
+        )
         self.assertEqual(profile_image.type, 'attachment')
         self.assertEqual(profile_image.object_relation, 'profile-image')
-        self.assertEqual(profile_image.value, observable.x_misp_profile_image['value'])
+        self.assertEqual(
+            profile_image.value, self._custom_value(observable, 'x_misp_profile_image')['value']
+        )
         self.assertEqual(
             self._get_data_value(profile_image.data),
-            observable.x_misp_profile_image['data']
+            self._custom_value(observable, 'x_misp_profile_image')['data']
         )
 
     def _check_gitlab_user_indicator_object(self, attributes, pattern):
@@ -5821,7 +5830,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(ip_dst.value, address2.value)
         self.assertEqual(url.type, 'url')
         self.assertEqual(url.object_relation, 'url')
-        self.assertEqual(url.value, network_traffic.x_misp_url)
+        self.assertEqual(url.value, self._custom_value(network_traffic, 'x_misp_url'))
         extension = network_traffic.extensions['http-request-ext']
         self.assertEqual(method.type, 'http-method')
         self.assertEqual(method.object_relation, 'method')
@@ -5889,14 +5898,14 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(filename.value, file_object.name)
         self.assertEqual(image_text.type, 'text')
         self.assertEqual(image_text.object_relation, 'image-text')
-        self.assertEqual(image_text.value, file_object.x_misp_image_text)
+        self.assertEqual(image_text.value, self._custom_value(file_object, 'x_misp_image_text'))
         self.assertEqual(attachment.type, 'attachment')
         self.assertEqual(attachment.object_relation, 'attachment')
-        self.assertEqual(attachment.value, artifact.x_misp_filename)
+        self.assertEqual(attachment.value, self._custom_value(artifact, 'x_misp_filename'))
         self.assertEqual(self._get_data_value(attachment.data), artifact.payload_bin)
         self.assertEqual(url.type, 'url')
         self.assertEqual(url.object_relation, 'url')
-        self.assertEqual(url.value, artifact.x_misp_url)
+        self.assertEqual(url.value, self._custom_value(artifact, 'x_misp_url'))
 
     def _check_indicator_object(self, misp_object, indicator):
         self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
@@ -5969,7 +5978,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(first_seen.value, network_traffic.start)
         self.assertEqual(domain.type, 'domain')
         self.assertEqual(domain.object_relation, 'domain')
-        self.assertEqual(domain.value, network_traffic.x_misp_domain)
+        self.assertEqual(domain.value, self._custom_value(network_traffic, 'x_misp_domain'))
 
     def _check_legal_entity_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
@@ -6077,7 +6086,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(malware_sample.object_relation, 'malware-sample')
         self.assertEqual(
             malware_sample.value,
-            f"{artifact.x_misp_filename}|{artifact.hashes['MD5']}"
+            f"{self._custom_value(artifact, 'x_misp_filename')}|{artifact.hashes['MD5']}"
         )
         self.assertEqual(
             self._get_data_value(malware_sample.data),
@@ -6109,10 +6118,12 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(name.value, mutex.name)
         self.assertEqual(description.type, 'text')
         self.assertEqual(description.object_relation, 'description')
-        self.assertEqual(description.value, mutex.x_misp_description)
+        self.assertEqual(description.value, self._custom_value(mutex, 'x_misp_description'))
         self.assertEqual(operating_system.type, 'text')
         self.assertEqual(operating_system.object_relation, 'operating-system')
-        self.assertEqual(operating_system.value, mutex.x_misp_operating_system)
+        self.assertEqual(
+            operating_system.value, self._custom_value(mutex, 'x_misp_operating_system')
+        )
 
     def _check_netflow_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 9)
@@ -6237,7 +6248,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(src_port.value, network_traffic.src_port)
         self.assertEqual(hostname.type, 'hostname')
         self.assertEqual(hostname.object_relation, 'hostname-dst')
-        self.assertEqual(hostname.value, network_traffic.x_misp_hostname_dst)
+        self.assertEqual(
+            hostname.value, self._custom_value(network_traffic, 'x_misp_hostname_dst')
+        )
         self.assertEqual(layer3.type, 'text')
         self.assertEqual(layer3.object_relation, 'layer3-protocol')
         self.assertEqual(layer3.value, network_traffic.protocols[0].upper())
@@ -6345,7 +6358,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(port_src.value, network_traffic.src_port)
         self.assertEqual(hostname.type, 'hostname')
         self.assertEqual(hostname.object_relation, 'hostname-dst')
-        self.assertEqual(hostname.value, network_traffic.x_misp_hostname_dst)
+        self.assertEqual(
+            hostname.value, self._custom_value(network_traffic, 'x_misp_hostname_dst')
+        )
         self.assertEqual(protocol.type, 'text')
         self.assertEqual(protocol.object_relation, 'protocol')
         self.assertEqual(protocol.value, network_traffic.protocols[0].upper())
@@ -6446,13 +6461,15 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(account_name.value, observable.account_login)
         self.assertEqual(human_attribute.type, 'boolean')
         self.assertEqual(human_attribute.object_relation, 'human')
-        self.assertEqual(human_attribute.value, observable.x_misp_human)
+        self.assertEqual(human_attribute.value, self._custom_value(observable, 'x_misp_human'))
         self.assertEqual(profile_photo.type, 'attachment')
         self.assertEqual(profile_photo.object_relation, 'profile-photo')
-        self.assertEqual(profile_photo.value, observable.x_misp_profile_photo['value'])
+        self.assertEqual(
+            profile_photo.value, self._custom_value(observable, 'x_misp_profile_photo')['value']
+        )
         self.assertEqual(
             self._get_data_value(profile_photo.data),
-            observable.x_misp_profile_photo['data']
+            self._custom_value(observable, 'x_misp_profile_photo')['data']
         )
 
     def _check_pe_indicator_object(self, attributes, pattern, indicator_id):
@@ -6668,7 +6685,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(pid.value, process.pid)
         self.assertEqual(port.type, 'port')
         self.assertEqual(port.object_relation, 'port')
-        self.assertEqual(port.value, process.x_misp_port)
+        self.assertEqual(port.value, self._custom_value(process, 'x_misp_port'))
         self.assertEqual(image.type, 'filename')
         self.assertEqual(image.object_relation, 'image')
         self.assertEqual(image.value, image_object.name)
@@ -6720,14 +6737,18 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(account_name.value, observable.account_login)
         self.assertEqual(account_avatar.type, 'attachment')
         self.assertEqual(account_avatar.object_relation, 'account-avatar')
-        self.assertEqual(account_avatar.value, observable.x_misp_account_avatar['value'])
+        self.assertEqual(
+            account_avatar.value, self._custom_value(observable, 'x_misp_account_avatar')['value']
+        )
         self.assertEqual(
             self._get_data_value(account_avatar.data),
-            observable.x_misp_account_avatar['data']
+            self._custom_value(observable, 'x_misp_account_avatar')['data']
         )
         self.assertEqual(description_attribute.type, 'text')
         self.assertEqual(description_attribute.object_relation, 'description')
-        self.assertEqual(description_attribute.value, observable.x_misp_description)
+        self.assertEqual(
+            description_attribute.value, self._custom_value(observable, 'x_misp_description')
+        )
 
     def _check_registry_key_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 6)
@@ -6767,7 +6788,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(key.value, observable.key)
         self.assertEqual(hive.type, 'text')
         self.assertEqual(hive.object_relation, 'hive')
-        self.assertEqual(hive.value, observable.x_misp_hive)
+        self.assertEqual(hive.value, self._custom_value(observable, 'x_misp_hive'))
         self.assertEqual(data.type, 'text')
         self.assertEqual(data.object_relation, 'data')
         self.assertEqual(data.value, values.data)
@@ -6853,7 +6874,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(username.type, 'text')
         self.assertEqual(username.object_relation, 'username')
         self.assertEqual(username.value, observable.account_login)
-        for attribute, phone_value in zip(phone_attributes, observable.x_misp_phone):
+        phones = self._custom_value(observable, 'x_misp_phone')
+        for attribute, phone_value in zip(phone_attributes, phones):
             self.assertEqual(attribute.type, 'text')
             self.assertEqual(attribute.object_relation, 'phone')
             self.assertEqual(attribute.value, phone_value)
@@ -6899,13 +6921,17 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(displayed_name.value, observable.display_name)
         self.assertEqual(followers_attribute.type, 'text')
         self.assertEqual(followers_attribute.object_relation, 'followers')
-        self.assertEqual(followers_attribute.value, observable.x_misp_followers)
+        self.assertEqual(
+            followers_attribute.value, self._custom_value(observable, 'x_misp_followers')
+        )
         self.assertEqual(profile_image.type, 'attachment')
         self.assertEqual(profile_image.object_relation, 'profile-image')
-        self.assertEqual(profile_image.value, observable.x_misp_profile_image['value'])
+        self.assertEqual(
+            profile_image.value, self._custom_value(observable, 'x_misp_profile_image')['value']
+        )
         self.assertEqual(
             self._get_data_value(profile_image.data),
-            observable.x_misp_profile_image['data']
+            self._custom_value(observable, 'x_misp_profile_image')['data']
         )
 
     def _check_url_indicator_object(self, attributes, pattern):
@@ -6938,16 +6964,24 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(url.value, URL.value)
         self.assertEqual(domain.type, 'domain')
         self.assertEqual(domain.object_relation, 'domain')
-        self.assertEqual(domain.value, URL.x_misp_domain)
+        self.assertEqual(
+            domain.value, self._custom_value(URL, 'x_misp_domain')
+        )
         self.assertEqual(host.type, 'hostname')
         self.assertEqual(host.object_relation, 'host')
-        self.assertEqual(host.value, URL.x_misp_host)
+        self.assertEqual(
+            host.value, self._custom_value(URL, 'x_misp_host')
+        )
         self.assertEqual(ip.type, 'ip-dst')
         self.assertEqual(ip.object_relation, 'ip')
-        self.assertEqual(ip.value, URL.x_misp_ip)
+        self.assertEqual(
+            ip.value, self._custom_value(URL, 'x_misp_ip')
+        )
         self.assertEqual(port.type, 'port')
         self.assertEqual(port.object_relation, 'port')
-        self.assertEqual(port.value, URL.x_misp_port)
+        self.assertEqual(
+            port.value, self._custom_value(URL, 'x_misp_port')
+        )
 
     def _check_user_account_indicator_object(self, attributes, pattern_list):
         self.assertEqual(len(attributes), 11)
@@ -7015,10 +7049,12 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(user_id.value, observable.user_id)
         self.assertEqual(user_avatar.type, 'attachment'),
         self.assertEqual(user_avatar.object_relation, 'user-avatar')
-        self.assertEqual(user_avatar.value, observable.x_misp_user_avatar['value'])
+        self.assertEqual(
+            user_avatar.value, self._custom_value(observable, 'x_misp_user_avatar')['value']
+        )
         self.assertEqual(
             self._get_data_value(user_avatar.data),
-            observable.x_misp_user_avatar['data']
+            self._custom_value(observable, 'x_misp_user_avatar')['data']
         )
         extension = observable.extensions['unix-account-ext']
         self.assertEqual(group_id.type, 'text'),
@@ -7165,7 +7201,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(version.value, observable.version)
         self.assertEqual(pem.type, 'text')
         self.assertEqual(pem.object_relation, 'pem')
-        self.assertEqual(pem.value, observable.x_misp_pem)
+        self.assertEqual(pem.value, self._custom_value(observable, 'x_misp_pem'))
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
