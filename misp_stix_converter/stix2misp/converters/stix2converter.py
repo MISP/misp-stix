@@ -63,10 +63,12 @@ class _CustomSyntaxView(Mapping):
     values next, each under the custom property name it stands for.
     """
 
-    def __init__(self, stix_object, values: dict, paths: dict):
+    def __init__(self, stix_object, values: dict, paths: dict,
+                 original_names: Optional[dict] = None):
         self.__stix_object = stix_object
         self.__values = values
         self.__paths = paths
+        self.__original_names = original_names or {}
 
     def __contains__(self, key: object) -> bool:
         return key in self.__values or key in self.__stix_object
@@ -85,6 +87,25 @@ class _CustomSyntaxView(Mapping):
     def __len__(self) -> int:
         return sum(1 for _ in self)
 
+    def in_extension(self, field: str) -> bool:
+        """Tell whether a value comes from the MISP property extension.
+
+        :param field: a property name, as the readers read it
+        :return: whether the value is read from the extension, rather than
+            from a property of the object
+        """
+        return field in self.__paths
+
+    @property
+    def original_names(self) -> dict:
+        """The MISP spelling of the galaxy meta keys the MISP property
+        extension carries under a changed name, read in meta mode.
+
+        :return: the meta key per custom property name, for the extension
+            values only
+        """
+        return self.__original_names
+
     def path(self, field: str) -> str:
         """Spell a property as the bundle does, for the messages naming it.
 
@@ -96,7 +117,8 @@ class _CustomSyntaxView(Mapping):
 
 
 def _as_custom_syntax(
-        stix_object, main_parser: _MAIN_PARSER_TYPING) -> _CustomSyntaxView:
+        stix_object, main_parser: _MAIN_PARSER_TYPING,
+        meta: bool = False) -> _CustomSyntaxView:
     """Present a standard STIX object's MISP values as the readers name them.
 
     The Internal import reads the MISP values of a standard object under
@@ -108,6 +130,15 @@ def _as_custom_syntax(
     extension property name is translated into the custom property name it
     stands for, so every reader keeps its names. The names the extension body
     uses for itself are no MISP value.
+
+    The values of a galaxy cluster are its meta keys, read in meta mode. A
+    meta key is free-form: no rule strips its escape, and no name is a fixed
+    MISP field with a type of its own. The extension's `original_names`
+    lists every name the fold or the escape changed, so each name is read as
+    written, under the custom property prefix, and the channel is translated
+    to the same names. It spells the extension's own values only, as the
+    custom property channel spells the custom properties: an entry naming
+    no extension value is reported and left out.
 
     An object may carry both syntaxes, and each value is read. The export
     never writes a value in both, so when both give the same custom property
@@ -128,6 +159,7 @@ def _as_custom_syntax(
 
     :param stix_object: the standard STIX object whose MISP values are read
     :param main_parser: the parser reporting what the reading meets
+    :param meta: whether the values are the meta keys of a galaxy cluster
     :return: the object, with its MISP property extension values next to its
         own properties
     :raise InvalidMISPExtensionError: the MISP property extension holds
@@ -149,24 +181,52 @@ def _as_custom_syntax(
     for name, value in extension.items():
         if name in _EXTENSION_RESERVED_NAMES:
             continue
-        field = _custom_property_name_from_extension(name)
+        field = (
+            f'{_CUSTOM_PROPERTY_PREFIX}{name}' if meta
+            else _custom_property_name_from_extension(name)
+        )
         paths[field] = f'{path}.{name}'
-        _check_misp_value(name, value, paths[field])
+        _check_misp_value(name, value, paths[field], meta)
         if field in stix_object:
             main_parser._custom_syntax_collision_warning(
                 stix_object['id'], field, paths[field]
             )
         values[field] = value
-    return _CustomSyntaxView(stix_object, values, paths)
+    if not meta:
+        return _CustomSyntaxView(stix_object, values, paths)
+    return _CustomSyntaxView(
+        stix_object, values, paths, _extension_original_names(
+            stix_object['id'], extension.get('original_names', {}), values,
+            f'{path}.original_names', main_parser
+        )
+    )
 
 
-def _check_misp_value(name: str, value: Any, path: str):
-    # The two fixed MISP fields with a type of their own, then the values of
-    # every other name: an item, or a list of items
-    if name == 'opinion':
+def _extension_original_names(
+        object_id: str, original_names: Mapping, values: dict, path: str,
+        main_parser: _MAIN_PARSER_TYPING) -> dict:
+    # The extension's channel, under the names its meta keys are read with:
+    # an entry naming none of them is reported as the bundle spells it
+    known, unknown = {}, []
+    for name, key in original_names.items():
+        field = f'{_CUSTOM_PROPERTY_PREFIX}{name}'
+        if field in values:
+            known[field] = key
+        else:
+            unknown.append(name)
+    if unknown:
+        main_parser._unknown_original_names_warning(object_id, unknown, path)
+    return known
+
+
+def _check_misp_value(name: str, value: Any, path: str, meta: bool):
+    # The two fixed MISP fields with a type of their own, which no meta key
+    # is, then the values of every other name: an item, or a list of items
+    fixed_field = None if meta else name
+    if fixed_field == 'opinion':
         if not isinstance(value, int) or isinstance(value, bool):
             _unreadable_misp_value(path, 'an integer')
-    elif name == 'author_ref':
+    elif fixed_field == 'author_ref':
         if not isinstance(value, str):
             _unreadable_misp_value(path, 'an identifier')
     elif not all(
@@ -663,11 +723,21 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         )
 
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
+        # Each syntax's channel spells the meta keys of its own syntax. The
+        # MISP property extension came with the channel, so a name it does
+        # not list is verbatim, with no list to fall back on.
         original_names = self._read_original_names(stix_object)
+        stix_object = _as_custom_syntax(
+            stix_object, self.main_parser, meta=True
+        )
         for key, value in stix_object.items():
             if key == _ORIGINAL_NAMES_PROPERTY:
                 continue
-            if key.startswith(_CUSTOM_PROPERTY_PREFIX):
+            if stix_object.in_extension(key):
+                yield stix_object.original_names.get(
+                    key, _custom_property_relation(key)
+                ), value
+            elif key.startswith(_CUSTOM_PROPERTY_PREFIX):
                 yield self._restore_meta_key(key, original_names), value
 
     @staticmethod
