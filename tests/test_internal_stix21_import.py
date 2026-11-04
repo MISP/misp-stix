@@ -2549,12 +2549,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.parser.warnings
         )
 
-    def test_stix21_bundle_with_custom_labels(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_custom_labels()
+    def _check_bundle_with_custom_labels(self, bundle):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator, observed_data, domain, address = bundle.objects
+        _, grouping, indicator, observed_data, domain, address = self._bundle_objects(bundle)
         misp_object, attribute = self._check_misp_event_features_from_grouping(
             event, grouping
         )
@@ -2599,6 +2598,16 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.type, 'domain|ip')
         self.assertEqual(attribute.value, f'{domain.value}|{address.value}')
         self.assertEqual(attribute.tags[0].name, free_tag)
+
+    def test_stix21_bundle_with_custom_labels(self):
+        self._check_bundle_with_custom_labels(
+            TestInternalSTIX21Bundles.get_bundle_with_custom_labels()
+        )
+
+    def test_stix21_bundle_with_custom_labels_extension_syntax(self):
+        self._check_bundle_with_custom_labels(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_custom_labels()
+        )
 
     def test_stix21_bundle_with_dict_form_objects(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_dict_form_objects()
@@ -2738,6 +2747,127 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             coa.references[0].referenced_uuid
         )
         self.assertIn(f'Original UUID was: {vulnerability_uuid}', vulnerability.comment)
+
+    def _check_lone_indicator_nested_room_value(
+            self, case, name, companion, attribute):
+        # The MISP value a lone Indicator compares in a Nested Room of the
+        # MISP property extension goes to the MISP object the room's part
+        # converts to: the one holding `companion`
+        bundle = getattr(
+            TestInternalSTIX21Bundles,
+            f'get_extension_syntax_bundle_with_lone_indicator_{case}'
+        )()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(dict(self.parser.errors), {})
+        misp_object, = (
+            misp_object for misp_object in self.parser.misp_event.objects
+            if misp_object.name == name and companion in {
+                (attribute.object_relation, attribute.value)
+                for attribute in misp_object.attributes
+            }
+        )
+        self.assertIn(
+            ('text', *attribute, True),
+            [
+                (attribute.type, attribute.object_relation, attribute.value,
+                 attribute.to_ids)
+                for attribute in misp_object.attributes
+            ]
+        )
+
+    def test_stix21_bundle_with_lone_indicator_pe_section_nested_room(self):
+        self._check_lone_indicator_nested_room_value(
+            'pe_section_nested_room', 'pe-section', ('name', '.rsrc'),
+            ('text', 'Section text')
+        )
+
+    def test_stix21_bundle_with_lone_indicator_second_registry_value_nested_room(self):
+        # The Nested Room of the second value of a key goes to the second
+        # registry value, not to the first one
+        self._check_lone_indicator_nested_room_value(
+            'second_registry_value_nested_room', 'registry-key-value',
+            ('name', 'Bar'), ('data', 'Other data')
+        )
+
+    def test_stix21_bundle_with_lone_indicator_single_registry_value_nested_room(self):
+        # A key holding a single value converts to one registry-key object,
+        # which holds the value's MISP values as it holds its other values,
+        # and the message about one names that object
+        self._check_lone_indicator_nested_room_value(
+            'single_registry_value_nested_room', 'registry-key',
+            ('name', 'RegistryName'), ('xy', 'Other data')
+        )
+        self._check_unknown_custom_property_warning(
+            'registry-key',
+            f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values[0].misp_xy",
+            'xy', self.parser.warnings
+        )
+
+    def test_stix21_bundle_with_lone_indicator_standalone_registry_value_nested_room(self):
+        self._check_lone_indicator_nested_room_value(
+            'standalone_registry_value_nested_room', 'registry-key-value',
+            ('name', 'RegistryName'), ('data', 'Other data')
+        )
+
+    def test_stix21_bundle_with_lone_indicator_other_extension_path(self):
+        # A path into another extension definition is one no reader knows,
+        # where a Nested Room would sit included: each Indicator is lost with
+        # the per-object error, as for any comparison its reader does not know
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_lone_indicator_other_extension_path()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(self.parser.misp_event.objects, [])
+        errors = self._reported_messages(self.parser.errors)
+        self.assertEqual(len(errors), 2)
+        for indicator_id in ('indicator--b0f55591-6a63-4fbd-a169-064e64738d95',
+                             'indicator--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b'):
+            self.assertEqual(
+                len(
+                    [
+                        error for error in errors
+                        if 'Error while parsing the Indicator object with id '
+                        f'{indicator_id}' in error
+                    ]
+                ),
+                1, indicator_id
+            )
+
+    def test_stix21_bundle_with_lone_indicator_unknown_extension_properties(self):
+        # A name no template nor table knows keeps its value as a text
+        # attribute, and the message names the value where and as the
+        # pattern compares it: at the top level of the extension, and in each
+        # kind of Nested Room
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_lone_indicator_unknown_extension_properties()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(
+            sorted(
+                (misp_object.name, attribute.type, attribute.value)
+                for misp_object in self.parser.misp_event.objects
+                for attribute in misp_object.attributes
+                if attribute.object_relation == 'xy'
+            ),
+            [
+                ('mutex', 'text', 'mutex value'), ('pe', 'text', 'pe value'),
+                ('pe-section', 'text', 'section value'),
+                ('registry-key-value', 'text', 'registry value')
+            ]
+        )
+        warnings = self._reports_matching(
+            self.parser.warnings, 'Unknown custom property'
+        )
+        self.assertEqual(len(warnings), 4)
+        for nested_room in ('', 'windows_pebinary_ext.',
+                            'windows_pebinary_ext.sections[0].', 'values[1].'):
+            path = (
+                f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.{nested_room}misp_xy"
+            )
+            self.assertEqual(
+                len([warning for warning in warnings if f'"{path}"' in warning]),
+                1, path
+            )
+        self.assertNotIn('x_misp_xy', '\n'.join(warnings))
 
     def test_stix21_bundle_with_merged_indicator_on_different_values(self):
         # The Observed Data wins the merge, as it does for the content this
@@ -3574,24 +3704,36 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
     #                        MISP OBJECTS IMPORT TESTS.                        #
     ############################################################################
 
-    def test_stix21_bundle_with_account_indicator_objects(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_account_indicator_objects()
+    def _check_bundle_with_account_indicator_objects(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, gitlab_indicator, telegram_indicator = bundle.objects
+        _, grouping, gitlab_indicator, telegram_indicator = self._bundle_objects(bundle)
         gitlab, telegram = self._check_misp_event_features_from_grouping(event, grouping)
         gitlab_pattern = self._check_indicator_object(gitlab, gitlab_indicator)
         self._check_gitlab_user_indicator_object(gitlab.attributes, gitlab_pattern)
-        self._populate_documentation(
-            misp_object = json.loads(gitlab.to_json()),
-            indicator = gitlab_indicator
-        )
+        if documented:
+            self._populate_documentation(
+                misp_object = json.loads(gitlab.to_json()),
+                indicator = gitlab_indicator
+            )
         telegram_pattern = self._check_indicator_object(telegram, telegram_indicator)
         self._check_telegram_account_indicator_object(telegram.attributes, telegram_pattern)
-        self._populate_documentation(
-            misp_object = json.loads(telegram.to_json()),
-            indicator = telegram_indicator
+        if documented:
+            self._populate_documentation(
+                misp_object = json.loads(telegram.to_json()),
+                indicator = telegram_indicator
+            )
+
+    def test_stix21_bundle_with_account_indicator_objects(self):
+        self._check_bundle_with_account_indicator_objects(
+            TestInternalSTIX21Bundles.get_bundle_with_account_indicator_objects()
+        )
+
+    def test_stix21_bundle_with_account_indicator_objects_extension_syntax(self):
+        self._check_bundle_with_account_indicator_objects(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_account_indicator_objects(),
+            documented=True
         )
 
     def _check_bundle_with_account_observable_objects(self, bundle, documented=False):
@@ -3637,44 +3779,60 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_account_with_attachment_indicator_objects(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_account_with_attachment_indicator_objects()
+    def _check_bundle_with_account_with_attachment_indicator_objects(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, facebook_i, github_i, parler_i, reddit_i, twitter_i, user_i = bundle.objects
+        _, grouping, facebook_i, github_i, parler_i, reddit_i, twitter_i, user_i = self._bundle_objects(bundle)
         facebook, github, parler, reddit, twitter, user_account = self._check_misp_event_features_from_grouping(event, grouping)
         facebook_pattern = self._check_indicator_object(facebook, facebook_i)
         self._check_facebook_account_indicator_object(facebook.attributes, facebook_pattern)
-        self._populate_documentation(
-            misp_object=json.loads(facebook.to_json()), indicator=facebook_i
-        )
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(facebook.to_json()), indicator=facebook_i
+            )
         github_pattern = self._check_indicator_object(github, github_i)
         self._check_github_user_indicator_object(github.attributes, github_pattern)
-        self._populate_documentation(
-            misp_object=json.loads(github.to_json()), indicator=github_i
-        )
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(github.to_json()), indicator=github_i
+            )
         parler_pattern = self._check_indicator_object(parler, parler_i)
         self._check_parler_account_indicator_object(parler.attributes, parler_pattern)
-        self._populate_documentation(
-            misp_object=json.loads(parler.to_json()), indicator=parler_i
-        )
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(parler.to_json()), indicator=parler_i
+            )
         reddit_pattern = self._check_indicator_object(reddit, reddit_i)
         self._check_reddit_account_indicator_object(reddit.attributes, reddit_pattern)
-        self._populate_documentation(
-            misp_object=json.loads(reddit.to_json()), indicator=reddit_i
-        )
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(reddit.to_json()), indicator=reddit_i
+            )
         twitter_pattern = self._check_indicator_object(twitter, twitter_i)
         self._check_twitter_account_indicator_object(twitter.attributes, twitter_pattern)
-        self._populate_documentation(
-            misp_object=json.loads(twitter.to_json()), indicator=twitter_i
-        )
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(twitter.to_json()), indicator=twitter_i
+            )
         user_account_pattern = self._check_indicator_object(user_account, user_i)
         self._check_user_account_indicator_object(
             user_account.attributes, user_account_pattern[1:-1].split(' AND ')
         )
-        self._populate_documentation(
-            misp_object=json.loads(user_account.to_json()), indicator=user_i
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(user_account.to_json()), indicator=user_i
+            )
+
+    def test_stix21_bundle_with_account_with_attachment_indicator_objects(self):
+        self._check_bundle_with_account_with_attachment_indicator_objects(
+            TestInternalSTIX21Bundles.get_bundle_with_account_with_attachment_indicator_objects()
+        )
+
+    def test_stix21_bundle_with_account_with_attachment_indicator_objects_extension_syntax(self):
+        self._check_bundle_with_account_with_attachment_indicator_objects(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_account_with_attachment_indicator_objects(),
+            documented=True
         )
 
     def _check_bundle_with_account_with_attachment_observable_objects(self, bundle, documented=False):
@@ -3778,18 +3936,29 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_android_app_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_android_app_indicator_object()
+    def _check_bundle_with_android_app_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         self._check_android_app_indicator_object(misp_object.attributes, pattern)
-        self._populate_documentation(
-            misp_object = json.loads(misp_object.to_json()),
-            indicator = indicator
+        if documented:
+            self._populate_documentation(
+                misp_object = json.loads(misp_object.to_json()),
+                indicator = indicator
+            )
+
+    def test_stix21_bundle_with_android_app_indicator_object(self):
+        self._check_bundle_with_android_app_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_android_app_indicator_object()
+        )
+
+    def test_stix21_bundle_with_android_app_indicator_object_extension_syntax(self):
+        self._check_bundle_with_android_app_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_android_app_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_android_app_observable_object(self, bundle, documented=False):
@@ -3875,17 +4044,28 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_asn_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_asn_indicator_object()
+    def _check_bundle_with_asn_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         self._check_asn_indicator_object(misp_object.attributes, pattern)
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_asn_indicator_object(self):
+        self._check_bundle_with_asn_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_asn_indicator_object()
+        )
+
+    def test_stix21_bundle_with_asn_indicator_object_extension_syntax(self):
+        self._check_bundle_with_asn_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_asn_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_asn_observable_object(self, bundle, documented=False):
@@ -3966,17 +4146,28 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_cpe_asset_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_cpe_asset_indicator_object()
+    def _check_bundle_with_cpe_asset_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         self._check_cpe_asset_indicator_object(misp_object.attributes, pattern)
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_cpe_asset_indicator_object(self):
+        self._check_bundle_with_cpe_asset_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_cpe_asset_indicator_object()
+        )
+
+    def test_stix21_bundle_with_cpe_asset_indicator_object_extension_syntax(self):
+        self._check_bundle_with_cpe_asset_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_cpe_asset_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_cpe_asset_observable_object(self, bundle, documented=False):
@@ -4009,19 +4200,30 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_credential_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_credential_indicator_object()
+    def _check_bundle_with_credential_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         self._check_credential_indicator_object(
             misp_object.attributes, pattern[1:-1].split(' AND ')
         )
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_credential_indicator_object(self):
+        self._check_bundle_with_credential_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_credential_indicator_object()
+        )
+
+    def test_stix21_bundle_with_credential_indicator_object_extension_syntax(self):
+        self._check_bundle_with_credential_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_credential_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_credential_observable_object(self, bundle, documented=False):
@@ -4107,17 +4309,28 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         for misp_object, custom_object in zip(misp_objects, custom_objects):
             self._check_custom_object(misp_object, custom_object)
 
-    def test_stix21_bundle_with_domain_ip_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_domain_ip_indicator_object()
+    def _check_bundle_with_domain_ip_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         self._check_domain_ip_indicator_object(misp_object.attributes, pattern)
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_domain_ip_indicator_object(self):
+        self._check_bundle_with_domain_ip_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_domain_ip_indicator_object()
+        )
+
+    def test_stix21_bundle_with_domain_ip_indicator_object_extension_syntax(self):
+        self._check_bundle_with_domain_ip_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_domain_ip_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_domain_ip_leftovers_in_the_pattern(self, bundle):
@@ -4201,19 +4414,30 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_email_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_indicator_object()
+    def _check_bundle_with_email_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         email_pattern = self._get_parsed_email_pattern(self._check_indicator_object(misp_object, indicator))
         self._check_email_indicator_object(
             misp_object.attributes, email_pattern, indicator.id
         )
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_email_indicator_object(self):
+        self._check_bundle_with_email_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_email_indicator_object()
+        )
+
+    def test_stix21_bundle_with_email_indicator_object_extension_syntax(self):
+        self._check_bundle_with_email_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_email_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_email_observable_object(self, bundle, documented=False):
@@ -4275,12 +4499,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             misp_object=json.loads(misp_object.to_json()), identity=identity
         )
 
-    def test_stix21_bundle_with_file_and_pe_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_file_and_pe_indicator_object()
+    def _check_bundle_with_file_and_pe_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         file_object, pe_object, section_object = self._check_misp_event_features_from_grouping(event, grouping)
         file_pattern, pe_pattern, section_pattern = self._get_parsed_file_and_pe_pattern(
             self._check_indicator_object(file_object, indicator)
@@ -4296,15 +4519,27 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_pe_section_indicator_object(
             section_object.attributes, section_pattern, indicator.id
         )
-        self._populate_documentation(
-            misp_object=[
-                json.loads(file_object.to_json()),
-                json.loads(pe_object.to_json()),
-                json.loads(section_object.to_json())
-            ],
-            indicator=indicator,
-            name='File object with a Windows PE binary extension',
-            summary='File object with a Windows PE binary extension'
+        if documented:
+            self._populate_documentation(
+                misp_object=[
+                    json.loads(file_object.to_json()),
+                    json.loads(pe_object.to_json()),
+                    json.loads(section_object.to_json())
+                ],
+                indicator=indicator,
+                name='File object with a Windows PE binary extension',
+                summary='File object with a Windows PE binary extension'
+            )
+
+    def test_stix21_bundle_with_file_and_pe_indicator_object(self):
+        self._check_bundle_with_file_and_pe_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_file_and_pe_indicator_object()
+        )
+
+    def test_stix21_bundle_with_file_and_pe_indicator_object_extension_syntax(self):
+        self._check_bundle_with_file_and_pe_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_file_and_pe_indicator_object(),
+            documented=True
         )
 
     def test_stix21_bundle_with_file_and_pe_observable_object(self):
@@ -4339,17 +4574,28 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             summary='File object with a Windows PE binary extension'
         )
 
-    def test_stix21_bundle_with_file_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_file_indicator_object()
+    def _check_bundle_with_file_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._get_parsed_file_pattern(self._check_indicator_object(misp_object, indicator))
         self._check_file_indicator_object(misp_object.attributes, pattern)
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_file_indicator_object(self):
+        self._check_bundle_with_file_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_file_indicator_object()
+        )
+
+    def test_stix21_bundle_with_file_indicator_object_extension_syntax(self):
+        self._check_bundle_with_file_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_file_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_file_observable_object(self, bundle, documented=False):
@@ -4626,12 +4872,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_registry_key_with_values_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_registry_key_with_values_indicator_object()
+    def _check_bundle_with_registry_key_with_values_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         registry, value1, value2 = (
             self._check_misp_event_features_from_grouping(event, grouping)
         )
@@ -4663,29 +4908,52 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(reference1.referenced_uuid, value1.uuid)
         self.assertEqual(reference2.referenced_uuid, value2.uuid)
-        self._populate_documentation(
-            misp_object=[
-                json.loads(registry.to_json()),
-                json.loads(value1.to_json()),
-                json.loads(value2.to_json())
-            ],
-            indicator=indicator,
-            name='registry-key with references to registry-key-value(s)',
-            summary='Registry Key Object referencing multiple '
-                    'Registry Key Value Objects'
+        if documented:
+            self._populate_documentation(
+                misp_object=[
+                    json.loads(registry.to_json()),
+                    json.loads(value1.to_json()),
+                    json.loads(value2.to_json())
+                ],
+                indicator=indicator,
+                name='registry-key with references to registry-key-value(s)',
+                summary='Registry Key Object referencing multiple '
+                        'Registry Key Value Objects'
+            )
+
+    def test_stix21_bundle_with_registry_key_with_values_indicator_object(self):
+        self._check_bundle_with_registry_key_with_values_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_registry_key_with_values_indicator_object()
         )
 
-    def test_stix21_bundle_with_hashlookup_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_hashlookup_indicator_object()
+    def test_stix21_bundle_with_registry_key_with_values_indicator_object_extension_syntax(self):
+        self._check_bundle_with_registry_key_with_values_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_registry_key_with_values_indicator_object(),
+            documented=True
+        )
+
+    def _check_bundle_with_hashlookup_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         self._check_indicator_object(misp_object, indicator)
         self._check_hashlookup_indicator_object(misp_object.attributes, indicator)
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_hashlookup_indicator_object(self):
+        self._check_bundle_with_hashlookup_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_hashlookup_indicator_object()
+        )
+
+    def test_stix21_bundle_with_hashlookup_indicator_object_extension_syntax(self):
+        self._check_bundle_with_hashlookup_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_hashlookup_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_hashlookup_observable_object(self, bundle, documented=False):
@@ -5020,17 +5288,28 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             misp_object=json.loads(misp_object.to_json()), identity=identity
         )
 
-    def test_stix21_bundle_with_image_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_image_indicator_object()
+    def _check_bundle_with_image_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         self._check_image_indicator_object(misp_object.attributes, pattern)
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_image_indicator_object(self):
+        self._check_bundle_with_image_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_image_indicator_object()
+        )
+
+    def test_stix21_bundle_with_image_indicator_object_extension_syntax(self):
+        self._check_bundle_with_image_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_image_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_image_observable_object(self, bundle, documented=False):
@@ -5156,12 +5435,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_lnk_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_lnk_indicator_object()
+    def _check_bundle_with_lnk_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         atime, ctime,  mtime, name, dir_ref, MD5, SHA1, SHA256, payload_bin, x_misp_filename, content_md5, _, _, _, size = self._check_indicator_object(misp_object, indicator)[1:-1].split(' AND ')
         access_time, creation_time,  modification_time, filename, path, md5, sha1, sha256, size_in_bytes, malware_sample = misp_object.attributes
@@ -5175,8 +5453,20 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
                 x_misp_filename, content_md5, size
             )
         )
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_lnk_indicator_object(self):
+        self._check_bundle_with_lnk_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_lnk_indicator_object()
+        )
+
+    def test_stix21_bundle_with_lnk_indicator_object_extension_syntax(self):
+        self._check_bundle_with_lnk_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_lnk_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_lnk_observable_object(self, bundle, documented=False):
@@ -5226,17 +5516,28 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_mutex_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_mutex_indicator_object()
+    def _check_bundle_with_mutex_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         self._check_mutex_indicator_object(misp_object.attributes, pattern)
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_mutex_indicator_object(self):
+        self._check_bundle_with_mutex_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_mutex_indicator_object()
+        )
+
+    def test_stix21_bundle_with_mutex_indicator_object_extension_syntax(self):
+        self._check_bundle_with_mutex_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_mutex_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_mutex_observable_object(self, bundle, documented=False):
@@ -5364,20 +5665,31 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_network_socket_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_network_socket_indicator_object()
+    def _check_bundle_with_network_socket_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         _, src_ref, _, dst_ref, _, *patterns = pattern[1:-1].split(' AND ')
         self._check_network_socket_indicator_object(
             misp_object.attributes, (src_ref, dst_ref, *patterns), indicator.id
         )
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_network_socket_indicator_object(self):
+        self._check_bundle_with_network_socket_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_network_socket_indicator_object()
+        )
+
+    def test_stix21_bundle_with_network_socket_indicator_object_extension_syntax(self):
+        self._check_bundle_with_network_socket_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_network_socket_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_network_socket_observable_object(self, bundle, documented=False):
@@ -5661,12 +5973,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_process_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_process_indicator_object()
+    def _check_bundle_with_process_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         pid, image, parent_command_line, parent_image, parent_pid, parent_name, child_pid, hidden, name, port = misp_object.attributes
@@ -5681,9 +5992,21 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
                 _parent_name, _child_pid, is_hidden, _port
             )
         )
-        self._populate_documentation(
-            misp_object = json.loads(misp_object.to_json()),
-            indicator = indicator
+        if documented:
+            self._populate_documentation(
+                misp_object = json.loads(misp_object.to_json()),
+                indicator = indicator
+            )
+
+    def test_stix21_bundle_with_process_indicator_object(self):
+        self._check_bundle_with_process_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_process_indicator_object()
+        )
+
+    def test_stix21_bundle_with_process_indicator_object_extension_syntax(self):
+        self._check_bundle_with_process_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_process_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_process_observable_object(self, bundle, documented=False):
@@ -5737,12 +6060,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_registry_key_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_registry_key_indicator_object()
+    def _check_bundle_with_registry_key_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         key, last_modified, *attributes = misp_object.attributes
@@ -5750,8 +6072,20 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_registry_key_indicator_object(
             (key, *attributes, last_modified), (_key, *patterns, modified_time)
         )
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_registry_key_indicator_object(self):
+        self._check_bundle_with_registry_key_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_registry_key_indicator_object()
+        )
+
+    def test_stix21_bundle_with_registry_key_indicator_object_extension_syntax(self):
+        self._check_bundle_with_registry_key_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_registry_key_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_registry_key_observable_object(self, bundle, documented=False):
@@ -5831,17 +6165,28 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_url_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_url_indicator_object()
+    def _check_bundle_with_url_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         self._check_url_indicator_object(misp_object.attributes, pattern)
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_url_indicator_object(self):
+        self._check_bundle_with_url_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_url_indicator_object()
+        )
+
+    def test_stix21_bundle_with_url_indicator_object_extension_syntax(self):
+        self._check_bundle_with_url_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_url_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_url_observable_object(self, bundle, documented=False):
@@ -5898,17 +6243,28 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_x509_indicator_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_x509_indicator_object()
+    def _check_bundle_with_x509_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, indicator = bundle.objects
+        _, grouping, indicator = self._bundle_objects(bundle)
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         self._check_x509_indicator_object(misp_object.attributes, pattern)
-        self._populate_documentation(
-            misp_object=json.loads(misp_object.to_json()), indicator=indicator
+        if documented:
+            self._populate_documentation(
+                misp_object=json.loads(misp_object.to_json()), indicator=indicator
+            )
+
+    def test_stix21_bundle_with_x509_indicator_object(self):
+        self._check_bundle_with_x509_indicator_object(
+            TestInternalSTIX21Bundles.get_bundle_with_x509_indicator_object()
+        )
+
+    def test_stix21_bundle_with_x509_indicator_object_extension_syntax(self):
+        self._check_bundle_with_x509_indicator_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_x509_indicator_object(),
+            documented=True
         )
 
     def _check_bundle_with_x509_observable_object(self, bundle, documented=False):

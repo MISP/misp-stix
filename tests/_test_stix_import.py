@@ -269,6 +269,32 @@ class TestSTIX2Import(TestSTIX):
         )
 
     @staticmethod
+    def _misp_value_pattern_paths(field: str) -> tuple:
+        """Name the object paths a fixture pattern compares a MISP value at.
+
+        The Custom Property Name itself, then its Extension Property Name
+        inside the MISP property extension. The fixture is the input, so the
+        name goes through the export's escape, as for `_custom_value`.
+
+        :param field: the `x_misp_` name of the value
+        :return: the object path in each syntax
+        """
+        return (
+            field,
+            f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'."
+            f"{_extension_property_name(_custom_property_relation(field))}"
+        )
+
+    def _pattern_misp_value(self, pattern: dict, field: str):
+        """Read a MISP value of a fixture pattern parsed by path, in either
+        syntax."""
+        value, = (
+            pattern[path] for path in self._misp_value_pattern_paths(field)
+            if path in pattern
+        )
+        return value
+
+    @staticmethod
     def _dict_form_timestamp(timestamp: str):
         """The `datetime` a dict-form object's timestamp string stands for.
 
@@ -4903,7 +4929,12 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         for attribute, pattern in zip(attributes, patterns):
             self.assertEqual(attribute.type, 'text')
             identifier, value = pattern.split (' = ')
-            self.assertEqual(attribute.object_relation, identifier.split(':')[1][7:])
+            self.assertIn(
+                identifier.split(':')[1],
+                self._misp_value_pattern_paths(
+                    f'x_misp_{attribute.object_relation}'
+                )
+            )
             self.assertEqual(attribute.value, value.strip("'"))
 
     def _check_credential_observable_object(self, attributes, observable, pattern):
@@ -5081,10 +5112,16 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(x_mailer.value, pattern['additional_header_fields.x_mailer'])
         self.assertEqual(user_agent.type, 'text')
         self.assertEqual(user_agent.object_relation, 'user-agent')
-        self.assertEqual(user_agent.value, pattern['x_misp_user_agent'])
+        self.assertEqual(
+            user_agent.value,
+            self._pattern_misp_value(pattern, 'x_misp_user_agent')
+        )
         self.assertEqual(boundary.type, 'email-mime-boundary')
         self.assertEqual(boundary.object_relation, 'mime-boundary')
-        self.assertEqual(boundary.value, pattern['x_misp_mime_boundary'])
+        self.assertEqual(
+            boundary.value,
+            self._pattern_misp_value(pattern, 'x_misp_mime_boundary')
+        )
         for index, attribute in enumerate(attachments):
             self.assertEqual(attribute.type, 'attachment')
             self.assertEqual(attribute.object_relation, pattern[f'body_multipart[{index}].content_disposition'])
@@ -7221,7 +7258,10 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         pe_pattern = []
         section_pattern = []
         for pattern in full_pattern[1:-1].split(' AND '):
-            if ":extensions.'windows-pebinary-ext'." in pattern:
+            # The pe values, on the predefined extension or in the room of
+            # the MISP property extension standing for it
+            if (":extensions.'windows-pebinary-ext'." in pattern
+                    or '.windows_pebinary_ext.' in pattern):
                 if '.sections[' in pattern:
                     section_pattern.append(pattern)
                 else:

@@ -14,6 +14,7 @@ from copy import deepcopy
 from misp_stix_converter.tools import load_stix2_content
 from pathlib import Path
 from stix2.parsing import dict_to_stix2
+from typing import Callable
 
 _TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
 _MISP_EXTENSION_IDS = (
@@ -3714,6 +3715,40 @@ _EVENT_REPORT = [
         "definition": {"tlp": "white"}
     }
 ]
+_EXTENSION_SYNTAX_ACCOUNT_INDICATOR_OBJECTS = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_type = 'gitlab' AND user-account:user_id = '1234567890' AND user-account:display_name = 'John Doe' AND user-account:account_login = 'j0hnd0e']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="gitlab-user"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--7ecc4537-89cd-4f17-8027-6e0f70710c53",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": f"[user-account:account_type = 'telegram' AND user-account:user_id = '1234567890' AND user-account:account_login = 'T3l3gr4mUs3r' AND user-account:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.phone[*] = '0112233445' AND user-account:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.phone[*] = '0556677889']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="telegram-account"', 'misp:meta-category="misc"']
+    }
+]
 _EXTENSION_SYNTAX_ACCOUNT_OBSERVABLE_OBJECTS = [
     {
         "type": "observed-data",
@@ -4237,7 +4272,7 @@ _EXTENSION_SYNTAX_ANALYST_DATA_SAMPLES = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[file:hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:name = 'bin.exe' AND (file:content_ref.x_misp_filename = 'bin.exe' AND file:content_ref.hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+        "pattern": f"[file:hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:name = 'bin.exe' AND (file:content_ref.extensions.'{MISP_PROPERTY_EXTENSION_ID}'.filename = 'bin.exe' AND file:content_ref.hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -4319,6 +4354,20 @@ _EXTENSION_SYNTAX_ANALYST_DATA_SAMPLES = [
         "lang": "en"
     }
 ]
+_EXTENSION_SYNTAX_ANDROID_APP_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--02782ed5-b27f-4abc-8bae-efebe13a46dd",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[software:name = 'Facebook' AND software:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.domain = 'facebook.com']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="android-app"', 'misp:meta-category="file"']
+}
 _EXTENSION_SYNTAX_ANDROID_APP_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -4452,6 +4501,22 @@ _EXTENSION_SYNTAX_ANNOTATION_OBJECT = [
         "labels": ['misp:type="ip-dst"', 'misp:category="Network activity"']
     }
 ]
+_EXTENSION_SYNTAX_ASN_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5b23c82b-6508-4bdc-b580-045b0a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[autonomous-system:number = '66642' AND autonomous-system:name = 'AS name' AND autonomous-system:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.subnet_announced[*] = '1.2.3.4' AND autonomous-system:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.subnet_announced[*] = '8.8.8.8']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
+    ],
+    "labels": ['misp:name="asn"', 'misp:meta-category="network"']
+}
 _EXTENSION_SYNTAX_ASN_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -4646,7 +4711,7 @@ _EXTENSION_SYNTAX_BUNDLE_WITH_MULTIPLE_REPORTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:x_misp_port = '8443']",
+        "pattern": f"[domain-name:value = 'circl.lu' AND domain-name:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.port = '8443']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -4800,7 +4865,7 @@ _EXTENSION_SYNTAX_BUNDLE_WITH_NO_REPORT = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:x_misp_port = '8443']",
+        "pattern": f"[domain-name:value = 'circl.lu' AND domain-name:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.port = '8443']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -5102,6 +5167,20 @@ _EXTENSION_SYNTAX_COURSE_OF_ACTION_WITH_UNKNOWN_PROPERTY = {
         }
     }
 }
+_EXTENSION_SYNTAX_CPE_ASSET_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--3f53a829-6307-4006-b7a2-ff53dace4159",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[software:cpe = 'cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*' AND software:languages = 'ENG' AND software:name = 'Word' AND software:vendor = 'Microsoft' AND software:version = '2002' AND software:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.description = 'Microsoft Word is a word processing software developed by Microsoft.']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "misc"}],
+    "labels": ['misp:name="cpe-asset"', 'misp:meta-category="misc"']
+}
 _EXTENSION_SYNTAX_CPE_ASSET_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -5159,6 +5238,20 @@ _EXTENSION_SYNTAX_CPE_ASSET_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--3f53a829-6307-4006-b7a2-ff53dace4159"
     }
 ]
+_EXTENSION_SYNTAX_CREDENTIAL_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5b1f9378-46d4-494b-a4c1-044e0a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[user-account:user_id = 'misp' AND user-account:credential = 'Password1234' AND user-account:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.text = 'MISP default credentials' AND user-account:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.type = 'password' AND user-account:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.origin = 'malware-analysis' AND user-account:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.format = 'clear-text' AND user-account:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.notification = 'victim-notified']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "misc"}],
+    "labels": ['misp:name="credential"', 'misp:meta-category="misc"']
+}
 _EXTENSION_SYNTAX_CREDENTIAL_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -5217,6 +5310,22 @@ _EXTENSION_SYNTAX_CREDENTIAL_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5b1f9378-46d4-494b-a4c1-044e0a00020f"
     }
 ]
+_EXTENSION_SYNTAX_DOMAIN_IP_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[domain-name:value = 'circl.lu' AND domain-name:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.port = '8443']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
+    ],
+    "labels": ['misp:name="domain-ip"', 'misp:meta-category="network"']
+}
 _EXTENSION_SYNTAX_DOMAIN_IP_OBSERVABLE_OBJECTS = [
     {
         "type": "observed-data",
@@ -5357,6 +5466,22 @@ _EXTENSION_SYNTAX_DOMAIN_IP_OBSERVABLE_OBJECTS = [
         "target_ref": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f"
     }
 ]
+_EXTENSION_SYNTAX_EMAIL_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5e396622-2a54-4c8d-b61d-159da964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[email-message:to_refs[0].value = 'jdoe@random.org' AND email-message:to_refs[0].display_name = 'John Doe' AND email-message:cc_refs[0].value = 'diana.prince@dc.us' AND email-message:cc_refs[0].display_name = 'Diana Prince' AND email-message:cc_refs[1].value = 'marie.curie@nobel.fr' AND email-message:cc_refs[1].display_name = 'Marie Curie' AND email-message:bcc_refs[0].value = 'jfk@gov.us' AND email-message:bcc_refs[0].display_name = 'John Fitzgerald Kennedy' AND email-message:from_ref.value = 'donald.duck@disney.com' AND email-message:from_ref.display_name = 'Donald Duck' AND email-message:message_id = '25' AND email-message:additional_header_fields.reply_to = 'reply-to@email.test' AND email-message:subject = 'Email test subject' AND email-message:additional_header_fields.x_mailer = 'x-mailer-test' AND email-message:body_multipart[0].body_raw_ref.name = 'attachment1.file' AND email-message:body_multipart[0].content_disposition = 'attachment' AND email-message:body_multipart[1].body_raw_ref.name = 'attachment2.file' AND email-message:body_multipart[1].content_disposition = 'attachment' AND email-message:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.user_agent = 'Test user agent' AND email-message:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.mime_boundary = 'Test mime boundary']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
+    ],
+    "labels": ['misp:name="email"', 'misp:meta-category="network"']
+}
 _EXTENSION_SYNTAX_EMAIL_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -5490,6 +5615,20 @@ _EXTENSION_SYNTAX_EMAIL_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a"
     }
 ]
+_EXTENSION_SYNTAX_FILE_AND_PE_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5ac47782-e1b8-40b6-96b4-02510a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.'SHA-256' = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.compilation_timestamp = '2019-03-16T12:31:22Z' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.original_filename = 'PuTTy' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.internal_filename = 'PuTTy' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.lang_id = '080904B0' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.product_name = 'PuTTy suite' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.product_version = 'Release 0.71' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.company_name = 'Simoe Tatham' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.legal_copyright = 'Copyright © 1997-2019 Simon Tatham.' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="file"', 'misp:meta-category="file"']
+}
 _EXTENSION_SYNTAX_FILE_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -5601,6 +5740,22 @@ _EXTENSION_SYNTAX_GEOLOCATION_OBJECT = {
             "country": "USA"
         }
     }
+}
+_EXTENSION_SYNTAX_HASHLOOKUP_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--b3c8f9e1-4d2a-4b6c-8e7f-1a2b3c4d5e6f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[file:name = 'oui' AND file:size = '35' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.knownmalicious = 'hashlookup-known-malicious-source' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.packagename = 'coreutils' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.packageversion = '8.32' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.packagerelease = '4.1ubuntu1' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.packagearch = 'amd64' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.packagedescription = 'GNU core utilities' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.packagemaintainer = 'Ubuntu Developers' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.source = 'https://www.circl.lu/services/hashlookup']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="hashlookup"', 'misp:meta-category="file"']
 }
 _EXTENSION_SYNTAX_HASHLOOKUP_OBSERVABLE_OBJECT = [
     {
@@ -5994,6 +6149,20 @@ _EXTENSION_SYNTAX_LNK_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--153ef8d5-9182-45ec-bf1c-5819932b9ab7"
     }
 ]
+_EXTENSION_SYNTAX_MUTEX_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--b0f55591-6a63-4fbd-a169-064e64738d95",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[mutex:name = 'MutexTest' AND mutex:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.description = 'Test mutex on unix' AND mutex:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.operating_system = 'Unix']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "misc"}],
+    "labels": ['misp:name="mutex"', 'misp:meta-category="misc"']
+}
 _EXTENSION_SYNTAX_MUTEX_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -6121,6 +6290,22 @@ _EXTENSION_SYNTAX_NETWORK_CONNECTION_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5afacc53-c0b0-4825-a6ee-03c80a00020f"
     }
 ]
+_EXTENSION_SYNTAX_NETWORK_SOCKET_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '8080' AND network-traffic:src_port = '8080' AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true AND network-traffic:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.domain_family = 'PF_INET']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
+    ],
+    "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
+}
 _EXTENSION_SYNTAX_NETWORK_SOCKET_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -6379,6 +6564,20 @@ _EXTENSION_SYNTAX_PERSON_OBJECT = {
         }
     }
 }
+_EXTENSION_SYNTAX_PROCESS_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5e39776a-b284-40b3-8079-22fea964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[process:pid = '2510' AND process:image_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.image_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.extensions.'{MISP_PROPERTY_EXTENSION_ID}'.process_name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:is_hidden = 'True' AND process:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.name = 'TestProcess' AND process:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.port = '1234']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "misc"}],
+    "labels": ['misp:name="process"', 'misp:meta-category="misc"']
+}
 _EXTENSION_SYNTAX_PROCESS_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -6475,6 +6674,20 @@ _EXTENSION_SYNTAX_PROCESS_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5e39776a-b284-40b3-8079-22fea964451a"
     }
 ]
+_EXTENSION_SYNTAX_REGISTRY_KEY_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25T16:22:00Z' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.hive = 'hklm']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
+}
 _EXTENSION_SYNTAX_REGISTRY_KEY_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -6536,6 +6749,22 @@ _EXTENSION_SYNTAX_REGISTRY_KEY_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f"
     }
 ]
+_EXTENSION_SYNTAX_REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.hive = 'hklm']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "file"}
+    ],
+    "labels": ['misp:name="registry-key"', 'misp:meta-category="file"']
+}
 _EXTENSION_SYNTAX_REGISTRY_KEY_WITH_VALUES_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -6651,6 +6880,22 @@ _EXTENSION_SYNTAX_SCRIPT_OBJECTS = [
         }
     }
 ]
+_EXTENSION_SYNTAX_URL_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5ac347ca-dac4-4562-9775-04120a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[url:value = 'https://www.circl.lu/team' AND url:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.domain = 'circl.lu' AND url:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.host = 'www.circl.lu' AND url:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.misp_ip = '149.13.33.14' AND url:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.port = '443']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
+    ],
+    "labels": ['misp:name="url"', 'misp:meta-category="network"']
+}
 _EXTENSION_SYNTAX_URL_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -6733,6 +6978,22 @@ _EXTENSION_SYNTAX_VULNERABILITY_OBJECT = {
             "published": "2017-10-13T07:29:00Z"
         }
     }
+}
+_EXTENSION_SYNTAX_X509_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5ac3444e-145c-4749-8467-02550a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00Z' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00Z' AND x509-certificate:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.pem = 'RawCertificateInPEMFormat']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "network"}
+    ],
+    "labels": ['misp:name="x509"', 'misp:meta-category="network"']
 }
 _EXTENSION_SYNTAX_X509_OBSERVABLE_OBJECT = [
     {
@@ -13129,6 +13390,16 @@ def _packaged_misp_extension(identifier: str) -> dict:
         return json.load(f)
 
 
+def _custom_syntax_pattern_path(name: str) -> str:
+    # Where a pattern compares a MISP value in the Custom Syntax
+    return f'x_misp_{name}'
+
+
+def _extension_syntax_pattern_path(name: str) -> str:
+    # Where a pattern compares a MISP value in the Extension Syntax
+    return f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.{name}"
+
+
 def _tlp_marked_observable(base, value, marking_id):
     # MISP-style observed-data (labels declare the attribute type) + its SCO.
     return (
@@ -13257,6 +13528,15 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
             _packaged_misp_extension(identifier)
             for identifier in (MISP_PROJECT_IDENTITY_ID, *used)
         ]
+
+    @staticmethod
+    def __with_more_comparisons(indicator: dict, *comparisons: str) -> dict:
+        # The Indicator, its pattern comparing more values after its own
+        indicator = deepcopy(indicator)
+        indicator['pattern'] = (
+            f"{indicator['pattern'][:-1]} AND {' AND '.join(comparisons)}]"
+        )
+        return indicator
 
     @classmethod
     def __assemble_extension_syntax_bundle(cls, *stix_objects, unreferenced=()):
@@ -13800,13 +14080,20 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
             indicator, opinion, domain_indicator, unreferenced=(custom_opinion,)
         )
 
-    @classmethod
-    def get_bundle_with_custom_labels(cls):
-        indicator = deepcopy(_DOMAIN_IP_INDICATOR_OBJECT)
+    @staticmethod
+    def __custom_labels(indicator: dict) -> list:
+        # A tagged domain-ip object Indicator and a tagged attribute
+        indicator = deepcopy(indicator)
         indicator['labels'].append('Object tag')
         observed_data, domain, ip = deepcopy(_DOMAIN_IP_OBSERVABLE_ATTRIBUTE[:-2])
         observed_data['labels'].append('Attribute tag')
-        return cls.__assemble_bundle(indicator, observed_data, domain, ip)
+        return [indicator, observed_data, domain, ip]
+
+    @classmethod
+    def get_bundle_with_custom_labels(cls):
+        return cls.__assemble_bundle(
+            *cls.__custom_labels(_DOMAIN_IP_INDICATOR_OBJECT)
+        )
 
     @classmethod
     def get_bundle_with_dict_form_objects(cls):
@@ -14116,8 +14403,10 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_bundle_with_account_observable_objects(cls):
         return cls.__assemble_bundle(*_ACCOUNT_OBSERVABLE_OBJECTS)
 
-    @classmethod
-    def get_bundle_with_account_with_attachment_indicator_objects(cls):
+    @staticmethod
+    def __account_with_attachment_indicator_objects(misp_value: Callable[[str], str]) -> list:
+        # The account Indicators, each comparing its MISP values at the path
+        # `misp_value` gives their name
         indicators = deepcopy(_ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS)
         with open(_TESTFILES_PATH / 'octocat.png', 'rb') as f:
             data = b64encode(f.read()).decode()
@@ -14126,43 +14415,43 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
                 "user-account:account_type = 'facebook'",
                 "user-account:user_id = '1392781243'",
                 "user-account:account_login = 'octocat'",
-                "user-account:x_misp_link = 'https://facebook.com/octocat'",
-                f"user-account:x_misp_user_avatar.data = '{data}'",
-                "user-account:x_misp_user_avatar.value = 'octocat.png'"
+                f"user-account:{misp_value('link')} = 'https://facebook.com/octocat'",
+                f"user-account:{misp_value('user_avatar')}.data = '{data}'",
+                f"user-account:{misp_value('user_avatar')}.value = 'octocat.png'"
             ),
             (
                 "user-account:account_type = 'github'",
                 "user-account:user_id = '1'",
                 "user-account:display_name = 'Octo Cat'",
                 "user-account:account_login = 'octocat'",
-                "user-account:x_misp_organisation = 'GitHub'",
-                f"user-account:x_misp_profile_image.data = '{data}'",
-                "user-account:x_misp_profile_image.value = 'octocat.png'"
+                f"user-account:{misp_value('organisation')} = 'GitHub'",
+                f"user-account:{misp_value('profile_image')}.data = '{data}'",
+                f"user-account:{misp_value('profile_image')}.value = 'octocat.png'"
             ),
             (
                 "user-account:account_type = 'parler'",
                 "user-account:user_id = '42'",
                 "user-account:account_login = 'ParlerOctocat'",
-                "user-account:x_misp_human = 'False'",
-                f"user-account:x_misp_profile_photo.data = '{data}'",
-                "user-account:x_misp_profile_photo.value = 'octocat.png'"
+                f"user-account:{misp_value('human')} = 'False'",
+                f"user-account:{misp_value('profile_photo')}.data = '{data}'",
+                f"user-account:{misp_value('profile_photo')}.value = 'octocat.png'"
             ),
             (
                 "user-account:account_type = 'reddit'",
                 "user-account:user_id = '666'",
                 "user-account:account_login = 'RedditOctocat'",
-                "user-account:x_misp_description = 'Reddit account of the OctoCat'",
-                f"user-account:x_misp_account_avatar.data = '{data}'",
-                "user-account:x_misp_account_avatar.value = 'octocat.png'"
+                f"user-account:{misp_value('description')} = 'Reddit account of the OctoCat'",
+                f"user-account:{misp_value('account_avatar')}.data = '{data}'",
+                f"user-account:{misp_value('account_avatar')}.value = 'octocat.png'"
             ),
             (
                 "user-account:account_type = 'twitter'",
                 "user-account:display_name = 'Octo Cat'",
                 "user-account:user_id = '1357111317'",
                 "user-account:account_login = 'octocat'",
-                "user-account:x_misp_followers = '666'",
-                f"user-account:x_misp_profile_image.data = '{data}'",
-                "user-account:x_misp_profile_image.value = 'octocat.png'"
+                f"user-account:{misp_value('followers')} = '666'",
+                f"user-account:{misp_value('profile_image')}.data = '{data}'",
+                f"user-account:{misp_value('profile_image')}.value = 'octocat.png'"
             ),
             (
                 "user-account:account_type = 'unix'",
@@ -14175,13 +14464,21 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
                 "user-account:extensions.'unix-account-ext'.groups = 'donald-fan'",
                 "user-account:extensions.'unix-account-ext'.gid = '2004'",
                 "user-account:extensions.'unix-account-ext'.home_dir = '/home/iglocska'",
-                f"user-account:x_misp_user_avatar.data = '{data}'",
-                "user-account:x_misp_user_avatar.value = 'octocat.png'"
+                f"user-account:{misp_value('user_avatar')}.data = '{data}'",
+                f"user-account:{misp_value('user_avatar')}.value = 'octocat.png'"
             )
         )
         for indicator, pattern in zip(indicators, patterns):
             indicator['pattern'] = f"[{' AND '.join(pattern)}]"
-        return cls.__assemble_bundle(*indicators)
+        return indicators
+
+    @classmethod
+    def get_bundle_with_account_with_attachment_indicator_objects(cls):
+        return cls.__assemble_bundle(
+            *cls.__account_with_attachment_indicator_objects(
+                _custom_syntax_pattern_path
+            )
+        )
 
     @classmethod
     def get_bundle_with_account_with_attachment_observable_objects(cls):
@@ -14307,8 +14604,10 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_bundle_with_file_and_pe_observable_object(cls):
         return cls.__assemble_bundle(*_FILE_AND_PE_OBSERVABLE_OBJECT)
 
-    @classmethod
-    def get_bundle_with_file_indicator_object(cls):
+    @staticmethod
+    def __file_indicator_object(misp_value: Callable[[str], str]) -> dict:
+        # The file Indicator, comparing its MISP values at the path
+        # `misp_value` gives their name
         indicator = deepcopy(_FILE_INDICATOR_OBJECT)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             pattern = [
@@ -14320,16 +14619,22 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
                 "file:size = '35'",
                 "file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp'",
                 f"(file:content_ref.payload_bin = '{b64encode(f.read()).decode()}'",
-                "file:content_ref.x_misp_filename = 'oui'",
+                f"file:content_ref.{misp_value('filename')} = 'oui'",
                 "file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802'",
                 "file:content_ref.mime_type = 'application/zip'",
                 "file:content_ref.encryption_algorithm = 'mime-type-indicated'",
                 "file:content_ref.decryption_key = 'infected')",
                 "(file:content_ref.payload_bin = 'Tm9uLW1hbGljaW91cyBmaWxlCg=='",
-                "file:content_ref.x_misp_filename = 'non')"
+                f"file:content_ref.{misp_value('filename')} = 'non')"
             ]
         indicator['pattern'] = f"[{' AND '.join(pattern)}]"
-        return cls.__assemble_bundle(indicator)
+        return indicator
+
+    @classmethod
+    def get_bundle_with_file_indicator_object(cls):
+        return cls.__assemble_bundle(
+            cls.__file_indicator_object(_custom_syntax_pattern_path)
+        )
 
     @staticmethod
     def __file_observable_object(content: list, filename: str) -> list:
@@ -14378,20 +14683,28 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_bundle_with_identity_object(cls):
         return cls.__assemble_bundle(_IDENTITY_OBJECT)
 
-    @classmethod
-    def get_bundle_with_image_indicator_object(cls):
+    @staticmethod
+    def __image_indicator_object(misp_value: Callable[[str], str]) -> dict:
+        # The image Indicator, comparing its MISP values at the path
+        # `misp_value` gives their name
         indicator = deepcopy(_IMAGE_INDICATOR_OBJECT)
         with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
             pattern = [
                 "file:name = 'STIX.png'",
                 f"file:content_ref.payload_bin = '{b64encode(f.read()).decode()}'",
                 "file:content_ref.mime_type = 'image/png'",
-                "file:content_ref.x_misp_filename = 'STIX.png'",
+                f"file:content_ref.{misp_value('filename')} = 'STIX.png'",
                 "file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png'",
-                "file:x_misp_image_text = 'STIX'"
+                f"file:{misp_value('image_text')} = 'STIX'"
             ]
         indicator['pattern'] = f"[{' AND '.join(pattern)}]"
-        return cls.__assemble_bundle(indicator)
+        return indicator
+
+    @classmethod
+    def get_bundle_with_image_indicator_object(cls):
+        return cls.__assemble_bundle(
+            cls.__image_indicator_object(_custom_syntax_pattern_path)
+        )
 
     @staticmethod
     def __image_observable_object(content: list, filename: str) -> list:
@@ -14438,8 +14751,10 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
             identity['x_misp_logo']['data'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(identity)
 
-    @classmethod
-    def get_bundle_with_lnk_indicator_object(cls):
+    @staticmethod
+    def __lnk_indicator_object(misp_value: Callable[[str], str]) -> dict:
+        # The lnk Indicator, comparing its MISP values at the path
+        # `misp_value` gives their name
         indicator = deepcopy(_LNK_INDICATOR_OBJECT)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             pattern = [
@@ -14452,7 +14767,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
                 "file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86'",
                 "file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b'",
                 f"(file:content_ref.payload_bin = '{b64encode(f.read()).decode()}'",
-                "file:content_ref.x_misp_filename = 'oui'",
+                f"file:content_ref.{misp_value('filename')} = 'oui'",
                 "file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802'",
                 "file:content_ref.mime_type = 'application/zip'",
                 "file:content_ref.encryption_algorithm = 'mime-type-indicated'",
@@ -14460,7 +14775,13 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
                 "file:size = '35'"
             ]
         indicator['pattern'] = f"[{' AND '.join(pattern)}]"
-        return cls.__assemble_bundle(indicator)
+        return indicator
+
+    @classmethod
+    def get_bundle_with_lnk_indicator_object(cls):
+        return cls.__assemble_bundle(
+            cls.__lnk_indicator_object(_custom_syntax_pattern_path)
+        )
 
     @staticmethod
     def __lnk_observable_object(content: list, filename: str) -> list:
@@ -14682,9 +15003,23 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_account_indicator_objects(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_ACCOUNT_INDICATOR_OBJECTS
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_account_observable_objects(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_ACCOUNT_OBSERVABLE_OBJECTS
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_account_with_attachment_indicator_objects(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *cls.__account_with_attachment_indicator_objects(
+                _extension_syntax_pattern_path
+            )
         )
 
     @classmethod
@@ -14721,6 +15056,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_android_app_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_ANDROID_APP_INDICATOR_OBJECT
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_android_app_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_ANDROID_APP_OBSERVABLE_OBJECT
@@ -14730,6 +15071,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_annotation_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_ANNOTATION_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_asn_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_ASN_INDICATOR_OBJECT
         )
 
     @classmethod
@@ -14757,15 +15104,39 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_cpe_asset_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_CPE_ASSET_INDICATOR_OBJECT
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_cpe_asset_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_CPE_ASSET_OBSERVABLE_OBJECT
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_credential_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_CREDENTIAL_INDICATOR_OBJECT
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_credential_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_CREDENTIAL_OBSERVABLE_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_custom_labels(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *cls.__custom_labels(_EXTENSION_SYNTAX_DOMAIN_IP_INDICATOR_OBJECT)
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_domain_ip_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_DOMAIN_IP_INDICATOR_OBJECT
         )
 
     @classmethod
@@ -14784,9 +15155,27 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_email_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_EMAIL_INDICATOR_OBJECT
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_email_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_EMAIL_OBSERVABLE_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_file_and_pe_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_FILE_AND_PE_INDICATOR_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_file_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            cls.__file_indicator_object(_extension_syntax_pattern_path)
         )
 
     @classmethod
@@ -14805,6 +15194,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_hashlookup_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_HASHLOOKUP_INDICATOR_OBJECT
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_hashlookup_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_HASHLOOKUP_OBSERVABLE_OBJECT
@@ -14814,6 +15209,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_http_request_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_HTTP_REQUEST_OBSERVABLE_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_image_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            cls.__image_indicator_object(_extension_syntax_pattern_path)
         )
 
     @classmethod
@@ -14841,11 +15242,95 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_extension_syntax_bundle(identity)
 
     @classmethod
+    def get_extension_syntax_bundle_with_lnk_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            cls.__lnk_indicator_object(_extension_syntax_pattern_path)
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_lnk_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *cls.__lnk_observable_object(
                 _EXTENSION_SYNTAX_LNK_OBSERVABLE_OBJECT,
                 f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.filename"
+            )
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_lone_indicator_other_extension_path(cls):
+        # Paths into another extension definition, which no reader knows: at
+        # the top level, and where the Nested Room of a registry value sits
+        indicator = deepcopy(_EXTENSION_SYNTAX_MUTEX_INDICATOR_OBJECT)
+        indicator['pattern'] = indicator['pattern'].replace(
+            f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.description",
+            "extensions.'extension-definition--d83fce45-ef58-4c6c-a3f4-1fbc32e98c6e'.description"
+        )
+        return cls.__assemble_extension_syntax_bundle(
+            indicator,
+            cls.__with_more_comparisons(
+                _REGISTRY_KEY_VALUE_INDICATOR_OBJECT,
+                "windows-registry-key:extensions.'extension-definition--d83fce45-ef58-4c6c-a3f4-1fbc32e98c6e'.values[0].data = 'Other data'"
+            )
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_lone_indicator_pe_section_nested_room(cls):
+        # The MISP value of a PE section, in its Nested Room
+        return cls.__assemble_extension_syntax_bundle(
+            cls.__with_more_comparisons(
+                _EXTENSION_SYNTAX_FILE_AND_PE_INDICATOR_OBJECT,
+                f"file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.sections[0].text = 'Section text'"
+            )
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_lone_indicator_second_registry_value_nested_room(cls):
+        # The MISP value of the second value of a key, in its Nested Room
+        return cls.__assemble_extension_syntax_bundle(
+            cls.__with_more_comparisons(
+                _EXTENSION_SYNTAX_REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT,
+                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values[1].data = 'Other data'"
+            )
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_lone_indicator_single_registry_value_nested_room(cls):
+        # A MISP value no template nor table knows, of the only value of a
+        # key, in its Nested Room
+        return cls.__assemble_extension_syntax_bundle(
+            cls.__with_more_comparisons(
+                _EXTENSION_SYNTAX_REGISTRY_KEY_INDICATOR_OBJECT,
+                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values[0].misp_xy = 'Other data'"
+            )
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_lone_indicator_standalone_registry_value_nested_room(cls):
+        # A standalone registry value's MISP value, in its Nested Room
+        return cls.__assemble_extension_syntax_bundle(
+            cls.__with_more_comparisons(
+                _REGISTRY_KEY_VALUE_INDICATOR_OBJECT,
+                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values[0].data = 'Other data'"
+            )
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_lone_indicator_unknown_extension_properties(cls):
+        # A name no template nor table knows, at the top level of the
+        # extension and in each kind of Nested Room
+        return cls.__assemble_extension_syntax_bundle(
+            cls.__with_more_comparisons(
+                _EXTENSION_SYNTAX_MUTEX_INDICATOR_OBJECT,
+                f"mutex:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.misp_xy = 'mutex value'"
+            ),
+            cls.__with_more_comparisons(
+                _EXTENSION_SYNTAX_FILE_AND_PE_INDICATOR_OBJECT,
+                f"file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.misp_xy = 'pe value'",
+                f"file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.sections[0].misp_xy = 'section value'"
+            ),
+            cls.__with_more_comparisons(
+                _EXTENSION_SYNTAX_REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT,
+                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values[1].misp_xy = 'registry value'"
             )
         )
 
@@ -14885,6 +15370,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return dict_to_stix2(bundle, allow_custom=True)
 
     @classmethod
+    def get_extension_syntax_bundle_with_mutex_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_MUTEX_INDICATOR_OBJECT
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_mutex_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_MUTEX_OBSERVABLE_OBJECT
@@ -14894,6 +15385,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_network_connection_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_NETWORK_CONNECTION_OBSERVABLE_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_network_socket_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_NETWORK_SOCKET_INDICATOR_OBJECT
         )
 
     @classmethod
@@ -14942,15 +15439,33 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_process_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_PROCESS_INDICATOR_OBJECT
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_process_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_PROCESS_OBSERVABLE_OBJECT
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_registry_key_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_REGISTRY_KEY_INDICATOR_OBJECT
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_registry_key_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_REGISTRY_KEY_OBSERVABLE_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_registry_key_with_values_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT
         )
 
     @classmethod
@@ -15031,6 +15546,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_url_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_URL_INDICATOR_OBJECT
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_url_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_URL_OBSERVABLE_OBJECT
@@ -15040,6 +15561,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_vulnerability_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             _EXTENSION_SYNTAX_VULNERABILITY_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_x509_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_X509_INDICATOR_OBJECT
         )
 
     @classmethod
