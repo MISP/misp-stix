@@ -10,7 +10,8 @@ from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
 from pymisp import (
-    MISPAttribute, MISPEventReport, MISPNote, MISPObject, MISPOpinion)
+    MISPAttribute, MISPEventReport, MISPGalaxyCluster, MISPNote, MISPObject,
+    MISPOpinion)
 from stix2.properties import (
     DictionaryProperty, IDProperty, IntegerProperty, ListProperty,
     ReferenceProperty, StringProperty, TimestampProperty)
@@ -40,6 +41,8 @@ _STIX_OBJECT_TYPING = Union[
     AttackPattern, Campaign, CourseOfAction, CustomObject, Identity, Indicator,
     IntrusionSet, Malware, ObservedData, Tool, Vulnerability, dict
 ]
+_object_attributes_additional_fields = ('category', 'comment', 'to_ids', 'uuid')
+_object_attributes_fields = ('type', 'object_relation', 'value')
 
 
 @CustomObject(
@@ -1667,11 +1670,64 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     ############################################################################
 
     # STIX 2.0 writes the MISP values as custom properties, on the object or
-    # on its nested part they belong to
+    # on its nested part they belong to, and the MISP records no STIX object
+    # maps as `x-misp-*` objects
+
+    @staticmethod
+    def _allow_custom_references(args: dict, reference_ids: tuple):
+        if any('x-misp-' in ref for ref in reference_ids):
+            args['allow_custom'] = True
 
     def _attach_nested_rooms(self, args: dict, name: str, rooms: dict | list):
         # The nested parts hold their custom properties: no room is filled
         pass
+
+    @staticmethod
+    def _create_custom_attribute_args(attribute: MISPAttribute | dict) -> dict:
+        custom_args = {
+            'x_misp_value': attribute['value'],
+            'x_misp_type': attribute['type'],
+            'x_misp_category': attribute['category']
+        }
+        if attribute.get('comment'):
+            custom_args['x_misp_comment'] = attribute['comment']
+        return custom_args
+
+    def _create_custom_galaxy_args(
+            self, cluster: MISPGalaxyCluster | dict, galaxy_name: str,
+            description: str) -> dict:
+        custom_args = {
+            'x_misp_name': galaxy_name, 'x_misp_type': cluster['type'],
+            'x_misp_value': cluster['value'],
+            'x_misp_description': f"{description} | {cluster['description']}"
+        }
+        if cluster.get('meta'):
+            meta = {}
+            for key, value in cluster['meta'].items():
+                field = self._sanitise_meta_field(key)
+                meta[field] = value
+                # A dictionary key has no prefix to strip before comparing
+                self._record_original_name(custom_args, field, key, prefix='')
+            custom_args['x_misp_meta'] = meta
+        return custom_args
+
+    def _create_custom_object_args(
+            self, misp_object: MISPObject | dict) -> dict:
+        custom_args = {
+            'x_misp_meta_category': misp_object['meta-category'],
+            'x_misp_name': misp_object['name'],
+            'x_misp_attributes': [
+                self._parse_custom_object_attribute(attribute)
+                for attribute in misp_object['Attribute']
+            ]
+        }
+        if misp_object.get('comment'):
+            custom_args['x_misp_comment'] = misp_object['comment']
+        return custom_args
+
+    @staticmethod
+    def _custom_object_type(kind: str) -> str:
+        return f'x-misp-{kind}'
 
     @staticmethod
     def _is_misp_value_property(name: str, value: Any) -> bool:
@@ -1690,6 +1746,27 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         # the key, not in the value where the observable writes them
         steps.append(self._quote_custom_property(name))
         return f"{location.stix_type}:{'.'.join(steps)}"
+
+    @staticmethod
+    def _parse_custom_object_attribute(
+            attribute: MISPAttribute | dict) -> dict:
+        custom_attribute = {
+            key: attribute[key] for key in _object_attributes_fields
+        }
+        if '(s)' in custom_attribute['object_relation']:
+            object_relation = custom_attribute.pop('object_relation')
+            custom_attribute['object_relation'] = object_relation.replace(
+                '(s)', ''
+            )
+        for field in _object_attributes_additional_fields:
+            if attribute.get(field):
+                custom_attribute[field] = attribute[field]
+        if attribute.get('data'):
+            data = attribute['data']
+            if not isinstance(data, str):
+                data = b64encode(data.getvalue()).decode()
+            custom_attribute['data'] = data
+        return custom_attribute
 
     @staticmethod
     def _set_fixed_value(args: dict, name: str, value: Any):
