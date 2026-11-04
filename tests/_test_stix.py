@@ -4,6 +4,7 @@
 import json
 import unittest
 from datetime import datetime
+from pathlib import Path
 from uuid import UUID, uuid5
 from .test_events import (
     get_event_with_account_objects,
@@ -52,6 +53,12 @@ MISP_PROPERTY_EXTENSION_ID = (
     'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'
 )
 MISP_PROJECT_IDENTITY_ID = 'identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f'
+# What the Export loads and embeds, and what an Extension Syntax import fixture
+# carries: packaged, unlike the schemas
+PACKAGED_MISP_EXTENSIONS = (
+    Path(__file__).resolve().parent.parent /
+    'misp_stix_converter' / 'data' / 'misp_extensions'
+)
 
 
 def append_further_values(misp_object: dict, relation: str, values: tuple,

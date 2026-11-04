@@ -21,16 +21,12 @@ from .update_documentation import (
 from ._test_stix import (
     MISP_ATTRIBUTE_EXTENSION_ID, MISP_GALAXY_CLUSTER_EXTENSION_ID,
     MISP_OBJECT_EXTENSION_ID, MISP_PROJECT_IDENTITY_ID,
-    MISP_PROPERTY_EXTENSION_ID, TestSTIX21)
+    MISP_PROPERTY_EXTENSION_ID, PACKAGED_MISP_EXTENSIONS, TestSTIX21)
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export, TestSTIX21Export
 
 
 _TESTS = Path(__file__).resolve().parent
 _REPOSITORY = _TESTS.parent
-# What the Export loads and embeds: packaged, unlike the schemas
-_PACKAGED_MISP_EXTENSIONS = (
-    _REPOSITORY / 'misp_stix_converter' / 'data' / 'misp_extensions'
-)
 # The suite is named from the property extension's id, and the `schema` URL of
 # each definition is where its schema file sits on the main branch
 _MISP_EXTENSION_SUITE = (
@@ -508,13 +504,13 @@ class TestSTIX21MISPExtensions(TestSTIX21):
             MISP_PROJECT_IDENTITY_ID
         )
         self.assertEqual(
-            sorted(path.name for path in _PACKAGED_MISP_EXTENSIONS.glob('*')),
+            sorted(path.name for path in PACKAGED_MISP_EXTENSIONS.glob('*')),
             sorted(f'{identifier}.json' for identifier in identifiers)
         )
         for identifier in identifiers:
             with self.subTest(identifier=identifier):
                 stix_object = stix2_parse(
-                    self._load(_PACKAGED_MISP_EXTENSIONS / f'{identifier}.json')
+                    self._load(PACKAGED_MISP_EXTENSIONS / f'{identifier}.json')
                 )
                 self.assertEqual(stix_object.id, identifier)
 
@@ -534,7 +530,7 @@ class TestSTIX21MISPExtensions(TestSTIX21):
         for identifier, name, extension_type in definitions:
             with self.subTest(name=name):
                 definition = self._load(
-                    _PACKAGED_MISP_EXTENSIONS / f'{identifier}.json'
+                    PACKAGED_MISP_EXTENSIONS / f'{identifier}.json'
                 )
                 self.assertEqual(list(base_validator.iter_errors(definition)), [])
                 schema = self._schema_file(identifier)
@@ -561,7 +557,7 @@ class TestSTIX21MISPExtensions(TestSTIX21):
         # encodes
         self.assertEqual(
             self._load(
-                _PACKAGED_MISP_EXTENSIONS / f'{MISP_PROJECT_IDENTITY_ID}.json'
+                PACKAGED_MISP_EXTENSIONS / f'{MISP_PROJECT_IDENTITY_ID}.json'
             ),
             {
                 'type': 'identity', 'spec_version': '2.1',

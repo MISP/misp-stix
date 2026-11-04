@@ -1,15 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
+from ._test_stix import (
+    MISP_ATTRIBUTE_EXTENSION_ID, MISP_GALAXY_CLUSTER_EXTENSION_ID,
+    MISP_OBJECT_EXTENSION_ID, MISP_PROJECT_IDENTITY_ID,
+    MISP_PROPERTY_EXTENSION_ID, PACKAGED_MISP_EXTENSIONS)
 from ._test_stix_import import (
     SMUGGLING_TAG_PREDICATE, SMUGGLING_TAG_VALUE, UNUSABLE_TAG_SLOT,
     TestSTIX2Bundles)
 from base64 import b64encode
 from copy import deepcopy
+from misp_stix_converter.tools import load_stix2_content
 from pathlib import Path
 from stix2.parsing import dict_to_stix2
 
 _TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
+_MISP_EXTENSION_IDS = (
+    MISP_ATTRIBUTE_EXTENSION_ID, MISP_OBJECT_EXTENSION_ID,
+    MISP_GALAXY_CLUSTER_EXTENSION_ID, MISP_PROPERTY_EXTENSION_ID
+)
 _ACCOUNT_INDICATOR_OBJECTS = [
     {
         "type": "indicator",
@@ -3704,6 +3714,761 @@ _EVENT_REPORT = [
         "definition": {"tlp": "white"}
     }
 ]
+_EXTENSION_SYNTAX_ANALYST_DATA_SAMPLES = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '194.78.89.250']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="ip-src"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "explanation": "Fully agree with the malicious nature of the IP",
+        "authors": ["opinion@foo.bar"],
+        "opinion": "strongly-agree",
+        "object_refs": ["indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238"],
+        "labels": ['misp:context-layer="Analyst Opinion"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "opinion": 90
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "network-traffic--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+            "ipv4-addr--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        ],
+        "labels": ['misp:type="ip-dst"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "dst_ref": "ipv4-addr--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "protocols": ["tcp"]
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--76fd763a-45fb-49a6-a732-64aeedbfd7d4",
+        "value": "8.8.8.8"
+    },
+    {
+        "type": "note",
+        "spec_version": "2.1",
+        "id": "note--31fc7048-9ede-4db9-a423-ef97670ed4c6",
+        "created": "2024-06-12T12:52:45.000Z",
+        "modified": "2024-06-12T12:52:45.000Z",
+        "content": "DNS Resolver used to resolve the malicious domain",
+        "authors": ["opinion@foo.bar"],
+        "object_refs": ["observed-data--76fd763a-45fb-49a6-a732-64aeedbfd7d4"],
+        "labels": ['misp:context-layer="Analyst Note"'],
+        "lang": "en"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[file:hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:name = 'bin.exe' AND (file:content_ref.x_misp_filename = 'bin.exe' AND file:content_ref.hashes.MD5 = '0cdc9b1b45064e6315f83b150c0fc0eb' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--74258748-78f2-4b19-bedc-27ec61b1c5df",
+        "created": "2024-06-12T12:52:48.000Z",
+        "modified": "2024-06-12T12:53:58.000Z",
+        "explanation": "No warning from my antivirus",
+        "authors": ["john.doe@foo.bar"],
+        "opinion": "neutral",
+        "object_refs": ["indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"],
+        "labels": ['misp:context-layer="Analyst Opinion"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "opinion": 60
+            }
+        }
+    },
+    {
+        "type": "note",
+        "spec_version": "2.1",
+        "id": "note--dc14f700-6822-46bd-9b65-fb2703cf707f",
+        "created": "2024-06-12T12:51:16.000Z",
+        "modified": "2024-06-12T12:51:16.000Z",
+        "content": "Should be the Putty agent",
+        "authors": ["john.doe@foo.bar"],
+        "object_refs": ["indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"],
+        "labels": ['misp:context-layer="Analyst Note"'],
+        "lang": "en"
+    },
+    {
+        "type": "note",
+        "spec_version": "2.1",
+        "id": "note--44ceb474-6493-48de-b753-bbd0470e0e54",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2024-06-11T11:34:42.000Z",
+        "modified": "2024-06-11T11:34:42.000Z",
+        "abstract": "Summary of the case",
+        "content": "A victim reported a malicious file @[object](eb49356e-d709-4e63-b8a2-f8c5cc54f38f)\nThis file was downloaded by the victim via the IP @[attribute](60c2c930-d0ab-49b1-986c-3d2ec60ba5ac)",
+        "object_refs": ["indicator--eb49356e-d709-4e63-b8a2-f8c5cc54f38f"],
+        "labels": ['misp:data-layer="Event Report"']
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--0178d298-4e02-4471-a115-8f3e381fe530",
+        "created": "2024-06-25T11:46:25.000Z",
+        "modified": "2024-06-25T11:46:25.000Z",
+        "explanation": "Event though it is a concise report, I agree with it",
+        "authors": ["anonymous@foo.bar"],
+        "opinion": "agree",
+        "object_refs": ["note--44ceb474-6493-48de-b753-bbd0470e0e54"],
+        "labels": ['misp:context-layer="Analyst Opinion"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "opinion": 68
+            }
+        }
+    },
+    {
+        "type": "note",
+        "spec_version": "2.1",
+        "id": "note--bbd17601-425f-4dd5-82ed-0b18115bee98",
+        "created": "2024-06-25T06:33:45.000Z",
+        "modified": "2024-06-25T06:33:45.000Z",
+        "content": "Straight to the point Event",
+        "authors": ["reporter@gfoo.bar"],
+        "object_refs": ["grouping--a6ef17d6-91cb-4a05-b10b-2f045daf874c"],
+        "labels": ['misp:context-layer="Analyst Note"'],
+        "lang": "en"
+    }
+]
+_EXTENSION_SYNTAX_ATTACK_PATTERN_OBJECT = {
+    "type": "attack-pattern",
+    "spec_version": "2.1",
+    "id": "attack-pattern--7205da54-70de-4fa7-9b34-e14e63fe6787",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Buffer Overflow in Local Command-Line Utilities",
+    "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "vulnerability"}
+    ],
+    "labels": ['misp:name="attack-pattern"', 'misp:meta-category="vulnerability"'],
+    "external_references": [{"source_name": "capec", "external_id": "CAPEC-9"}],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+            "related_weakness": ["CWE-118", "CWE-120"],
+            "solutions": "Carefully review the service\\'s implementation before making it available to users."
+        }
+    }
+}
+_EXTENSION_SYNTAX_BUNDLE_WITH_SIGHTINGS = [
+    {
+        "type": "grouping",
+        "spec_version": "2.1",
+        "id": "grouping--a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "MISP-STIX-Converter test event",
+        "context": "suspicious-activity",
+        "object_refs": [
+            "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "autonomous-system--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "sighting--5125aa81-ab95-4cdf-83f9-3c467207307d",
+            "sighting--b5b53917-1556-4476-97eb-52e179e3393e",
+            "opinion--ec85cc8c-205f-4b19-8f96-73ef80d24d13",
+            "opinion--7ea813e5-6dd5-4241-83a7-37fb56da2d78",
+            "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "sighting--5533d0db-b952-4609-b82d-59017f2454fc",
+            "opinion--c7d12059-6a07-4423-a82a-f3bceaae33c8",
+            "sighting--ec0c6809-9ccb-4201-bc47-d5ffc5ecaa88",
+            "opinion--3ab7497e-39f5-4a0a-b797-dc08bf80631d"
+        ],
+        "labels": ["Threat-Report", 'misp:tool="MISP-STIX-Converter"']
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": ["autonomous-system--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"],
+        "labels": ['misp:type="AS"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "autonomous-system",
+        "spec_version": "2.1",
+        "id": "autonomous-system--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "number": 174
+    },
+    {
+        "type": "sighting",
+        "spec_version": "2.1",
+        "id": "sighting--5125aa81-ab95-4cdf-83f9-3c467207307d",
+        "created": "2020-10-25T16:22:05.000Z",
+        "modified": "2020-10-25T16:22:05.000Z",
+        "sighting_of_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "where_sighted_refs": ["identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"]
+    },
+    {
+        "type": "sighting",
+        "spec_version": "2.1",
+        "id": "sighting--b5b53917-1556-4476-97eb-52e179e3393e",
+        "created": "2020-10-25T16:22:30.000Z",
+        "modified": "2020-10-25T16:22:30.000Z",
+        "sighting_of_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "where_sighted_refs": ["identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183"]
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--ec85cc8c-205f-4b19-8f96-73ef80d24d13",
+        "created": "2020-10-25T16:22:10.000Z",
+        "modified": "2020-10-25T16:22:10.000Z",
+        "explanation": "False positive Sighting",
+        "authors": ["Oscorp Industries"],
+        "opinion": "strongly-disagree",
+        "object_refs": ["observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "author_ref": "identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90"
+            }
+        }
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--7ea813e5-6dd5-4241-83a7-37fb56da2d78",
+        "created": "2020-10-25T16:22:20.000Z",
+        "modified": "2020-10-25T16:22:20.000Z",
+        "explanation": "False positive Sighting",
+        "authors": ["Umbrella Corporation"],
+        "opinion": "strongly-disagree",
+        "object_refs": ["observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "author_ref": "identity--91050751-c1c9-4944-a522-db6390cec15b"
+            }
+        }
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Domain test attribute",
+        "pattern": "[domain-name:value = 'circl.lu']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "sighting",
+        "spec_version": "2.1",
+        "id": "sighting--5533d0db-b952-4609-b82d-59017f2454fc",
+        "created": "2020-10-25T16:22:05.000Z",
+        "modified": "2020-10-25T16:22:05.000Z",
+        "sighting_of_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "where_sighted_refs": ["identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"]
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--c7d12059-6a07-4423-a82a-f3bceaae33c8",
+        "created": "2020-10-25T16:22:30.000Z",
+        "modified": "2020-10-25T16:22:30.000Z",
+        "explanation": "False positive Sighting",
+        "authors": ["E-Corp"],
+        "opinion": "strongly-disagree",
+        "object_refs": ["indicator--518b4bcb-a86b-4783-9457-391d548b605b"],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "author_ref": "identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183"
+            }
+        }
+    },
+    {
+        "type": "sighting",
+        "spec_version": "2.1",
+        "id": "sighting--ec0c6809-9ccb-4201-bc47-d5ffc5ecaa88",
+        "created": "2020-10-25T16:22:20.000Z",
+        "modified": "2020-10-25T16:22:20.000Z",
+        "sighting_of_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "where_sighted_refs": ["identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90"]
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--3ab7497e-39f5-4a0a-b797-dc08bf80631d",
+        "created": "2020-10-25T16:22:10.000Z",
+        "modified": "2020-10-25T16:22:10.000Z",
+        "explanation": "False positive Sighting",
+        "authors": ["Umbrella Corporation"],
+        "opinion": "strongly-disagree",
+        "object_refs": ["indicator--518b4bcb-a86b-4783-9457-391d548b605b"],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "author_ref": "identity--91050751-c1c9-4944-a522-db6390cec15b"
+            }
+        }
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--55f6ea5e-2c60-40e5-964f-47a8950d210f",
+        "created": "2022-07-11T14:11:39.134109Z",
+        "modified": "2022-07-11T14:11:39.134109Z",
+        "name": "CIRCL",
+        "identity_class": "organization"
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183",
+        "created": "2022-07-11T14:11:39.134416Z",
+        "modified": "2022-07-11T14:11:39.134416Z",
+        "name": "E-Corp",
+        "identity_class": "organization"
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90",
+        "created": "2022-07-11T14:11:39.134704Z",
+        "modified": "2022-07-11T14:11:39.134704Z",
+        "name": "Oscorp Industries",
+        "identity_class": "organization"
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--91050751-c1c9-4944-a522-db6390cec15b",
+        "created": "2022-07-11T14:11:39.135147Z",
+        "modified": "2022-07-11T14:11:39.135147Z",
+        "name": "Umbrella Corporation",
+        "identity_class": "organization"
+    }
+]
+_EXTENSION_SYNTAX_COURSE_OF_ACTION_OBJECT = {
+    "type": "course-of-action",
+    "spec_version": "2.1",
+    "id": "course-of-action--5d514ff9-ac30-4fb5-b9e7-3eb4a964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
+    "description": "Block communication between the PIVY agents and the C2 Server",
+    "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "cost": "Low",
+            "efficacy": "High",
+            "impact": "Low",
+            "objective": "Block communication between the PIVY agents and the C2 Server",
+            "stage": "Response",
+            "type": "Perimeter Blocking"
+        }
+    }
+}
+_EXTENSION_SYNTAX_COURSE_OF_ACTION_WITH_BOTH_SYNTAXES = {
+    "type": "course-of-action",
+    "spec_version": "2.1",
+    "id": "course-of-action--2f8c3a1e-6b0d-4c4f-9a57-1e2d3c4b5a69",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
+    "description": "Block communication between the PIVY agents and the C2 Server",
+    "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
+    "x_misp_cost": "Low",
+    "x_misp_impact": "Low",
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "cost": "High",
+            "efficacy": "High"
+        }
+    }
+}
+_EXTENSION_SYNTAX_COURSE_OF_ACTION_WITH_UNKNOWN_PROPERTY = {
+    "type": "course-of-action",
+    "spec_version": "2.1",
+    "id": "course-of-action--7c1d9e2f-3a4b-4c5d-8e6f-0a1b2c3d4e5f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
+    "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "cost": "Low",
+            "misp_xy": "nobody knows"
+        }
+    }
+}
+_EXTENSION_SYNTAX_GEOLOCATION_OBJECT = {
+    "type": "location",
+    "spec_version": "2.1",
+    "id": "location--6a10dac8-71ac-4d9b-8269-1e9c73ea4d8f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "latitude": 39.108889,
+    "longitude": -76.771389,
+    "precision": 1000.0,
+    "region": "northern-america",
+    "country": "US",
+    "city": "Fort Meade",
+    "street_address": "9800 Savage Rd. Suite 6272",
+    "postal_code": "MD 20755",
+    "labels": ['misp:name="geolocation"', 'misp:meta-category="misc"'],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "altitude": "55",
+            "country": "USA"
+        }
+    }
+}
+_EXTENSION_SYNTAX_LEGAL_ENTITY_OBJECT = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--0d55ba1f-c3ff-4b91-8a09-8713576e178b",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Umbrella Corporation",
+    "description": "The Umbrella Corporation is an international pharmaceutical company.",
+    "identity_class": "organization",
+    "sectors": ["Pharmaceutical"],
+    "contact_information": "phone-number: 1234567890 / website: https://umbrella.org",
+    "labels": ['misp:name="legal-entity"', 'misp:meta-category="misc"'],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "registration_number": "11223344556677889900",
+            "logo": {"value": "umbrella_logo"}
+        }
+    }
+}
+_EXTENSION_SYNTAX_NEWS_AGENCY_OBJECT = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--d17e31ce-5a7a-4713-bdff-49d89548c259",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Agence France-Presse",
+    "identity_class": "organization",
+    "contact_information": "address: 13 place de la Bourse, 75002 Paris; Southern Railway Building, 1500 K Street, NW, Suite 600 / e-mail: contact@afp.fr; contact@afp.us / phone-number: (33)0140414646; (1)2024140600",
+    "labels": ['misp:name="news-agency"', 'misp:meta-category="misc"'],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "attachment": {"value": "AFP_logo.png"},
+            "link": "https://www.afp.com/"
+        }
+    }
+}
+_EXTENSION_SYNTAX_ORGANIZATION_OBJECT = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--fe85995c-189d-4c20-9d0e-dfc03e72000b",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Computer Incident Response Center of Luxembourg",
+    "description": "The Computer Incident Response Center Luxembourg (CIRCL) is a government-driven initiative designed to gather, review, report and respond to computer security threats and incidents.",
+    "roles": ["national CERT"],
+    "identity_class": "organization",
+    "contact_information": "address: 16, bd d'Avranches, L-1160 Luxembourg / e-mail: info@circl.lu / phone-number: (+352) 247 88444",
+    "labels": ['misp:name="organization"', 'misp:meta-category="misc"'],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "alias": "CIRCL"
+        }
+    }
+}
+_EXTENSION_SYNTAX_PATTERNING_LANGUAGE_OBJECTS = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--3b80a1ad-f1f6-4565-bdbd-909d5bc93048",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "CRS Rule 901500",
+        "pattern": "SecRule TX:detection_paranoia_level \"@lt %{tx.blocking_paranoia_level}\"      \"id:901500,     phase:1,     deny,     status:500,     t:none,     log,     msg:'Detection paranoia level configured is lower than the paranoia level itself. This is illegal. Blocking request. Aborting',     tag:'OWASP_CRS',     ver:'OWASP_CRS/4.26.0-dev'\"",
+        "pattern_type": "crs",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="owasp-crs-rule"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--cb44774d-ce45-411b-b6fb-9f0278edd25c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "MultimodalInjection",
+        "pattern": "rule MultimodalInjection\n{\n    meta:\n        description = \"Detects multimodal prompt injection attempts\"\n        author = \"@fr0gger_\"\n        version = \"1.0\"\n        category = \"suspicious_patterns/cross_modal\"\n        reference = \"LLM01:2025 Prompt Injection\"\n        uuid = \"520b23d8-54c0-4ade-b8a7-cdc1a90c0def\"\n        date = \"2026-02-21\"\n        severity = \"high\"\n\n    keywords:\n        $image_process = /process (this|the) image|analyze (this|the) image|look at (this|the) image/i\n        $hidden_content = /hidden (text|content|message|instruction)/i\n        $watermark = /watermark|embedded text|text in image/i\n        $multimodal = /multimodal|cross-modal|multiple formats/i\n\n    semantics:\n        $hidden_in_media = \"instructions hidden in the image\" (0.4)\n        $cross_modal_attack = \"combine text and image instructions\" (0.4)\n\n    llm:\n        $image_injection = \"Does this prompt involve processing images that might contain hidden instructions or malicious content?\" (0.3)\n\n    condition:\n        (keywords.$image_process and (keywords.$hidden_content or keywords.$watermark)) or\n        keywords.$multimodal or\n        semantics.$hidden_in_media or\n        semantics.$cross_modal_attack or\n        llm.$image_injection\n}",
+        "pattern_type": "nova",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "detection"}
+        ],
+        "labels": ['misp:name="nova-rule"', 'misp:meta-category="detection"']
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--c8c418e3-b61c-4d40-a1fc-b10cec6585d7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Ps.exe",
+        "description": "Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A",
+        "pattern": "title: Ps.exe Renamed SysInternals Tool description: Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A report reference: https://www.us-cert.gov/ncas/alerts/TA17-293A author: Florian Roth date: 2017/10/22 logsource: product: windows service: sysmon detection: selection: EventID: 1 CommandLine: \\'ps.exe -accepteula\\' condition: selection falsepositives: - Renamed SysInternals tool level: high",
+        "pattern_type": "sigma",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="sigma"', 'misp:meta-category="misc"'],
+        "external_references": [
+            {
+                "source_name": "url",
+                "url": "https://www.us-cert.gov/ncas/alerts/TA17-293A"
+            }
+        ],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "context": "disk"
+            }
+        }
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--efc15547-4fe9-4188-aa71-b688e1bfa59c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "To rule them all",
+        "pattern": "alert http any 443 -> 8.8.8.8 any",
+        "pattern_type": "suricata",
+        "pattern_version": "3.1.6",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="suricata"', 'misp:meta-category="network"'],
+        "external_references": [
+            {
+                "source_name": "url",
+                "url": "https://suricata.readthedocs.io/en/suricata-6.0.4/index.html"
+            }
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--a86a1736-90fc-48fa-8e72-8735cac0e14a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Wazuh-Indexer Cluster Logs - Level: ERROR",
+        "pattern": "<rule id=\"200996\" level=\"12\">\n    <decoded_as>json</decoded_as>\n    <field name=\"cluster.name\">\\.+</field>\n    <field name=\"level\">^ERROR$</field>\n    <description>Wazuh-Indexer Cluster Logs - Level: ERROR</description>\n    <options>no_full_log</options>\n  </rule>",
+        "pattern_type": "wazuh",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="wazuh-rule"', 'misp:meta-category="misc"']
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--cafdd27e-c3e2-4f7a-88b4-4c1c98f18be7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Ultimate rule",
+        "description": "To rule them all",
+        "pattern": 'rule torcryptomining { meta: description = \\\\"Tor miner - broken UPX magic string\\\\" strings: $upx_erase = {(00 FF 99 41|DF DD 30 33)} condition: $upx_erase at 236 }',
+        "pattern_type": "yara",
+        "pattern_version": "4.1.0",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="yara"', 'misp:meta-category="misc"']
+    }
+]
+_EXTENSION_SYNTAX_PERSON_OBJECT = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--868037d5-d804-4f1d-8016-f296361f9c68",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "John Smith",
+    "roles": ["Guru"],
+    "identity_class": "individual",
+    "contact_information": "phone-number: 0123456789",
+    "labels": ['misp:name="person"', 'misp:meta-category="misc"'],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "nationality": "USA",
+            "passport_number": "ABA9875413"
+        }
+    }
+}
+_EXTENSION_SYNTAX_SCRIPT_OBJECTS = [
+    {
+        "type": "malware",
+        "spec_version": "2.1",
+        "id": "malware--ce12c406-cf09-457b-875a-41ab75d6dc4d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "infected.py",
+        "description": "A script that infects command line shells",
+        "is_family": False,
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "implementation_languages": ["Python"],
+        "labels": ['misp:name="script"', 'misp:meta-category="misc"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "script": "print('You are infected')",
+                "script_as_attachment": {
+                    "value": "infected.py",
+                    "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
+                },
+                "state": "Malicious"
+            }
+        }
+    },
+    {
+        "type": "tool",
+        "spec_version": "2.1",
+        "id": "tool--9d14bdd1-5d32-4b4d-bd50-fd3a9d1c1c04",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "hello.py",
+        "description": "A peaceful script",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "misc"}
+        ],
+        "labels": ['misp:name="script"', 'misp:meta-category="misc"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "language": "Python",
+                "script": "print('Hello World')",
+                "script_as_attachment": {
+                    "value": "hello.py",
+                    "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK"
+                },
+                "state": "Harmless"
+            }
+        }
+    }
+]
+_EXTENSION_SYNTAX_VULNERABILITY_OBJECT = {
+    "type": "vulnerability",
+    "spec_version": "2.1",
+    "id": "vulnerability--5e579975-e9cc-46c6-a6ad-1611a964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "CVE-2017-11774",
+    "description": "Microsoft Outlook allow an attacker to execute arbitrary commands",
+    "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
+    "external_references": [
+        {"source_name": "cve", "external_id": "CVE-2017-11774"},
+        {"source_name": "url", "url": "http://www.securityfocus.com/bid/101098"},
+        {
+            "source_name": "url",
+            "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
+        }
+    ],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "created": "2017-10-13T07:29:00Z",
+            "cvss_score": "6.8",
+            "published": "2017-10-13T07:29:00Z"
+        }
+    }
+}
 _FILE_AND_PE_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -7482,6 +8247,148 @@ _MAC_ADDRESS_OBSERVABLE_ATTRIBUTE = [
         "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
     }
 ]
+# Each object but the Indicator carries MISP Extension content the import
+# cannot read, next to readable values: the object is lost, with no value
+# salvaged. The last Course of Action's extension value is no dictionary,
+# which stix2 refuses to load.
+_MALFORMED_MISP_EXTENSION_VALUES = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '194.78.89.250']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="ip-src"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "attack-pattern",
+        "spec_version": "2.1",
+        "id": "attack-pattern--7205da54-70de-4fa7-9b34-e14e63fe6787",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Buffer Overflow in Local Command-Line Utilities",
+        "labels": ['misp:name="attack-pattern"', 'misp:meta-category="vulnerability"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "prerequisites": 3,
+                "solutions": "Carefully review the service's implementation"
+            }
+        }
+    },
+    {
+        "type": "course-of-action",
+        "spec_version": "2.1",
+        "id": "course-of-action--5d514ff9-ac30-4fb5-b9e7-3eb4a964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
+        "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "cost": {"value": "Low"},
+                "efficacy": "High"
+            }
+        }
+    },
+    {
+        "type": "vulnerability",
+        "spec_version": "2.1",
+        "id": "vulnerability--5e579975-e9cc-46c6-a6ad-1611a964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "CVE-2017-11774",
+        "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
+        "external_references": [
+            {"source_name": "cve", "external_id": "CVE-2017-11774"}
+        ],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "cvss_score": "6.8",
+                "references": ["http://www.securityfocus.com/bid/101098", ["CVE-2017-11774"]]
+            }
+        }
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--868037d5-d804-4f1d-8016-f296361f9c68",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "John Smith",
+        "identity_class": "individual",
+        "labels": ['misp:name="person"', 'misp:meta-category="misc"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "nationality": "USA",
+                "original_names": ["nationality"]
+            }
+        }
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--e6039f2f-d705-41d0-859d-89845546cd7b",
+        "created": "2024-06-12T12:49:45.000Z",
+        "modified": "2024-06-12T12:51:41.000Z",
+        "explanation": "Fully agree with the malicious nature of the IP",
+        "authors": ["opinion@foo.bar"],
+        "opinion": "strongly-agree",
+        "object_refs": ["indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238"],
+        "labels": ['misp:context-layer="Analyst Opinion"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "opinion": "90"
+            }
+        }
+    },
+    {
+        "type": "opinion",
+        "spec_version": "2.1",
+        "id": "opinion--c7d12059-6a07-4423-a82a-f3bceaae33c8",
+        "created": "2020-10-25T16:22:30.000Z",
+        "modified": "2020-10-25T16:22:30.000Z",
+        "explanation": "False positive Sighting",
+        "authors": ["E-Corp"],
+        "opinion": "strongly-disagree",
+        "object_refs": ["indicator--f7ef1b4a-964a-4a69-9e21-808f85c56238"],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "author_ref": ["identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183"]
+            }
+        }
+    },
+    {
+        "type": "course-of-action",
+        "spec_version": "2.1",
+        "id": "course-of-action--2f8c3a1e-6b0d-4c4f-9a57-1e2d3c4b5a69",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
+        "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: "property-extension"
+        }
+    }
+]
 _MALWARE_GALAXY = {
     "type": "malware",
     "spec_version": "2.1",
@@ -9885,6 +10792,12 @@ _TLP_2_0_MARKING_DEFINITIONS = [
 ]
 
 
+def _packaged_misp_extension(identifier: str) -> dict:
+    with open(PACKAGED_MISP_EXTENSIONS / f'{identifier}.json', 'rt',
+              encoding='utf-8') as f:
+        return json.load(f)
+
+
 def _tlp_marked_observable(base, value, marking_id):
     # MISP-style observed-data (labels declare the attribute type) + its SCO.
     return (
@@ -9965,6 +10878,14 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
 
     @classmethod
     def __assemble_bundle(cls, *stix_objects, unreferenced=()):
+        return dict_to_stix2(
+            cls.__bundle_content(*stix_objects, unreferenced=unreferenced),
+            allow_custom=True
+        )
+
+    @classmethod
+    def __bundle_content(cls, *stix_objects, unreferenced=(),
+                         misp_extensions=False):
         # `unreferenced` carries the custom objects MISP only declares for
         # STIX 2.0 the way `get_bundle_with_dict_form_objects` does: out of
         # the grouping references, reaching the loaders as plain dicts.
@@ -9976,9 +10897,44 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
             )
         )
         bundle['objects'] = [
-            deepcopy(cls.__identity), grouping, *stix_objects, *unreferenced
+            deepcopy(cls.__identity),
+            *(
+                cls.__misp_extensions(*stix_objects, *unreferenced)
+                if misp_extensions else ()
+            ),
+            grouping, *stix_objects, *unreferenced
         ]
-        return dict_to_stix2(bundle, allow_custom=True)
+        return bundle
+
+    @staticmethod
+    def __misp_extensions(*stix_objects) -> list:
+        # As the Export writes a bundle using the MISP Extensions: the MISP
+        # Project identity and the definitions the objects use, as packaged,
+        # follow the organisation identity, in first-use order, ahead of the
+        # grouping, which lists neither
+        content = json.dumps(stix_objects)
+        used = sorted(
+            (
+                identifier for identifier in _MISP_EXTENSION_IDS
+                if identifier in content
+            ),
+            key=content.index
+        )
+        if not used:
+            return []
+        return [
+            _packaged_misp_extension(identifier)
+            for identifier in (MISP_PROJECT_IDENTITY_ID, *used)
+        ]
+
+    @classmethod
+    def __assemble_extension_syntax_bundle(cls, *stix_objects, unreferenced=()):
+        return dict_to_stix2(
+            cls.__bundle_content(
+                *stix_objects, unreferenced=unreferenced, misp_extensions=True
+            ),
+            allow_custom=True
+        )
 
     @classmethod
     def __tlp_markings_bundle(cls, observables, markings):
@@ -11280,3 +12236,147 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_x509_observable_object(cls):
         return cls.__assemble_bundle(*_X509_OBSERVABLE_OBJECT)
+
+    ############################################################################
+    #                      MISP EXTENSION SYNTAX SAMPLES                       #
+    ############################################################################
+
+    @classmethod
+    def get_bundle_with_malformed_misp_extension_values(cls):
+        # Loaded as a document is, since stix2 refuses one of the objects
+        return load_stix2_content(
+            cls.__bundle_content(
+                *_MALFORMED_MISP_EXTENSION_VALUES, misp_extensions=True
+            )
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_analyst_data(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_ANALYST_DATA_SAMPLES
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_analyst_note_and_opinion_sharing_a_uuid(cls):
+        indicator, opinion, observed_data, network_traffic, ip_address, note = deepcopy(
+            _EXTENSION_SYNTAX_ANALYST_DATA_SAMPLES[:6]
+        )
+        note['id'] = f"note--{opinion['id'].split('--')[1]}"
+        return cls.__assemble_extension_syntax_bundle(
+            indicator, opinion, observed_data, network_traffic, ip_address, note
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_attack_pattern_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_ATTACK_PATTERN_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_both_syntaxes_on_one_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_COURSE_OF_ACTION_WITH_BOTH_SYNTAXES
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_course_of_action_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_COURSE_OF_ACTION_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_geolocation_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_GEOLOCATION_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_legal_entity_object(cls):
+        identity = deepcopy(_EXTENSION_SYNTAX_LEGAL_ENTITY_OBJECT)
+        with open(_TESTFILES_PATH / 'umbrella_logo.png', 'rb') as f:
+            identity['extensions'][MISP_PROPERTY_EXTENSION_ID]['logo']['data'] = (
+                b64encode(f.read()).decode()
+            )
+        return cls.__assemble_extension_syntax_bundle(identity)
+
+    @classmethod
+    def get_extension_syntax_bundle_with_news_agency_object(cls):
+        identity = deepcopy(_EXTENSION_SYNTAX_NEWS_AGENCY_OBJECT)
+        with open(_TESTFILES_PATH / 'AFP_logo.png', 'rb') as f:
+            identity['extensions'][MISP_PROPERTY_EXTENSION_ID]['attachment']['data'] = (
+                b64encode(f.read()).decode()
+            )
+        return cls.__assemble_extension_syntax_bundle(identity)
+
+    @classmethod
+    def get_extension_syntax_bundle_with_organization_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_ORGANIZATION_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_patterning_language_objects(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_PATTERNING_LANGUAGE_OBJECTS
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_person_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_PERSON_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_script_objects(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_SCRIPT_OBJECTS
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_sighting_opinion_and_analyst_note_sharing_a_uuid(cls):
+        indicator, note = deepcopy(_EXTENSION_SYNTAX_ANALYST_DATA_SAMPLES[0]), deepcopy(
+            _EXTENSION_SYNTAX_ANALYST_DATA_SAMPLES[5]
+        )
+        note['object_refs'] = [indicator['id']]
+        sighting = deepcopy(
+            next(
+                stix_object for stix_object in _EXTENSION_SYNTAX_BUNDLE_WITH_SIGHTINGS
+                if stix_object['type'] == 'opinion'
+            )
+        )
+        sighting['id'] = f"opinion--{note['id'].split('--')[1]}"
+        sighting['object_refs'] = [indicator['id']]
+        author_ref = sighting['extensions'][MISP_PROPERTY_EXTENSION_ID]['author_ref']
+        author = deepcopy(
+            next(
+                stix_object for stix_object in _EXTENSION_SYNTAX_BUNDLE_WITH_SIGHTINGS
+                if stix_object['id'] == author_ref
+            )
+        )
+        return cls.__assemble_extension_syntax_bundle(
+            indicator, note, sighting, unreferenced=(author,)
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_sightings(cls):
+        # The sightings bundle brings its own grouping, which lists neither
+        # the identities nor the MISP Extensions
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [
+            deepcopy(cls.__identity),
+            *cls.__misp_extensions(*_EXTENSION_SYNTAX_BUNDLE_WITH_SIGHTINGS),
+            *deepcopy(_EXTENSION_SYNTAX_BUNDLE_WITH_SIGHTINGS)
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_extension_syntax_bundle_with_unknown_extension_property(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_COURSE_OF_ACTION_WITH_UNKNOWN_PROPERTY
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_vulnerability_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_VULNERABILITY_OBJECT
+        )

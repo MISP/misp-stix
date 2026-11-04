@@ -1040,12 +1040,17 @@
                     "misp:name=\"script\"",
                     "misp:meta-category=\"misc\""
                 ],
-                "x_misp_script": "print('You are infected')",
-                "x_misp_script_as_attachment": {
-                    "value": "infected.py",
-                    "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
-                },
-                "x_misp_state": "Malicious"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "script": "print('You are infected')",
+                        "script_as_attachment": {
+                            "value": "infected.py",
+                            "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
+                        },
+                        "state": "Malicious"
+                    }
+                }
             }
         }
     },
@@ -1138,13 +1143,18 @@
                     "misp:name=\"script\"",
                     "misp:meta-category=\"misc\""
                 ],
-                "x_misp_language": "Python",
-                "x_misp_script": "print('Hello World')",
-                "x_misp_script_as_attachment": {
-                    "value": "hello.py",
-                    "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK"
-                },
-                "x_misp_state": "Harmless"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "language": "Python",
+                        "script": "print('Hello World')",
+                        "script_as_attachment": {
+                            "value": "hello.py",
+                            "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK"
+                        },
+                        "state": "Harmless"
+                    }
+                }
             }
         }
     },
@@ -1886,12 +1896,17 @@
                         "external_id": "CAPEC-9"
                     }
                 ],
-                "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
-                "x_misp_related_weakness": [
-                    "CWE-118",
-                    "CWE-120"
-                ],
-                "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+                        "related_weakness": [
+                            "CWE-118",
+                            "CWE-120"
+                        ],
+                        "solutions": "Carefully review the service\\'s implementation before making it available to users."
+                    }
+                }
             }
         }
     },
@@ -1995,12 +2010,17 @@
                     "misp:name=\"course-of-action\"",
                     "misp:meta-category=\"misc\""
                 ],
-                "x_misp_cost": "Low",
-                "x_misp_efficacy": "High",
-                "x_misp_impact": "Low",
-                "x_misp_objective": "Block communication between the PIVY agents and the C2 Server",
-                "x_misp_stage": "Response",
-                "x_misp_type": "Perimeter Blocking"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "cost": "Low",
+                        "efficacy": "High",
+                        "impact": "Low",
+                        "objective": "Block communication between the PIVY agents and the C2 Server",
+                        "stage": "Response",
+                        "type": "Perimeter Blocking"
+                    }
+                }
             }
         }
     },
@@ -4132,8 +4152,13 @@
                     "misp:name=\"geolocation\"",
                     "misp:meta-category=\"misc\""
                 ],
-                "x_misp_altitude": "55",
-                "x_misp_country": "USA"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "altitude": "55",
+                        "country": "USA"
+                    }
+                }
             }
         }
     },
@@ -5797,11 +5822,16 @@
                     "misp:name=\"legal-entity\"",
                     "misp:meta-category=\"misc\""
                 ],
-                "x_misp_logo": {
-                    "value": "umbrella_logo",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC"
-                },
-                "x_misp_registration_number": "11223344556677889900"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "registration_number": "11223344556677889900",
+                        "logo": {
+                            "value": "umbrella_logo",
+                            "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC"
+                        }
+                    }
+                }
             }
         }
     },
@@ -7319,11 +7349,16 @@
                     "misp:name=\"news-agency\"",
                     "misp:meta-category=\"misc\""
                 ],
-                "x_misp_attachment": {
-                    "value": "AFP_logo.png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg=="
-                },
-                "x_misp_link": "https://www.afp.com/"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "attachment": {
+                            "value": "AFP_logo.png",
+                            "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg=="
+                        },
+                        "link": "https://www.afp.com/"
+                    }
+                }
             }
         }
     },
@@ -7480,7 +7515,12 @@
                     "misp:name=\"organization\"",
                     "misp:meta-category=\"misc\""
                 ],
-                "x_misp_alias": "CIRCL"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "alias": "CIRCL"
+                    }
+                }
             }
         }
     },
@@ -7812,8 +7852,13 @@
                     "misp:name=\"person\"",
                     "misp:meta-category=\"misc\""
                 ],
-                "x_misp_nationality": "USA",
-                "x_misp_passport_number": "ABA9875413"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "nationality": "USA",
+                        "passport_number": "ABA9875413"
+                    }
+                }
             }
         }
     },
@@ -9217,7 +9262,12 @@
                         "url": "https://www.us-cert.gov/ncas/alerts/TA17-293A"
                     }
                 ],
-                "x_misp_context": "disk"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "context": "disk"
+                    }
+                }
             }
         }
     },
@@ -10355,9 +10405,14 @@
                         "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
                     }
                 ],
-                "x_misp_created": "2017-10-13T07:29:00Z",
-                "x_misp_cvss_score": "6.8",
-                "x_misp_published": "2017-10-13T07:29:00Z"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "created": "2017-10-13T07:29:00Z",
+                        "cvss_score": "6.8",
+                        "published": "2017-10-13T07:29:00Z"
+                    }
+                }
             }
         }
     },

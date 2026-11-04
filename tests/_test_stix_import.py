@@ -20,7 +20,8 @@ from misp_stix_converter.stix2misp.converters.stix2mapping import (
     InternalSTIX2Mapping)
 from misp_stix_converter.tools.misp_object_templates import (
     _custom_property_name, _custom_property_relation,
-    _ORIGINAL_NAMES_PROPERTY, _template_custom_properties)
+    _extension_property_name, _ORIGINAL_NAMES_PROPERTY,
+    _template_custom_properties)
 from pathlib import Path
 from pymisp import AbstractMISP, MISPAttribute
 from stix2.parsing import dict_to_stix2
@@ -28,7 +29,8 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import UUID, uuid5
 from ._test_stix import (
-    PLANTED_TEMPLATE, TestSTIX, append_further_values, spell_non_pattern_value)
+    MISP_PROJECT_IDENTITY_ID, MISP_PROPERTY_EXTENSION_ID, PLANTED_TEMPLATE,
+    TestSTIX, append_further_values, spell_non_pattern_value)
 from .update_documentation import (
     AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
     ObjectsDocumentationUpdater)
@@ -243,6 +245,28 @@ class TestSTIX2Import(TestSTIX):
             message for identifier_reports in reports.values()
             for message in identifier_reports
         ]
+
+    @staticmethod
+    def _custom_value(stix_object, field: str):
+        """Read a MISP value of a fixture object, in either syntax.
+
+        A Custom Property Name is read as itself, then under its Extension
+        Property Name inside the MISP property extension. The fixture is the
+        input, so the name goes through the export's escape, not through the
+        strip the import reads it with.
+
+        :param stix_object: the fixture object carrying the value
+        :param field: the `x_misp_` name of the value
+        :return: the value, or `None` when the object carries none
+        """
+        if field in stix_object:
+            return stix_object[field]
+        extension = stix_object.get('extensions', {}).get(
+            MISP_PROPERTY_EXTENSION_ID, {}
+        )
+        return extension.get(
+            _extension_property_name(_custom_property_relation(field))
+        )
 
     @staticmethod
     def _dict_form_timestamp(timestamp: str):
@@ -1175,6 +1199,20 @@ class TestSTIX21Import(TestSTIX2Import):
             ext_objects_documentation.check_import_mapping('stix21')
 
     @staticmethod
+    def _bundle_objects(bundle) -> list:
+        """The objects of a bundle, as the checks read them by position.
+
+        An Extension Syntax bundle carries the MISP Project identity and the
+        MISP Extension definitions after the organisation identity: they are
+        left out, so both syntaxes' bundles line up.
+        """
+        return [
+            stix_object for stix_object in bundle.objects
+            if stix_object['id'] != MISP_PROJECT_IDENTITY_ID
+            and stix_object['type'] != 'extension-definition'
+        ]
+
+    @staticmethod
     def _invalid_indicator(indicator_id: str) -> dict:
         """An Indicator `stix2` refuses to parse, taking the invalid
         objects path - the pattern is not STIX patterning."""
@@ -1296,8 +1334,9 @@ class TestSTIX21Import(TestSTIX2Import):
 
     def _check_misp_opinion(self, misp_opinion, stix_opinion):
         self.assertEqual(misp_opinion.uuid, stix_opinion.id.split('--')[1])
-        if hasattr(stix_opinion, 'x_misp_opinion'):
-            self.assertEqual(misp_opinion.opinion, stix_opinion.x_misp_opinion)
+        opinion = self._custom_value(stix_opinion, 'x_misp_opinion')
+        if opinion is not None:
+            self.assertEqual(misp_opinion.opinion, opinion)
         else:
             self.assertEqual(misp_opinion.opinion, self.opinion_mapping(stix_opinion.opinion))
         self.assertEqual(misp_opinion.created, stix_opinion.created)
@@ -4745,10 +4784,18 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         summary, name, prerequisites, weakness1, weakness2, solution, capec_id = misp_object.attributes
         self.assertEqual(summary.value, attack_pattern.description)
         self.assertEqual(name.value, attack_pattern.name)
-        self.assertEqual(prerequisites.value, attack_pattern.x_misp_prerequisites)
-        self.assertEqual(weakness1.value, attack_pattern.x_misp_related_weakness[0])
-        self.assertEqual(weakness2.value, attack_pattern.x_misp_related_weakness[1])
-        self.assertEqual(solution.value, attack_pattern.x_misp_solutions)
+        self.assertEqual(
+            prerequisites.value,
+            self._custom_value(attack_pattern, 'x_misp_prerequisites')
+        )
+        self.assertEqual(
+            [weakness1.value, weakness2.value],
+            self._custom_value(attack_pattern, 'x_misp_related_weakness')
+        )
+        self.assertEqual(
+            solution.value,
+            self._custom_value(attack_pattern, 'x_misp_solutions')
+        )
         self.assertEqual(
             f"CAPEC-{capec_id.value}",
             attack_pattern.external_references[0].external_id
@@ -4781,7 +4828,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         for attribute in attributes:
             self.assertEqual(
                 attribute.value,
-                getattr(course_of_action, f"x_misp_{attribute.object_relation}")
+                self._custom_value(
+                    course_of_action, f"x_misp_{attribute.object_relation}"
+                )
             )
 
     def _check_cpe_asset_indicator_object(self, attributes, pattern):
@@ -5930,11 +5979,15 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         phone_info, website_info = identity.contact_information.split(' / ')
         self.assertEqual(phone_info, f"{phone.object_relation}: {phone.value}")
         self.assertEqual(website_info, f"{website.object_relation}: {website.value}")
-        self.assertEqual(registration_number.value, identity.x_misp_registration_number)
+        self.assertEqual(
+            registration_number.value,
+            self._custom_value(identity, 'x_misp_registration_number')
+        )
         self.assertEqual(logo.type, 'attachment')
         self.assertEqual(logo.object_relation, 'logo')
-        self.assertEqual(logo.value, identity.x_misp_logo['value'])
-        self.assertEqual(self._get_data_value(logo.data), identity.x_misp_logo['data'])
+        logo_value = self._custom_value(identity, 'x_misp_logo')
+        self.assertEqual(logo.value, logo_value['value'])
+        self.assertEqual(self._get_data_value(logo.data), logo_value['data'])
         self._check_object_attribute_uuid(logo, identity.id)
 
     def _check_lnk_indicator_object(self, attributes, pattern):
@@ -6317,15 +6370,18 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(phone_info, f'{phone.object_relation}: {phone.value}')
         self.assertEqual(attachment.type, 'attachment')
         self.assertEqual(attachment.object_relation, 'attachment')
-        self.assertEqual(attachment.value, identity.x_misp_attachment['value'])
+        attachment_value = self._custom_value(identity, 'x_misp_attachment')
+        self.assertEqual(attachment.value, attachment_value['value'])
         self.assertEqual(
-            self._get_data_value(attachment.data),
-            identity.x_misp_attachment['data']
+            self._get_data_value(attachment.data), attachment_value['data']
         )
         self._check_object_attribute_uuid(attachment, identity.id)
         self.assertEqual(link.type, 'link')
         self.assertEqual(link.object_relation, 'link')
-        self.assertEqual(link.value, identity.x_misp_link)
+        self.assertEqual(
+            link.value,
+            self._custom_value(identity, 'x_misp_link')
+        )
         self._check_object_attribute_uuid(link, identity.id)
 
     def _check_organization_object(self, misp_object, identity):
@@ -6338,7 +6394,10 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         name, description, role, alias, address, email, phone = misp_object.attributes
         self.assertEqual(name.value, identity.name)
         self.assertEqual(description.value, identity.description)
-        self.assertEqual(alias.value, identity.x_misp_alias)
+        self.assertEqual(
+            alias.value,
+            self._custom_value(identity, 'x_misp_alias')
+        )
         address_info, email_info, phone_info = identity.contact_information.split(' / ')
         self.assertEqual(address_info, f'{address.object_relation}: {address.value}')
         self.assertEqual(email_info, f'{email.object_relation}: {email.value}')
@@ -6539,9 +6598,15 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(name.object_relation, 'full-name')
         self.assertEqual(name.value, identity.name)
         self.assertEqual(nationality.object_relation, 'nationality')
-        self.assertEqual(nationality.value, identity.x_misp_nationality)
+        self.assertEqual(
+            nationality.value,
+            self._custom_value(identity, 'x_misp_nationality')
+        )
         self.assertEqual(passport.object_relation, 'passport-number')
-        self.assertEqual(passport.value, identity.x_misp_passport_number)
+        self.assertEqual(
+            passport.value,
+            self._custom_value(identity, 'x_misp_passport_number')
+        )
         self.assertEqual(identity.contact_information, f'{phone.object_relation}: {phone.value}')
         return role
 
@@ -6716,11 +6781,16 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         filename, comment, language, script, state, attachment = misp_object.attributes
         self.assertEqual(filename.value, stix_object.name)
         self.assertEqual(comment.value, stix_object.description)
-        self.assertEqual(script.value, stix_object.x_misp_script)
-        self.assertEqual(attachment.value, stix_object.x_misp_script_as_attachment['value'])
         self.assertEqual(
-            self._get_data_value(attachment.data),
-            stix_object.x_misp_script_as_attachment['data']
+            script.value,
+            self._custom_value(stix_object, 'x_misp_script')
+        )
+        attachment_value = self._custom_value(
+            stix_object, 'x_misp_script_as_attachment'
+        )
+        self.assertEqual(attachment.value, attachment_value['value'])
+        self.assertEqual(
+            self._get_data_value(attachment.data), attachment_value['data']
         )
         self._check_object_attribute_uuid(attachment, stix_object.id)
         return language, state
@@ -6975,12 +7045,19 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(description.value, vulnerability.description)
         self.assertEqual(
             created.value,
-            self._datetime_from_str(vulnerability.x_misp_created)
+            self._datetime_from_str(
+                self._custom_value(vulnerability, 'x_misp_created')
+            )
         )
-        self.assertEqual(cvss_score.value, vulnerability.x_misp_cvss_score)
+        self.assertEqual(
+            cvss_score.value,
+            self._custom_value(vulnerability, 'x_misp_cvss_score')
+        )
         self.assertEqual(
             published.value,
-            self._datetime_from_str(vulnerability.x_misp_published)
+            self._datetime_from_str(
+                self._custom_value(vulnerability, 'x_misp_published')
+            )
         )
 
     def _check_x509_indicator_object(self, attributes, pattern):
