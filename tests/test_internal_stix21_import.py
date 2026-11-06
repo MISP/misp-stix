@@ -850,6 +850,37 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.opinions, [])
         self.assertEqual(attribute.sightings, [])
 
+    def test_stix21_malformed_nested_rooms_cost_the_object(self):
+        # A room that is not a list, one whose length differs from its STIX
+        # list, an item that is no dictionary, a PE room the object has no
+        # PE extension for: each loses its Observed Data whole, with the
+        # per-object error naming the room, and is not paired up to the
+        # shorter length. The well-formed rooms convert.
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_malformed_nested_rooms()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        errors = self._reported_messages(self.parser.errors)
+        self.assertEqual(len(errors), 6)
+        path = f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'"
+        for object_uuid, room in (
+                ('1aed5f00-aa8a-402f-9dd2-e13bf7863c17', 'values'),
+                ('e55f2fbc-a26d-4006-9e2c-05f7ac9eeb27', 'values'),
+                ('2b4006b4-fb2c-4710-91c7-dedb41defde5', 'values[0]'),
+                ('77e97057-c642-4d4b-a4d7-1032676f79da', 'windows_pebinary_ext'),
+                ('71607fce-0c2c-4424-b6c1-a8a82b3e9efd',
+                 'windows_pebinary_ext.sections'),
+                ('41bc3219-36ea-43d8-9f88-fb84e65b954c', 'windows_pebinary_ext')):
+            with self.subTest(room=room, object_uuid=object_uuid):
+                error, = (
+                    error for error in errors
+                    if f'observed-data--{object_uuid}' in error
+                )
+                self.assertIn(f'{path}.{room}: ', error)
+        self.assertEqual(
+            [misp_object.name for misp_object in self.parser.misp_event.objects],
+            ['file', 'pe', 'pe-section', 'pe-section', 'pe-section']
+        )
+
     def test_stix21_bundle_with_tlp_1_0_markings(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_tlp_1_0_markings()
         self.parser.load_stix_bundle(bundle)
@@ -4925,12 +4956,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_file_and_pe_observable_object(self):
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_file_and_pe_observable_object()
+    def _check_bundle_with_file_and_pe_observable_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, observed_data, observable, indicator, relatonship = bundle.objects
+        _, grouping, observed_data, observable, indicator, relationship = self._bundle_objects(bundle)
         file_object, pe_object, section_object = self._check_misp_event_features_from_grouping(event, grouping)
         file_ref = self._check_observed_data_object(file_object, observed_data)[0]
         pattern = self._get_compiled_pattern(indicator)
@@ -4946,15 +4976,156 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             file_object.attributes, pe_object.attributes,
             section_object.attributes, observable, pattern
         )
-        self._populate_documentation(
-            misp_object=[
-                json.loads(file_object.to_json()),
-                json.loads(pe_object.to_json()),
-                json.loads(section_object.to_json())
-            ],
-            observed_data=[observed_data, observable],
-            name='File object with a Windows PE binary extension',
-            summary='File object with a Windows PE binary extension'
+        if documented:
+            self._populate_documentation(
+                misp_object=[
+                    json.loads(file_object.to_json()),
+                    json.loads(pe_object.to_json()),
+                    json.loads(section_object.to_json())
+                ],
+                observed_data=[observed_data, observable],
+                name='File object with a Windows PE binary extension',
+                summary='File object with a Windows PE binary extension'
+            )
+
+    def test_stix21_bundle_with_file_and_pe_observable_object(self):
+        self._check_bundle_with_file_and_pe_observable_object(
+            TestInternalSTIX21Bundles.get_bundle_with_file_and_pe_observable_object()
+        )
+
+    def test_stix21_bundle_with_file_and_pe_observable_object_extension_syntax(self):
+        self._check_bundle_with_file_and_pe_observable_object(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_file_and_pe_observable_object(),
+            documented=True
+        )
+
+    # The pe object and its sections the Nested Rooms fixture converts to,
+    # file or not: each attribute with its `to_ids`
+    _PE_NESTED_ROOMS_OBJECTS = (
+        (
+            'pe',
+            {
+                ('text', 'type', 'dll', True),
+                ('hex', 'machine-type-hex', '014c', False),
+                ('pdb', 'pdb', 'oui.pdb', True)
+            }
+        ),
+        (
+            'pe-section',
+            {
+                ('text', 'name', '.text', True),
+                ('text', 'text', 'Section text', False),
+                ('hex', 'virtual_address', '00001000', False)
+            }
+        ),
+        ('pe-section', {('text', 'name', '.data', False)}),
+        (
+            'pe-section',
+            {
+                ('text', 'name', '.rsrc', False),
+                ('text', 'characteristic', 'read', True),
+                ('hex', 'offset', '00000400', False)
+            }
+        )
+    )
+
+    def _import_nested_room_objects(self, bundle) -> list:
+        # Every MISP object of the event, in order, with its attributes and
+        # their `to_ids`: a bundle carrying Nested Rooms reads with nothing
+        # to report
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(self.parser.errors, {})
+        self.assertEqual(self.parser.warnings, {})
+        return [
+            (
+                misp_object.name,
+                {
+                    (attribute.type, attribute.object_relation,
+                     str(attribute.value), attribute.to_ids)
+                    for attribute in misp_object.attributes
+                }
+            )
+            for misp_object in self.parser.misp_event.objects
+        ]
+
+    def test_stix21_bundle_with_pe_nested_rooms(self):
+        # The pe object and each section take the values of their own room,
+        # an empty room item reading as nothing and a name the extension
+        # reserves for itself as no relation, and those the Merged Indicator
+        # compares are the ones with `to_ids`
+        self.assertEqual(
+            self._import_nested_room_objects(
+                TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_pe_nested_rooms()
+            ),
+            [
+                ('file', {('filename', 'filename', 'oui.dll', True)}),
+                *self._PE_NESTED_ROOMS_OBJECTS
+            ]
+        )
+
+    def test_stix21_bundle_with_standalone_pe_nested_rooms(self):
+        self.assertEqual(
+            self._import_nested_room_objects(
+                TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_standalone_pe_nested_rooms()
+            ),
+            list(self._PE_NESTED_ROOMS_OBJECTS)
+        )
+
+    def test_stix21_bundle_with_registry_key_value_nested_room(self):
+        # A standalone registry value is a key holding it alone: the room of
+        # that value holds its MISP values
+        self.assertEqual(
+            self._import_nested_room_objects(
+                TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_registry_key_value_nested_room()
+            ),
+            [
+                (
+                    'registry-key-value',
+                    {
+                        ('text', 'name', 'RegistryName', False),
+                        ('text', 'data', 'qwertyuiop', True),
+                        ('text', 'data-type', 'REG_SZ', False),
+                        ('text', 'data', 'Other data', False)
+                    }
+                )
+            ]
+        )
+
+    def test_stix21_bundle_with_registry_values_nested_room(self):
+        # Each registry value takes the values of the room item lining up
+        # with it, the key those of the extension's top level
+        self.assertEqual(
+            self._import_nested_room_objects(
+                TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_registry_values_nested_room()
+            ),
+            [
+                (
+                    'registry-key',
+                    {
+                        ('regkey', 'key', 'hkey_local_machine\\system\\bar\\foo', True),
+                        ('datetime', 'last-modified', '2020-10-25 16:22:00+00:00', True),
+                        ('text', 'hive', 'hklm', True)
+                    }
+                ),
+                (
+                    'registry-key-value',
+                    {
+                        ('text', 'name', 'Foo', True),
+                        ('text', 'data', 'qwerty', True),
+                        ('text', 'data-type', 'REG_SZ', True)
+                    }
+                ),
+                (
+                    'registry-key-value',
+                    {
+                        ('text', 'name', 'Bar', True),
+                        ('text', 'data', '42', True),
+                        ('text', 'data-type', 'REG_DWORD', True),
+                        ('text', 'data', 'Other data', True)
+                    }
+                )
+            ]
         )
 
     def _check_bundle_with_file_indicator_object(self, bundle, documented=False):

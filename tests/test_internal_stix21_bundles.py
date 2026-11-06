@@ -5656,6 +5656,98 @@ _EXTENSION_SYNTAX_FILE_AND_PE_INDICATOR_OBJECT = {
     "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
     "labels": ['misp:name="file"', 'misp:meta-category="file"']
 }
+_EXTENSION_SYNTAX_FILE_AND_PE_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5ac47782-e1b8-40b6-96b4-02510a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": ["file--5ac47782-e1b8-40b6-96b4-02510a00020f"],
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--5ac47782-e1b8-40b6-96b4-02510a00020f",
+        "hashes": {
+            "MD5": "b2a5abfeef9e36964281a31e17b57c97",
+            "SHA-1": "5898fc860300e228dcd54c0b1045b5fa0dcda502",
+            "SHA-256": "3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8"
+        },
+        "size": 1234,
+        "name": "oui",
+        "extensions": {
+            "windows-pebinary-ext": {
+                "pe_type": "exe",
+                "imphash": "23ea835ab4b9017c74dfb023d2301c99",
+                "number_of_sections": 8,
+                "optional_header": {"address_of_entry_point": 5369222868},
+                "sections": [
+                    {
+                        "name": ".rsrc",
+                        "size": 305152,
+                        "entropy": 7.836462238824369,
+                        "hashes": {
+                            "MD5": "8a2a5fc2ce56b3b04d58539a95390600",
+                            "SHA-1": "0aeb9def096e9f73e9460afe6f8783a32c7eabdf",
+                            "SHA-256": "c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b",
+                            "SHA-512": "98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f",
+                            "SSDEEP": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK"
+                        }
+                    }
+                ]
+            },
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "entropy": "1.234",
+                "windows_pebinary_ext": {
+                    "company_name": "Simoe Tatham",
+                    "compilation_timestamp": "2019-03-16T12:31:22Z",
+                    "file_description": "SSH, Telnet and Rlogin client",
+                    "file_version": "Release 0.71 (with embedded help)",
+                    "impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
+                    "internal_filename": "PuTTy",
+                    "lang_id": "080904B0",
+                    "legal_copyright": "Copyright © 1997-2019 Simon Tatham.",
+                    "original_filename": "PuTTy",
+                    "product_name": "PuTTy suite",
+                    "product_version": "Release 0.71"
+                }
+            }
+        }
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--5ac47782-e1b8-40b6-96b4-02510a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": f"[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.'SHA-256' = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.original_filename = 'PuTTy' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.internal_filename = 'PuTTy' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--381d4bb0-d07c-4128-8880-eede3c7825f5",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5ac47782-e1b8-40b6-96b4-02510a00020f",
+        "target_ref": "observed-data--5ac47782-e1b8-40b6-96b4-02510a00020f"
+    }
+]
 _EXTENSION_SYNTAX_FILE_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
@@ -6741,6 +6833,76 @@ _EXTENSION_SYNTAX_PATTERNING_LANGUAGE_OBJECTS = [
             {"kill_chain_name": "misp-category", "phase_name": "misc"}
         ],
         "labels": ['misp:name="yara"', 'misp:meta-category="misc"']
+    }
+]
+_EXTENSION_SYNTAX_PE_NESTED_ROOMS = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--b7e0a3ee-fa54-4c73-82fa-3b4a41005a2d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": ["file--b7e0a3ee-fa54-4c73-82fa-3b4a41005a2d"],
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--b7e0a3ee-fa54-4c73-82fa-3b4a41005a2d",
+        "name": "oui.dll",
+        "extensions": {
+            "windows-pebinary-ext": {
+                "pe_type": "dll",
+                "sections": [
+                    {"name": ".text"}, {"name": ".data"}, {"name": ".rsrc"}
+                ]
+            },
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "windows_pebinary_ext": {
+                    "machine_type_hex_": "014c",
+                    "pdb": "oui.pdb",
+                    "sections": [
+                        {"text": "Section text", "virtual_address": "00001000"},
+                        {},
+                        {
+                            "characteristic": "read", "offset": "00000400",
+                            "values": "No relation"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--b7e0a3ee-fa54-4c73-82fa-3b4a41005a2d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": f"[file:name = 'oui.dll' AND file:extensions.'windows-pebinary-ext'.pe_type = 'dll' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.text' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.pdb = 'oui.pdb' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.sections[2].characteristic = 'read']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "file"}
+        ],
+        "labels": ['misp:name="file"', 'misp:meta-category="file"']
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--8e5b0e4b-c5d6-434e-a9fb-56ca62fa30d8",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--b7e0a3ee-fa54-4c73-82fa-3b4a41005a2d",
+        "target_ref": "observed-data--b7e0a3ee-fa54-4c73-82fa-3b4a41005a2d"
     }
 ]
 _EXTENSION_SYNTAX_PERSON_OBJECT = {
@@ -15298,6 +15460,56 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     #                      MISP EXTENSION SYNTAX SAMPLES                       #
     ############################################################################
 
+    @staticmethod
+    def __with_nested_rooms(observed_data, observable, object_uuid, **rooms):
+        # A copy of an Observed Data and of its observable under another
+        # uuid, whose MISP property extension holds the given rooms
+        observed_data, observable = deepcopy(observed_data), deepcopy(observable)
+        observable['id'] = f"{observable['type']}--{object_uuid}"
+        observed_data['id'] = f'observed-data--{object_uuid}'
+        observed_data['object_refs'] = [observable['id']]
+        observable['extensions'][MISP_PROPERTY_EXTENSION_ID].update(rooms)
+        return observed_data, observable
+
+    @classmethod
+    def get_bundle_with_malformed_nested_rooms(cls):
+        # Nested Rooms the readers cannot read, each on an Observed Data of
+        # its own, next to well-formed ones. Named outside the schema sweep,
+        # which could not see a room misaligned with its STIX list anyway
+        registry_key = _EXTENSION_SYNTAX_REGISTRY_KEY_WITH_VALUES_OBSERVABLE_OBJECT[:2]
+        pe_file = _EXTENSION_SYNTAX_PE_NESTED_ROOMS[:2]
+        no_pe_extension = cls.__with_nested_rooms(
+            *pe_file, '41bc3219-36ea-43d8-9f88-fb84e65b954c',
+            windows_pebinary_ext={"pdb": "oui.pdb"}
+        )
+        del no_pe_extension[1]['extensions']['windows-pebinary-ext']
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_PE_NESTED_ROOMS,
+            *cls.__with_nested_rooms(
+                *registry_key, '1aed5f00-aa8a-402f-9dd2-e13bf7863c17',
+                values={"data": "Other data"}
+            ),
+            *cls.__with_nested_rooms(
+                *registry_key, 'e55f2fbc-a26d-4006-9e2c-05f7ac9eeb27',
+                values=[{"data": "Other data"}]
+            ),
+            *cls.__with_nested_rooms(
+                *registry_key, '2b4006b4-fb2c-4710-91c7-dedb41defde5',
+                values=["Other data", {}]
+            ),
+            *cls.__with_nested_rooms(
+                *pe_file, '77e97057-c642-4d4b-a4d7-1032676f79da',
+                windows_pebinary_ext=["oui.pdb"]
+            ),
+            *cls.__with_nested_rooms(
+                *pe_file, '71607fce-0c2c-4424-b6c1-a8a82b3e9efd',
+                windows_pebinary_ext={
+                    "sections": [{}, {}, {}, {"text": "Section text"}]
+                }
+            ),
+            *no_pe_extension
+        )
+
     @classmethod
     def get_bundle_with_malformed_misp_extension_values(cls):
         # Loaded as a document is, since stix2 refuses one of the objects
@@ -15495,6 +15707,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_file_and_pe_indicator_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             _EXTENSION_SYNTAX_FILE_AND_PE_INDICATOR_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_file_and_pe_observable_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_FILE_AND_PE_OBSERVABLE_OBJECT
         )
 
     @classmethod
@@ -15824,6 +16042,27 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_pe_nested_rooms(cls):
+        # The MISP values of a pe object and of its sections, in their Nested
+        # Rooms, compared in part by the Merged Indicator. The last section's
+        # room also holds a name the extension reserves for itself, which is
+        # no MISP value
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_PE_NESTED_ROOMS
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_standalone_pe_nested_rooms(cls):
+        # The same rooms, for a pe object no file carries: the file around
+        # its extension holds nothing else of the MISP object
+        stix_objects = deepcopy(_EXTENSION_SYNTAX_PE_NESTED_ROOMS)
+        for stix_object in (stix_objects[0], stix_objects[2]):
+            stix_object['labels'] = [
+                'misp:name="pe"', 'misp:meta-category="file"'
+            ]
+        return cls.__assemble_extension_syntax_bundle(*stix_objects)
+
+    @classmethod
     def get_extension_syntax_bundle_with_person_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             _EXTENSION_SYNTAX_PERSON_OBJECT
@@ -15851,6 +16090,43 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_registry_key_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_REGISTRY_KEY_OBSERVABLE_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_registry_key_value_nested_room(cls):
+        # The MISP value of a standalone registry value, a second data the
+        # Merged Indicator does not compare, in the room of the key's only
+        # value
+        observed_data, registry_key, indicator, relationship = deepcopy(
+            _REGISTRY_KEY_VALUE_OBSERVABLE_OBJECT
+        )
+        registry_key['extensions'] = {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "values": [{"data": "Other data"}]
+            }
+        }
+        return cls.__assemble_extension_syntax_bundle(
+            observed_data, registry_key, indicator, relationship
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_registry_values_nested_room(cls):
+        # The MISP value of the second value of a key, in its room, which
+        # the Merged Indicator compares: the room of the first one is empty
+        observed_data, registry_key, indicator, relationship = deepcopy(
+            _EXTENSION_SYNTAX_REGISTRY_KEY_WITH_VALUES_OBSERVABLE_OBJECT
+        )
+        registry_key['extensions'][MISP_PROPERTY_EXTENSION_ID]['values'] = [
+            {}, {"data": "Other data"}
+        ]
+        return cls.__assemble_extension_syntax_bundle(
+            observed_data, registry_key,
+            cls.__with_more_comparisons(
+                indicator,
+                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values[1].data = 'Other data'"
+            ),
+            relationship
         )
 
     @classmethod

@@ -26,6 +26,7 @@ from pathlib import Path
 from pymisp import AbstractMISP, MISPAttribute
 from stix2.parsing import dict_to_stix2
 from tempfile import TemporaryDirectory
+from typing import Optional
 from unittest.mock import patch
 from uuid import UUID, uuid5
 from ._test_stix import (
@@ -247,7 +248,7 @@ class TestSTIX2Import(TestSTIX):
         ]
 
     @staticmethod
-    def _custom_value(stix_object, field: str):
+    def _custom_value(stix_object, field: str, room: Optional[dict] = None):
         """Read a MISP value of a fixture object, in either syntax.
 
         A Custom Property Name is read as itself, then under its Extension
@@ -255,18 +256,41 @@ class TestSTIX2Import(TestSTIX):
         input, so the name goes through the export's escape, not through the
         strip the import reads it with.
 
-        :param stix_object: the fixture object carrying the value
+        :param stix_object: the fixture object, or the part of one, carrying
+            the value
         :param field: the `x_misp_` name of the value
+        :param room: the Nested Room holding the values of a part, which has
+            no extension of its own
         :return: the value, or `None` when the object carries none
         """
         if field in stix_object:
             return stix_object[field]
-        extension = stix_object.get('extensions', {}).get(
-            MISP_PROPERTY_EXTENSION_ID, {}
-        )
-        return extension.get(
+        if room is None:
+            room = stix_object.get('extensions', {}).get(
+                MISP_PROPERTY_EXTENSION_ID, {}
+            )
+        return room.get(
             _extension_property_name(_custom_property_relation(field))
         )
+
+    @staticmethod
+    def _nested_room(stix_object, *steps) -> dict:
+        """Read a Nested Room of a fixture object's MISP property extension.
+
+        :param stix_object: the fixture object carrying the extension
+        :param steps: the keys and indexes leading to the room inside the
+            extension, such as `'values', 1`
+        :return: the room, or an empty one when the object carries none
+        """
+        room = stix_object.get('extensions', {}).get(
+            MISP_PROPERTY_EXTENSION_ID, {}
+        )
+        for step in steps:
+            try:
+                room = room[step]
+            except (IndexError, KeyError):
+                return {}
+        return room
 
     @staticmethod
     def _misp_value_pattern_paths(field: str) -> tuple:
@@ -5284,11 +5308,14 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(size.value, observable.size)
         self.assertEqual(entropy.type, 'float')
         self.assertEqual(entropy.object_relation, 'entropy')
-        self.assertEqual(entropy.value, observable.x_misp_entropy)
+        self.assertEqual(
+            entropy.value, self._custom_value(observable, 'x_misp_entropy')
+        )
         self.assertEqual(len(pe_attributes), 15)
         (entrypoint, imphash, number, pe_type, company_name, compilation, description, file_version,
          impfuzzy, internal, lang_id, legal, original, name, product_version) = pe_attributes
         extension = observable.extensions['windows-pebinary-ext']
+        room = self._nested_room(observable, 'windows_pebinary_ext')
         self.assertEqual(entrypoint.type, 'text')
         self.assertEqual(entrypoint.object_relation, 'entrypoint-address')
         self.assertEqual(entrypoint.value, extension.optional_header['address_of_entry_point'])
@@ -5303,40 +5330,40 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(pe_type.value, extension.pe_type)
         self.assertEqual(company_name.type, 'text')
         self.assertEqual(company_name.object_relation, 'company-name')
-        self.assertEqual(company_name.value, extension.x_misp_company_name)
+        self.assertEqual(company_name.value, self._custom_value(extension, 'x_misp_company_name', room))
         self.assertEqual(compilation.type, 'datetime')
         self.assertEqual(compilation.object_relation, 'compilation-timestamp')
         self.assertEqual(
             compilation.value,
-            self._datetime_from_str(extension.x_misp_compilation_timestamp)
+            self._datetime_from_str(self._custom_value(extension, 'x_misp_compilation_timestamp', room))
         )
         self.assertEqual(description.type, 'text')
         self.assertEqual(description.object_relation, 'file-description')
-        self.assertEqual(description.value, extension.x_misp_file_description)
+        self.assertEqual(description.value, self._custom_value(extension, 'x_misp_file_description', room))
         self.assertEqual(file_version.type, 'text')
         self.assertEqual(file_version.object_relation, 'file-version')
-        self.assertEqual(file_version.value, extension.x_misp_file_version)
+        self.assertEqual(file_version.value, self._custom_value(extension, 'x_misp_file_version', room))
         self.assertEqual(impfuzzy.type, 'impfuzzy')
         self.assertEqual(impfuzzy.object_relation, 'impfuzzy')
-        self.assertEqual(impfuzzy.value, extension.x_misp_impfuzzy)
+        self.assertEqual(impfuzzy.value, self._custom_value(extension, 'x_misp_impfuzzy', room))
         self.assertEqual(internal.type, 'filename')
         self.assertEqual(internal.object_relation, 'internal-filename')
-        self.assertEqual(internal.value, extension.x_misp_internal_filename)
+        self.assertEqual(internal.value, self._custom_value(extension, 'x_misp_internal_filename', room))
         self.assertEqual(lang_id.type, 'text')
         self.assertEqual(lang_id.object_relation, 'lang-id')
-        self.assertEqual(lang_id.value, extension.x_misp_lang_id)
+        self.assertEqual(lang_id.value, self._custom_value(extension, 'x_misp_lang_id', room))
         self.assertEqual(legal.type, 'text')
         self.assertEqual(legal.object_relation, 'legal-copyright')
-        self.assertEqual(legal.value, extension.x_misp_legal_copyright)
+        self.assertEqual(legal.value, self._custom_value(extension, 'x_misp_legal_copyright', room))
         self.assertEqual(original.type, 'filename')
         self.assertEqual(original.object_relation, 'original-filename')
-        self.assertEqual(original.value, extension.x_misp_original_filename)
+        self.assertEqual(original.value, self._custom_value(extension, 'x_misp_original_filename', room))
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'product-name')
-        self.assertEqual(name.value, extension.x_misp_product_name)
+        self.assertEqual(name.value, self._custom_value(extension, 'x_misp_product_name', room))
         self.assertEqual(product_version.type, 'text')
         self.assertEqual(product_version.object_relation, 'product-version')
-        self.assertEqual(product_version.value, extension.x_misp_product_version)
+        self.assertEqual(product_version.value, self._custom_value(extension, 'x_misp_product_version', room))
         self.assertEqual(len(section_attributes), 8)
         entropy, name, size, md5, sha1, sha256, sha512, ssdeep = section_attributes
         section = extension.sections[0]

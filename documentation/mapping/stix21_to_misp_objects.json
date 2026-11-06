@@ -928,21 +928,26 @@
                                         "SSDEEP": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK"
                                     }
                                 }
-                            ],
-                            "x_misp_company_name": "Simoe Tatham",
-                            "x_misp_compilation_timestamp": "2019-03-16T12:31:22Z",
-                            "x_misp_file_description": "SSH, Telnet and Rlogin client",
-                            "x_misp_file_version": "Release 0.71 (with embedded help)",
-                            "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
-                            "x_misp_internal_filename": "PuTTy",
-                            "x_misp_lang_id": "080904B0",
-                            "x_misp_legal_copyright": "Copyright © 1997-2019 Simon Tatham.",
-                            "x_misp_original_filename": "PuTTy",
-                            "x_misp_product_name": "PuTTy suite",
-                            "x_misp_product_version": "Release 0.71"
+                            ]
+                        },
+                        "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                            "extension_type": "property-extension",
+                            "entropy": "1.234",
+                            "windows_pebinary_ext": {
+                                "company_name": "Simoe Tatham",
+                                "compilation_timestamp": "2019-03-16T12:31:22Z",
+                                "file_description": "SSH, Telnet and Rlogin client",
+                                "file_version": "Release 0.71 (with embedded help)",
+                                "impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
+                                "internal_filename": "PuTTy",
+                                "lang_id": "080904B0",
+                                "legal_copyright": "Copyright © 1997-2019 Simon Tatham.",
+                                "original_filename": "PuTTy",
+                                "product_name": "PuTTy suite",
+                                "product_version": "Release 0.71"
+                            }
                         }
-                    },
-                    "x_misp_entropy": "1.234"
+                    }
                 }
             ]
         }
