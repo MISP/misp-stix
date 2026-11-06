@@ -125,11 +125,17 @@ class MISPtoSTIXParser(AbstractParser):
                 continue
             if relation in with_uuid:
                 further = [
-                    value[0] if len(value) == 2 else value[:-1]
+                    MISPtoSTIXParser._value_without_uuid(value)
                     for value in further
                 ]
             repeated[relation] = further
         return attributes, repeated
+
+    @staticmethod
+    def _value_without_uuid(value: tuple) -> Union[str, tuple]:
+        # A value paired with its attribute uuid, last in the tuple: the
+        # value alone, or the value with its data
+        return value[0] if len(value) == 2 else value[:-1]
 
     def _extract_object_attribute_tags_and_galaxies(
             self, misp_object: dict) -> tuple:

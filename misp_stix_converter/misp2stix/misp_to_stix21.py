@@ -5,8 +5,8 @@ from .exceptions import InvalidHashValueError, _UnbuildableRecordError
 from .misp_to_stix2 import MISPtoSTIX2Parser, _PatternLocation
 from .stix21_mapping import MISPtoSTIX21Mapping
 from ..tools.misp_object_templates import (
-    _CUSTOM_PROPERTY_PREFIX, _MISP_PROPERTY_EXTENSION_ID,
-    _ORIGINAL_NAMES_PROPERTY, _extension_property_name)
+    _MISP_PROPERTY_EXTENSION_ID, _ORIGINAL_NAMES_PROPERTY,
+    _extension_property_name)
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
@@ -207,7 +207,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             opinion_args['authors'] = [opinion['authors']]
         if opinion.get('comment'):
             opinion_args['explanation'] = opinion['comment']
-        if any(obj['id'].startswith('x-misp--') for obj in stix_objects):
+        if any(obj['id'].startswith('x-misp-') for obj in stix_objects):
             opinion_args['allow_custom'] = True
         getattr(self, self._results_handling_method)(
             self._create_opinion(opinion_args)
@@ -1002,6 +1002,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         objects: list = []
         file_args: defaultdict = defaultdict(dict)
+        attachments: tuple = ()
         if attributes.get('path'):
             self._parse_directory_ref(
                 file_args, objects, *self._select_single_feature(
@@ -1026,9 +1027,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 # next to its further values
                 attributes['malware-sample'] = value[0]
             if attributes.get('attachment'):
-                value = self._select_single_feature(attributes, 'attachment')
-                self._parse_custom_attachment(
-                    file_args, value, *repeated.pop('attachment', [])
+                # Without its uuid, as its further values come: a value with
+                # no data would otherwise carry the uuid as its data
+                attachments = (
+                    self._value_without_uuid(
+                        self._select_single_feature(attributes, 'attachment')
+                    ),
+                    *repeated.pop('attachment', [])
                 )
         elif attributes.get('attachment'):
             value = self._select_single_feature(attributes, 'attachment')
@@ -1048,6 +1053,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     {'uuid': misp_object['uuid'], 'name': misp_object['name']}
                 )
             )
+        if attachments:
+            # The attachment shares the MISP property extension with the
+            # leftovers: written once their body is in place, not replaced
+            # by it
+            self._parse_custom_attachment(file_args, *attachments)
         file_args['id'] = self._parse_stix_object_id(
             'object', 'file', misp_object
         )
@@ -2137,8 +2147,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     #                      MISP VALUES WRITING FUNCTIONS                       #
     ############################################################################
 
-    # STIX 2.1 writes the MISP values a standard object leaves over in the
-    # MISP property extension. Its nested parts, its fixed MISP fields and
+    # STIX 2.1 writes the MISP values a standard object leaves over, and its
+    # fixed MISP fields, in the MISP property extension. Its nested parts and
     # the galaxy meta still go as custom properties, and the MISP records no
     # STIX object maps as `x-misp-*` objects, as STIX 2.0 does
 
@@ -2254,10 +2264,24 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return custom_attribute
 
     @staticmethod
-    def _set_fixed_value(args: dict, name: str, value: Any):
-        args.update(
-            {'allow_custom': True, f'{_CUSTOM_PROPERTY_PREFIX}{name}': value}
+    def _property_extension_body(args: dict) -> dict:
+        # The body comes with the first value: an object with nothing to
+        # carry gets none
+        return args.setdefault('extensions', {}).setdefault(
+            _MISP_PROPERTY_EXTENSION_ID,
+            {'extension_type': 'property-extension'}
         )
+
+    def _set_fixed_value(self, args: dict, name: str, value: Any):
+        # A fixed MISP field keeps its own name, with no fold and no escape
+        body = self._property_extension_body(args)
+        if name in body:
+            # Another relation of the object folds to the same name: the
+            # field's value wins, and the value it replaces is reported lost
+            self._extension_property_collision_warning(
+                self._current_misp_object, name, name
+            )
+        body[name] = value
 
     def _set_leftovers(
             self, args: dict, leftovers: dict, room: Optional[dict] = None):
@@ -2268,12 +2292,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 args[self._custom_property_name(relation)] = value
             return
         for relation, value in leftovers.items():
-            # The body comes with the first value: an object with nothing
-            # left over carries none
-            body = args.setdefault('extensions', {}).setdefault(
-                _MISP_PROPERTY_EXTENSION_ID,
-                {'extension_type': 'property-extension'}
-            )
+            body = self._property_extension_body(args)
             name = _extension_property_name(relation)
             if name in body:
                 # Two values on one name, from relations folding or escaped
