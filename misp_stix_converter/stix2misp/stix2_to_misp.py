@@ -583,11 +583,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _get_stix_object(self, object_ref: str):
         object_type = object_ref.split('--')[0]
-        if object_type.startswith('x-misp-'):
-            object_type = (
-                'note' if object_type == 'x-misp-event-report'
-                else object_type.replace('x-misp', 'custom')
-            )
+        # The MISP custom types share their stores in both syntaxes: an
+        # `x-misp-*` type and the `misp-*` type standing for the same MISP
+        # record load into the same one
+        if object_type == 'x-misp-event-report':
+            object_type = 'note'
+        elif object_type.startswith(('x-misp-', 'misp-')):
+            object_type = f"custom-{object_type.split('misp-', 1)[1]}"
         feature = f"_{object_type.replace('-', '_')}"
         try:
             return getattr(self, feature)[object_ref]

@@ -15,6 +15,9 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     )
     __stix_object_loading_mapping = Mapping(
         **{
+            'misp-attribute': '_load_custom_attribute',
+            'misp-galaxy-cluster': '_load_custom_galaxy_cluster',
+            'misp-object': '_load_custom_object',
             'note': '_load_note',
             'opinion': '_load_opinion',
             'x-misp-analyst-note': '_load_analyst_note',

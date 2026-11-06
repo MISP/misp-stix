@@ -817,12 +817,17 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         cluster_args['description'] = value.capitalize()
         return cluster_args
 
-    def _create_galaxy_args(self, galaxy_type: str, galaxy_name: str):
-        self.main_parser._galaxies[galaxy_type] = (
-            GALAXY_DEFINITIONS[galaxy_type]
-            if galaxy_type in GALAXY_DEFINITIONS
-            else {'type': galaxy_type, 'name': galaxy_name}
-        )
+    def _create_galaxy_args(self, galaxy_type: str, galaxy_name: str,
+                            galaxy_description: Optional[str] = None):
+        # A galaxy MISP ships is read from its definition, any other from
+        # what the bundle says of it
+        if galaxy_type in GALAXY_DEFINITIONS:
+            galaxy_args = GALAXY_DEFINITIONS[galaxy_type]
+        else:
+            galaxy_args = {'type': galaxy_type, 'name': galaxy_name}
+            if galaxy_description is not None:
+                galaxy_args['description'] = galaxy_description
+        self.main_parser._galaxies[galaxy_type] = galaxy_args
 
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
         # Each syntax's channel spells the meta keys of its own syntax. The
@@ -880,19 +885,21 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             clusters[object_id] = getattr(self, feature)(stix_object)
 
     def _read_original_names(
-            self, stix_object,
-            names: Optional[Iterable[str]] = None) -> Optional[dict]:
+            self, stix_object, names: Optional[Iterable[str]] = None,
+            channel: str = _ORIGINAL_NAMES_PROPERTY) -> Optional[dict]:
         """Read the spellings the export carried for the names it folded.
 
         :param stix_object: the STIX object carrying the channel, if any
         :param names: the names the object writes, as the channel keys them -
-            its own properties by default, or the keys of its `x_misp_meta`
-            dictionary when the channel spells those instead
+            its own properties by default, or the keys of its meta dictionary
+            when the channel spells those instead
+        :param channel: the property carrying the channel -
+            `original_names` on a `misp-galaxy-cluster`
         :return: the MISP spelling per wire name, or `None` when the object
             carries no channel - it is then older than the channel, or the
             fold changed none of its names
         """
-        original_names = stix_object.get(_ORIGINAL_NAMES_PROPERTY)
+        original_names = stix_object.get(channel)
         if original_names is None:
             return None
         if names is None:
@@ -900,7 +907,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         unknown = [name for name in original_names if name not in names]
         if unknown:
             self.main_parser._unknown_original_names_warning(
-                stix_object['id'], unknown
+                stix_object['id'], unknown, channel
             )
         return original_names
 
