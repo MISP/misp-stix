@@ -221,11 +221,16 @@
             "id": "user-account--5b1f9378-46d4-494b-a4c1-044e0a00020f",
             "user_id": "misp",
             "credential": "Password1234",
-            "x_misp_format": "clear-text",
-            "x_misp_notification": "victim-notified",
-            "x_misp_origin": "malware-analysis",
-            "x_misp_text": "MISP default credentials",
-            "x_misp_type": "password"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "format": "clear-text",
+                    "notification": "victim-notified",
+                    "origin": "malware-analysis",
+                    "text": "MISP default credentials",
+                    "type": "password"
+                }
+            }
         },
         {
             "type": "relationship",

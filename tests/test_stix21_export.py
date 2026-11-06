@@ -3327,7 +3327,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(telegram.account_type, 'telegram')
         self.assertEqual(telegram.user_id, telegram_id)
         self.assertEqual(telegram.account_login, username)
-        self.assertEqual(telegram.x_misp_phone, [phone1, phone2])
+        self.assertEqual(self._misp_extension(telegram)['phone'], [phone1, phone2])
 
     def _check_account_with_attachment_observable_objects(self, misp_objects, observables, object_refs):
         for object_ref, observable, misp_object in zip(object_refs, observables, misp_objects):
@@ -3343,12 +3343,15 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(facebook.account_type, 'facebook')
         self.assertEqual(facebook.user_id, account_id['value'])
         self.assertEqual(facebook.account_login, account_name['value'])
-        self.assertEqual(facebook.x_misp_link, link['value'])
-        self.assertEqual(facebook.x_misp_user_avatar['value'], user_avatar['value'])
+        facebook_extension = self._misp_extension(facebook)
+        self.assertEqual(facebook_extension['link'], link['value'])
+        self.assertEqual(
+            facebook_extension['user_avatar']['value'], user_avatar['value']
+        )
         data = user_avatar['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        self.assertEqual(facebook.x_misp_user_avatar['data'], data)
+        self.assertEqual(facebook_extension['user_avatar']['data'], data)
         github_id, username, fullname, organisation, image = (attribute['value'] for attribute in github_user['Attribute'])
         github = github[1]
         self.assertEqual(github.type, 'user-account')
@@ -3356,36 +3359,39 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(github.user_id, github_id)
         self.assertEqual(github.account_login, username)
         self.assertEqual(github.display_name, fullname)
-        self.assertEqual(github.x_misp_organisation, organisation)
-        self.assertEqual(github.x_misp_profile_image['value'], image)
+        github_extension = self._misp_extension(github)
+        self.assertEqual(github_extension['organisation'], organisation)
+        self.assertEqual(github_extension['profile_image']['value'], image)
         data = github_user['Attribute'][-1]['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        self.assertEqual(github.x_misp_profile_image['data'], data)
+        self.assertEqual(github_extension['profile_image']['data'], data)
         parler_id, parler_name, human, profile_photo = (attribute['value'] for attribute in parler_account['Attribute'])
         parler = parler[1]
         self.assertEqual(parler.type, 'user-account')
         self.assertEqual(parler.account_type, 'parler')
         self.assertEqual(parler.user_id, parler_id)
         self.assertEqual(parler.account_login, parler_name)
-        self.assertEqual(parler.x_misp_human, human)
-        self.assertEqual(parler.x_misp_profile_photo['value'], profile_photo)
+        parler_extension = self._misp_extension(parler)
+        self.assertEqual(parler_extension['human'], human)
+        self.assertEqual(parler_extension['profile_photo']['value'], profile_photo)
         data = parler_account['Attribute'][-1]['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        self.assertEqual(parler.x_misp_profile_photo['data'], data)
+        self.assertEqual(parler_extension['profile_photo']['data'], data)
         reddit_id, reddit_name, description, account_avatar = (attribute['value'] for attribute in reddit_account['Attribute'])
         reddit = reddit[1]
         self.assertEqual(reddit.type, 'user-account')
         self.assertEqual(reddit.account_type, 'reddit')
         self.assertEqual(reddit.user_id, reddit_id)
         self.assertEqual(reddit.account_login, reddit_name)
-        self.assertEqual(reddit.x_misp_description, description)
-        self.assertEqual(reddit.x_misp_account_avatar['value'], account_avatar)
+        reddit_extension = self._misp_extension(reddit)
+        self.assertEqual(reddit_extension['description'], description)
+        self.assertEqual(reddit_extension['account_avatar']['value'], account_avatar)
         data = reddit_account['Attribute'][-1]['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        self.assertEqual(reddit.x_misp_account_avatar['data'], data)
+        self.assertEqual(reddit_extension['account_avatar']['data'], data)
         _id, name, displayed_name, followers, profile_image = twitter_account['Attribute']
         twitter = twitter[1]
         self.assertEqual(twitter.type, 'user-account')
@@ -3393,12 +3399,13 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(twitter.user_id, _id['value'])
         self.assertEqual(twitter.account_login, name['value'])
         self.assertEqual(twitter.display_name, displayed_name['value'])
-        self.assertEqual(twitter.x_misp_followers, followers['value'])
-        self.assertEqual(twitter.x_misp_profile_image['value'], profile_image['value'])
+        twitter_extension = self._misp_extension(twitter)
+        self.assertEqual(twitter_extension['followers'], followers['value'])
+        self.assertEqual(twitter_extension['profile_image']['value'], profile_image['value'])
         data = profile_image['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        self.assertEqual(twitter.x_misp_profile_image['data'], data)
+        self.assertEqual(twitter_extension['profile_image']['data'], data)
 
     def _check_android_app_observable_object(self, misp_object, software, object_ref):
         name, certificate, domain = (
@@ -3409,8 +3416,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             software.id, object_ref, f"software--{misp_object['uuid']}"
         )
         self.assertEqual(software.name, name)
-        self.assertEqual(software.x_misp_certificate, certificate)
-        self.assertEqual(software.x_misp_domain, domain)
+        self.assertEqual(self._misp_extension(software)['certificate'], certificate)
+        self.assertEqual(self._misp_extension(software)['domain'], domain)
 
     def _check_asn_observable_object(self, misp_object, autonomous_system, object_ref):
         asn, description, subnet1, subnet2 = (
@@ -3424,7 +3431,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(autonomous_system.number, int(asn))
         self.assertEqual(autonomous_system.name, description)
         self.assertEqual(
-            autonomous_system.x_misp_subnet_announced,
+            self._misp_extension(autonomous_system)['subnet_announced'],
             [subnet1, subnet2]
         )
 
@@ -3441,7 +3448,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(software.languages, [language])
         self.assertEqual(software.vendor, vendor)
         self.assertEqual(software.version, version)
-        self.assertEqual(software.x_misp_description, description)
+        self.assertEqual(self._misp_extension(software)['description'], description)
 
     def _check_credential_observable_object(self, misp_object, user_account, object_ref):
         text, username, password, *attributes = misp_object['Attribute']
@@ -3454,7 +3461,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(user_account.credential, password['value'])
         for attribute in (text, *attributes):
             self.assertEqual(
-                getattr(user_account, f"x_misp_{attribute['object_relation']}"),
+                self._misp_extension(user_account)[attribute['object_relation']],
                 attribute['value']
             )
 
@@ -3565,8 +3572,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         self.assertEqual(domain_.type, 'domain-name')
         self.assertEqual(domain_.value, _domain['value'])
-        self.assertEqual(domain_.x_misp_hostname, hostname['value'])
-        self.assertEqual(domain_.x_misp_port, port['value'])
+        self.assertEqual(self._misp_extension(domain_)['hostname'], hostname['value'])
+        self.assertEqual(self._misp_extension(domain_)['port'], port['value'])
         self._assert_multiple_equal(
             address.id, domain_.resolves_to_refs[0], ip_ref,
             f"ipv4-addr--{_ip['uuid']}"
@@ -3592,8 +3599,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         additional_header = message.additional_header_fields
         self.assertEqual(additional_header['Reply-To'], _reply_to['value'])
         self.assertEqual(additional_header['X-Mailer'], _x_mailer['value'])
-        self.assertEqual(message.x_misp_mime_boundary, _boundary['value'])
-        self.assertEqual(message.x_misp_user_agent, _user_agent['value'])
+        self.assertEqual(self._misp_extension(message)['mime_boundary'], _boundary['value'])
+        self.assertEqual(self._misp_extension(message)['user_agent'], _user_agent['value'])
         self.assertEqual(message.from_ref, address1_ref)
         self.assertEqual(message.to_refs, [address2_ref])
         self.assertEqual(message.cc_refs, [address3_ref, address4_ref])
@@ -3666,7 +3673,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             message.cc_refs[0], cc_.id, cc_ref, f"email-addr--{_cc1['uuid']}"
         )
         self._check_email_address(cc_, _cc1['value'])
-        self.assertEqual(message.x_misp_cc_display_name, _cc2_name['value'])
+        self.assertEqual(self._misp_extension(message)['cc_display_name'], _cc2_name['value'])
         self._assert_multiple_equal(
             message.bcc_refs[0], bcc_.id, bcc_ref, f"email-addr--{_bcc['uuid']}"
         )
@@ -3683,7 +3690,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(hashes['SHA-1'], sha1)
         self.assertEqual(hashes['SHA-256'], sha256)
         self.assertEqual(_file.size, int(size))
-        self.assertEqual(_file.x_misp_entropy, entropy)
+        self.assertEqual(self._misp_extension(_file)['entropy'], entropy)
         self._check_pe_and_section_observable(
             _file.extensions['windows-pebinary-ext'], pe, section
         )
@@ -3753,15 +3760,16 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(hashes['SHA-256'], sha256['value'])
         self.assertEqual(hashes['SSDEEP'], ssdeep['value'])
         self.assertEqual(hashes['TLSH'], tlsh['value'])
-        self.assertEqual(observable.x_misp_knownmalicious, known_malicious['value'])
-        self.assertEqual(observable.x_misp_packagename, package_name['value'])
-        self.assertEqual(observable.x_misp_packageversion, package_version['value'])
-        self.assertEqual(observable.x_misp_packagerelease, package_release['value'])
-        self.assertEqual(observable.x_misp_packagearch, package_arch['value'])
-        self.assertEqual(observable.x_misp_packagedescription, package_description['value'])
-        self.assertEqual(observable.x_misp_packagemaintainer, package_maintainer['value'])
-        self.assertEqual(observable.x_misp_source, source['value'])
-        self._check_custom_property_names(observable)
+        extension = self._misp_extension(observable)
+        self.assertEqual(extension['knownmalicious'], known_malicious['value'])
+        self.assertEqual(extension['packagename'], package_name['value'])
+        self.assertEqual(extension['packageversion'], package_version['value'])
+        self.assertEqual(extension['packagerelease'], package_release['value'])
+        self.assertEqual(extension['packagearch'], package_arch['value'])
+        self.assertEqual(extension['packagedescription'], package_description['value'])
+        self.assertEqual(extension['packagemaintainer'], package_maintainer['value'])
+        self.assertEqual(extension['source'], source['value'])
+        self._check_extension_property_names(observable)
 
     def _check_http_request_observable_object(self, misp_object, observables, object_refs):
         ip_src, ip_dst, host, method, user_agent, uri, url, content = misp_object['Attribute']
@@ -3777,7 +3785,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(extension.request_value, uri['value'])
         self.assertEqual(extension.request_header['Content-Type'], content['value'])
         self.assertEqual(extension.request_header['User-Agent'], user_agent['value'])
-        self.assertEqual(network_traffic.x_misp_url, url['value'])
+        self.assertEqual(self._misp_extension(network_traffic)['url'], url['value'])
         self.assertEqual(src_address.type, 'ipv4-addr')
         self._assert_multiple_equal(
             src_address.id, src_address_ref, network_traffic.src_ref,
@@ -3817,7 +3825,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(artifact.mime_type, 'image/png')
         self.assertEqual(artifact.x_misp_url, url['value'])
         self.assertEqual(artifact.x_misp_filename, attachment['value'])
-        self.assertEqual(_file.x_misp_image_text, text['value'])
+        self.assertEqual(self._misp_extension(_file)['image_text'], text['value'])
 
     def _check_ip_port_observable_object(self, misp_object, observables, object_refs):
         ip, port, domain, first_seen = misp_object['Attribute']
@@ -3834,7 +3842,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_str(timestamp)
         self.assertEqual(network_traffic.start, timestamp)
         self.assertIn('ipv4', network_traffic.protocols)
-        self.assertEqual(network_traffic.x_misp_domain, domain['value'])
+        self.assertEqual(self._misp_extension(network_traffic)['domain'], domain['value'])
         self._assert_multiple_equal(
             network_traffic.dst_ref, address_object.id, address_ref,
             f"ipv4-addr--{ip['uuid']}"
@@ -3897,8 +3905,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         self.assertEqual(mutex.type, 'mutex')
         self.assertEqual(mutex.name, name)
-        self.assertEqual(mutex.x_misp_description, description)
-        self.assertEqual(mutex.x_misp_operating_system, _os)
+        self.assertEqual(self._misp_extension(mutex)['description'], description)
+        self.assertEqual(self._misp_extension(mutex)['operating_system'], _os)
 
     def _check_netflow_observable_object(self, misp_object, observables, object_refs):
         (ip_src, ip_dst, src_as, dst_as, src_port, dst_port,
@@ -3963,7 +3971,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             network_traffic.protocols,
             [layer3.lower(), layer4.lower(), layer7.lower()]
         )
-        self.assertEqual(network_traffic.x_misp_hostname_dst, hostname)
+        self.assertEqual(self._misp_extension(network_traffic)['hostname_dst'], hostname)
         self._assert_multiple_equal(
             network_traffic.src_ref, address1.id, address1_ref
         )
@@ -3992,8 +4000,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(socket_ext.address_family, address_family['value'])
         self.assertEqual(socket_ext.socket_type, socket_type['value'])
         self.assertEqual(getattr(socket_ext, f"is_{state['value']}"), True)
-        self.assertEqual(network_traffic.x_misp_domain_family, domain_family['value'])
-        self.assertEqual(network_traffic.x_misp_hostname_dst, hostname['value'])
+        self.assertEqual(self._misp_extension(network_traffic)['domain_family'], domain_family['value'])
+        self.assertEqual(self._misp_extension(network_traffic)['hostname_dst'], hostname['value'])
         self._assert_multiple_equal(
             network_traffic.src_ref, address1.id, address1_ref,
             f"ipv4-addr--{ip_src['uuid']}"
@@ -4018,8 +4026,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(process.type, 'process')
         self.assertEqual(process.pid, int(pid['value']))
         self.assertEqual(process.is_hidden, True)
-        self.assertEqual(process.x_misp_name, name['value'])
-        self.assertEqual(process.x_misp_port, port['value'])
+        self.assertEqual(self._misp_extension(process)['name'], name['value'])
+        self.assertEqual(self._misp_extension(process)['port'], port['value'])
         self._assert_multiple_equal(
             parent_process.image_ref, parent_image_object.id,
             parent_image_ref, f"file--{parent_image['uuid']}"
@@ -4033,7 +4041,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(parent_process.type, 'process')
         self.assertEqual(parent_process.pid, int(parent_pid['value']))
         self.assertEqual(parent_process.command_line, command_line['value'])
-        self.assertEqual(parent_process.x_misp_process_name, parent_name['value'])
+        self.assertEqual(self._misp_extension(parent_process)['process_name'], parent_name['value'])
         self._assert_multiple_equal(
             process.child_refs[0], child_process.id, child_ref,
             f"process--{child_pid['uuid']}"
@@ -4063,7 +4071,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             registry_key.modified_time.timestamp(),
             modified.timestamp()
         )
-        self.assertEqual(registry_key.x_misp_hive, hive)
+        self.assertEqual(self._misp_extension(registry_key)['hive'], hive)
         registry_value = registry_key['values'][0]
         self.assertEqual(registry_value.data, data)
         self.assertEqual(registry_value.data_type, data_type)
@@ -4084,10 +4092,11 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         self.assertEqual(url_object.type, 'url')
         self.assertEqual(url_object.value, url)
-        self.assertEqual(url_object.x_misp_domain, domain)
-        self.assertEqual(url_object.x_misp_host, host)
-        self.assertEqual(url_object.x_misp_ip, ip)
-        self.assertEqual(url_object.x_misp_port, port)
+        extension = self._misp_extension(url_object)
+        self.assertEqual(extension['domain'], domain)
+        self.assertEqual(extension['host'], host)
+        self.assertEqual(extension['misp_ip'], ip)
+        self.assertEqual(extension['port'], port)
 
     def _check_user_account_observable_object(self, misp_object, user_account, object_ref):
         (username, userid, display_name, passwd, group1, group2, groupid, home,
@@ -4112,11 +4121,11 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             user_account.credential_last_changed.timestamp(),
             password_last_changed.timestamp()
         )
-        self.assertEqual(user_account.x_misp_user_avatar['value'], user_avatar['value'])
+        self.assertEqual(self._misp_extension(user_account)['user_avatar']['value'], user_avatar['value'])
         data = user_avatar['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        self.assertEqual(user_account.x_misp_user_avatar['data'], data)
+        self.assertEqual(self._misp_extension(user_account)['user_avatar']['data'], data)
 
     def _check_x509_observable_object(self, misp_object, x509, object_ref):
         (issuer, pem, pia, pie, pim, srlnmbr, signalg, subject, vnb, vna, version,
@@ -4142,7 +4151,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(x509.subject_public_key_algorithm, pia)
         self.assertEqual(x509.subject_public_key_modulus, pim)
         self.assertEqual(x509.subject_public_key_exponent, int(pie))
-        self.assertEqual(x509.x_misp_pem, pem)
+        self.assertEqual(self._misp_extension(x509)['pem'], pem)
 
     @staticmethod
     def _reorder_observable_objects(observables, ids):
@@ -4561,12 +4570,13 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(note.labels[1], f'misp:meta-category="{annotation["meta-category"]}"')
         self.assertEqual(note.content, text.value)
         self.assertEqual(set(note.object_refs), {indicator.id, observed_data.id})
-        self.assertEqual(note.x_misp_type, annotation_type.value)
-        self.assertEqual(note.x_misp_attachment['value'], attachment.value)
+        extension = self._misp_extension(note)
+        self.assertEqual(extension['type'], annotation_type.value)
+        self.assertEqual(extension['attachment']['value'], attachment.value)
         data = attachment.data
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        self.assertEqual(note.x_misp_attachment['data'], data)
+        self.assertEqual(extension['attachment']['data'], data)
 
     def _test_event_with_android_app_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
@@ -4687,19 +4697,52 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 (sigma_indicator, suricata_indicator),
                 (sigma_object, suricata_object)):
             weird_attribute, odd_attribute = misp_object['Attribute'][-2:]
+            extension = self._misp_extension(indicator)
             self.assertEqual(
-                indicator.x_misp_weird_relation, weird_attribute['value']
+                extension['weird_relation'], weird_attribute['value']
             )
-            self.assertFalse(hasattr(indicator, 'x_misp_weird-relation'))
+            self.assertNotIn('weird-relation', extension)
             self.assertEqual(
-                indicator.x_misp_odd_case_relation, odd_attribute['value']
+                extension['odd_case_relation'], odd_attribute['value']
             )
-            self._check_custom_property_names(indicator)
+            self._check_extension_property_names(indicator)
         weird_attribute, odd_attribute = url_object['Attribute'][-2:]
-        self.assertEqual(url.x_misp_weird_relation, weird_attribute['value'])
-        self.assertFalse(hasattr(url, 'x_misp_weird-relation'))
-        self.assertEqual(url.x_misp_odd_case_relation, odd_attribute['value'])
-        self._check_custom_property_names(url)
+        extension = self._misp_extension(url)
+        self.assertEqual(extension['weird_relation'], weird_attribute['value'])
+        self.assertNotIn('weird-relation', extension)
+        self.assertEqual(extension['odd_case_relation'], odd_attribute['value'])
+        self._check_extension_property_names(url)
+
+    # Two relations of one object landing on one Extension Property Name,
+    # through the escape (a url `ip` and a real `misp-ip`) or through the
+    # fold (`domain` and `Domain`): the last value wins, and the value it
+    # replaces is reported lost
+
+    def _test_event_with_extension_property_name_collision(self):
+        for attribute_type, relation, name, value in (
+                ('ip-dst', 'misp-ip', 'misp_ip', '5.6.7.8'),
+                ('domain', 'Domain', 'domain', 'misp-project.org')):
+            with self.subTest(relation=relation):
+                event = get_event_with_url_object()
+                misp_object = self._spell_object_relations(
+                    event, 'url', {}, (attribute_type, relation, value)
+                )
+                self.parser = self._export_event(MISPtoSTIX21Parser, event)
+                self.assertEqual(self.parser.errors, {})
+                self.assertEqual(
+                    self.parser.warnings[event['Event']['uuid']],
+                    [
+                        f"MISP object url (uuid: {misp_object['uuid']}): "
+                        f'relation "{relation}" is written as "{name}" in the '
+                        'MISP property extension, already set by another '
+                        'value of the same object, the last value wins.'
+                    ]
+                )
+                url, = (
+                    stix_object for stix_object in self.parser.stix_objects
+                    if stix_object.type == 'url'
+                )
+                self.assertEqual(self._misp_extension(url)[name], value)
 
     def _test_event_with_directory_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
@@ -4939,8 +4982,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(location.latitude, float(latitude))
         self.assertEqual(location.longitude, float(longitude))
         self.assertEqual(location.precision, float(accuracy) * 1000)
-        self.assertEqual(location.x_misp_country, country)
-        self.assertEqual(location.x_misp_altitude, altitude)
+        self.assertEqual(self._misp_extension(location)['country'], country)
+        self.assertEqual(self._misp_extension(location)['altitude'], altitude)
 
     def _test_event_with_http_request_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
@@ -5185,11 +5228,11 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             news_agency.contact_information,
             f"address: {address1}; {address2} / e-mail: {email1}; {email2} / phone-number: {phone1}; {phone2} / link: {link}"
         )
-        self.assertEqual(news_agency.x_misp_attachment['value'], attachment)
+        self.assertEqual(self._misp_extension(news_agency)['attachment']['value'], attachment)
         data = misp_object['Attribute'][-1]['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        self.assertEqual(news_agency.x_misp_attachment['data'], data)
+        self.assertEqual(self._misp_extension(news_agency)['attachment']['data'], data)
 
     def _test_event_with_organisation_object(self, event):
         orgc = event['Orgc']
@@ -5221,7 +5264,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             f"address: {address} / e-mail: {email} / phone-number: {phone}"
         )
         self.assertEqual(organization.roles, [role])
-        self.assertEqual(organization.x_misp_alias, alias)
+        self.assertEqual(self._misp_extension(organization)['alias'], alias)
 
     def _test_event_with_patterning_language_objects(self, event):
         orgc = event['Orgc']
@@ -5253,7 +5296,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(sigma_indicator.pattern, rule['value'])
         self.assertEqual(sigma_indicator.pattern_type, rule['type'])
         self.assertEqual(sigma_indicator.external_references[0].url, reference['value'])
-        self.assertEqual(sigma_indicator.x_misp_context, context['value'])
+        self.assertEqual(self._misp_extension(sigma_indicator)['context'], context['value'])
         self._check_object_indicator_features(suricata_indicator, suricata, identity_id, suricata_ref)
         rule, version, comment, ref = suricata['Attribute']
         self.assertEqual(suricata_indicator.pattern, rule['value'])
@@ -5415,7 +5458,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         self.assertEqual(observable.type, 'windows-registry-key')
         self.assertEqual(observable.key, key)
-        self.assertEqual(observable.x_misp_hive, hive)
+        self.assertEqual(self._misp_extension(observable)['hive'], hive)
         if not isinstance(modified, datetime):
             modified = self._datetime_from_str(modified)
         self.assertEqual(observable.modified_time.timestamp(), modified.timestamp())
@@ -5458,7 +5501,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         self.assertEqual(observable.type, 'windows-registry-key')
         self.assertEqual(observable.key, key)
-        self.assertEqual(observable.x_misp_hive, hive)
+        self.assertEqual(self._misp_extension(observable)['hive'], hive)
         if not isinstance(modified, datetime):
             modified = self._datetime_from_str(modified)
         self.assertEqual(
@@ -5493,33 +5536,35 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(malware.implementation_languages, [language['value']])
         self.assertEqual(malware.name, name['value'])
         self.assertEqual(malware.description, comment['value'])
-        self.assertEqual(malware.x_misp_script, script['value'])
+        malware_extension = self._misp_extension(malware)
+        self.assertEqual(malware_extension['script'], script['value'])
         self.assertEqual(
-            malware.x_misp_script_as_attachment['value'],
+            malware_extension['script_as_attachment']['value'],
             script_attachment['value']
         )
         data = script_attachment['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        self.assertEqual(malware.x_misp_script_as_attachment['data'], data)
-        self.assertEqual(malware.x_misp_state, state['value'])
+        self.assertEqual(malware_extension['script_as_attachment']['data'], data)
+        self.assertEqual(malware_extension['state'], state['value'])
         self.assertEqual(malware.is_family, False)
         language, comment, name, script, script_attachment, state = tool_script['Attribute']
         self._assert_multiple_equal(tool.id, tool_ref, f"tool--{tool_script['uuid']}")
         self.assertEqual(tool.type, 'tool')
         self.assertEqual(tool.name, name['value'])
         self.assertEqual(tool.description, comment['value'])
-        self.assertEqual(tool.x_misp_language, language['value'])
-        self.assertEqual(tool.x_misp_script, script['value'])
+        tool_extension = self._misp_extension(tool)
+        self.assertEqual(tool_extension['language'], language['value'])
+        self.assertEqual(tool_extension['script'], script['value'])
         self.assertEqual(
-            tool.x_misp_script_as_attachment['value'],
+            tool_extension['script_as_attachment']['value'],
             script_attachment['value']
         )
         data = script_attachment['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        self.assertEqual(tool.x_misp_script_as_attachment['data'], data)
-        self.assertEqual(tool.x_misp_state, state['value'])
+        self.assertEqual(tool_extension['script_as_attachment']['data'], data)
+        self.assertEqual(tool_extension['state'], state['value'])
 
     def _test_event_with_url_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
@@ -5724,9 +5769,10 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 process = observables.pop(f"process--{misp_object['uuid']}")
                 for feature in ('pid', 'child_refs'):
                     self.assertNotIn(feature, process)
-                self.assertEqual(process.x_misp_pid, value)
-                self.assertEqual(process.x_misp_parent_pid, value)
-                self.assertEqual(process.x_misp_child_pid, value)
+                extension = self._misp_extension(process)
+                self.assertEqual(extension['pid'], value)
+                self.assertEqual(extension['parent_pid'], value)
+                self.assertEqual(extension['child_pid'], value)
                 parent_pid = next(
                     attribute for attribute in misp_object['Attribute']
                     if attribute['object_relation'] == 'parent-pid'
@@ -5781,9 +5827,9 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 observables = self._record_observables()
                 process = observables[f"process--{misp_object['uuid']}"]
                 self.assertNotIn('parent_ref', process)
-                self.assertEqual(process.x_misp_parent_pid, '0x1f')
+                self.assertEqual(self._misp_extension(process)['parent_pid'], '0x1f')
                 if extra:
-                    self.assertEqual(process.x_misp_parent_guid, 'guid-1')
+                    self.assertEqual(self._misp_extension(process)['parent_guid'], 'guid-1')
                 self.assertEqual(
                     sorted(observable.type for observable in observables.values()),
                     ['file', 'process', 'process']
@@ -5842,8 +5888,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 ]
                 extension = user_account.extensions['unix-account-ext']
                 self.assertNotIn('gid', extension)
-                self.assertNotIn('x_misp_group_id', extension)
-                self.assertEqual(user_account.x_misp_group_id, value)
+                self.assertEqual(self._misp_extension(user_account)['group_id'], value)
         event = get_event_with_user_account_object()
         misp_object = self._spell_object_relations(
             event, 'user-account', {'group-id': '-3'}
@@ -5874,7 +5919,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                     f"x509-certificate--{misp_object['uuid']}"
                 ]
                 self.assertNotIn('subject_public_key_exponent', x509)
-                self.assertEqual(x509.x_misp_pubkey_info_exponent, value)
+                self.assertEqual(self._misp_extension(x509)['pubkey_info_exponent'], value)
         event = get_event_with_x509_object()
         misp_object = self._spell_object_relations(
             event, 'x509', {'pubkey-info-exponent': '-3'}
@@ -5912,12 +5957,12 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 )
 
     def _test_event_with_file_objects_non_canonical_sizes(self):
-        for name, relation, custom, fixture in (
-                ('file', 'size-in-bytes', 'x_misp_size_in_bytes',
+        for name, relation, property_name, fixture in (
+                ('file', 'size-in-bytes', 'size_in_bytes',
                  get_event_with_file_object),
-                ('lnk', 'size-in-bytes', 'x_misp_size_in_bytes',
+                ('lnk', 'size-in-bytes', 'size_in_bytes',
                  get_event_with_lnk_object),
-                ('hashlookup', 'FileSize', 'x_misp_filesize',
+                ('hashlookup', 'FileSize', 'filesize',
                  get_event_with_hashlookup_object)):
             for value in self._NON_CANONICAL_VALIDATED:
                 with self.subTest(name=name, value=value):
@@ -5938,7 +5983,9 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                         f"file--{misp_object['uuid']}"
                     ]
                     self.assertNotIn('size', file_object)
-                    self.assertEqual(file_object[custom], value)
+                    self.assertEqual(
+                        self._misp_extension(file_object)[property_name], value
+                    )
             with self.subTest(name=name, value='31'):
                 event = fixture()
                 misp_object = self._spell_object_relations(
@@ -6081,11 +6128,13 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                     )
                     for feature in ('latitude', 'longitude', 'precision'):
                         self.assertNotIn(feature, location)
-                    self.assertEqual(location[f'x_misp_{relation}'], value)
                     self.assertEqual(
-                        location[f'x_misp_{other}'], other_value
+                        self._misp_extension(location)[relation], value
                     )
-                    self.assertEqual(location.x_misp_accuracy_radius, '1')
+                    self.assertEqual(
+                        self._misp_extension(location)[other], other_value
+                    )
+                    self.assertEqual(self._misp_extension(location)['accuracy_radius'], '1')
                     self.assertEqual(location.country, 'US')
                     self.parser.bundle.serialize()
         for value in self._NON_CANONICAL_FLOAT:
@@ -6109,7 +6158,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                     if stix_object.type == 'location'
                 )
                 self.assertNotIn('precision', location)
-                self.assertEqual(location.x_misp_accuracy_radius, value)
+                self.assertEqual(self._misp_extension(location)['accuracy_radius'], value)
                 self.assertEqual(location.latitude, 39.108889)
                 self.assertEqual(location.longitude, -76.771389)
                 self.parser.bundle.serialize()
@@ -6125,7 +6174,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 if stix_object.type == 'location'
             )
             self.assertNotIn('precision', location)
-            self.assertEqual(location.x_misp_accuracy_radius, '1e306')
+            self.assertEqual(self._misp_extension(location)['accuracy_radius'], '1e306')
             self.parser.bundle.serialize()
         with self.subTest(place=False):
             # With no country or region left, stix2 refuses the location: the
@@ -6160,8 +6209,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_network_objects_non_canonical_numbers(self):
         ports = {
-            'src-port': ('src_port', 'x_misp_src_port'),
-            'dst-port': ('dst_port', 'x_misp_dst_port')
+            'src-port': ('src_port', 'src_port'),
+            'dst-port': ('dst_port', 'dst_port')
         }
         cases = (
             ('network-connection', get_event_with_network_connection_object,
@@ -6172,8 +6221,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
              (('port', 'src-port', '8080'),)),
             ('netflow', get_event_with_netflow_object,
              {**ports,
-              'byte-count': ('src_byte_count', 'x_misp_byte_count'),
-              'packet-count': ('src_packets', 'x_misp_packet_count')},
+              'byte-count': ('src_byte_count', 'byte_count'),
+              'packet-count': ('src_packets', 'packet_count')},
              (('size-in-bytes', 'byte-count', '1234'),
               ('counter', 'packet-count', '12')))
         )
@@ -6199,9 +6248,12 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                     network_traffic = self._record_observables()[
                         f"network-traffic--{misp_object['uuid']}"
                     ]
-                    for feature, custom in features.values():
+                    for feature, property_name in features.values():
                         self.assertNotIn(feature, network_traffic)
-                        self.assertEqual(network_traffic[custom], value)
+                        self.assertEqual(
+                            self._misp_extension(network_traffic)[property_name],
+                            value
+                        )
             with self.subTest(name=name, value='31'):
                 event = fixture()
                 misp_object = self._spell_object_relations(
@@ -6251,8 +6303,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                     network_traffic = observables[
                         f"network-traffic--{misp_object['uuid']}"
                     ]
-                    self.assertEqual(network_traffic.x_misp_src_as, value)
-                    self.assertEqual(network_traffic.x_misp_dst_as, value)
+                    self.assertEqual(self._misp_extension(network_traffic)['src_as'], value)
+                    self.assertEqual(self._misp_extension(network_traffic)['dst_as'], value)
                     patterns = [
                         stix_object.pattern
                         for stix_object in self.parser.stix_objects
@@ -6290,7 +6342,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             network_traffic = self._record_observables()[
                 f"network-traffic--{misp_object['uuid']}"
             ]
-            self.assertEqual(network_traffic.x_misp_src_as, '007')
+            self.assertEqual(self._misp_extension(network_traffic)['src_as'], '007')
         with self.subTest(value='31'):
             event = get_event_with_netflow_object()
             misp_object = self._spell_object_relations(
@@ -6304,8 +6356,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 [31, 31]
             )
             self.assertNotIn(
-                'x_misp_src_as',
-                observables[f"network-traffic--{misp_object['uuid']}"]
+                MISP_PROPERTY_EXTENSION_ID,
+                observables[f"network-traffic--{misp_object['uuid']}"].extensions
             )
 
     def _test_event_with_asn_object_non_canonical_number(self):
@@ -7202,6 +7254,9 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_stix2_pattern_object(self):
         self._test_stix2_pattern_object(MISPtoSTIX21Parser)
 
+    def test_event_with_extension_property_name_collision(self):
+        self._test_event_with_extension_property_name_collision()
+
 
 class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
     def test_embedded_indicator_object_galaxy(self):
@@ -7806,6 +7861,9 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
 
     def test_event_with_stix2_pattern_object(self):
         self._test_stix2_pattern_object(MISPtoSTIX21Parser)
+
+    def test_event_with_extension_property_name_collision(self):
+        self._test_event_with_extension_property_name_collision()
 
 
 class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):

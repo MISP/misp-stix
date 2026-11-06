@@ -6088,9 +6088,15 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
                 to_ids=to_ids, pattern_path=pattern_path
             )
             self.assertIn(('text', 'totally_unknown', 'nobody knows'), attributes)
+            # The message names the property as the bundle spells it: in the
+            # MISP property extension of the observable, while the pattern
+            # still compares the custom property
+            field = (
+                'x_misp_totally_unknown' if pattern_path else
+                f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.totally_unknown"
+            )
             self._check_unknown_custom_property_warning(
-                'hashlookup', 'x_misp_totally_unknown', 'totally_unknown',
-                self.parser.warnings
+                'hashlookup', field, 'totally_unknown', self.parser.warnings
             )
 
     def test_stix21_bundle_with_http_request_indicator_object(self):
