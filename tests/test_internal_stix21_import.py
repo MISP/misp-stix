@@ -3823,7 +3823,8 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         cluster = parser.misp_event.galaxies[0].clusters[0]
         self.assertEqual(cluster.value, 'LEAKED-B-ACTOR')
 
-    def test_stix21_reused_parser_does_not_resolve_undefined_galaxy_cluster(self):
+    def _check_reused_parser_does_not_resolve_undefined_galaxy_cluster(
+            self, bundle_a):
         # The galaxy cluster SDOs the parser loads must go the same way as the
         # clusters built from them: bundle B *referencing* a cluster id it never
         # defines must resolve against nothing, not against the object bundle A
@@ -3831,13 +3832,13 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         # and B's dangling reference is never reported.
         from stix2.parsing import dict_to_stix2
         from misp_stix_converter import InternalSTIX2toMISPParser
-        bundle_a = TestInternalSTIX21Bundles.get_bundle_with_custom_galaxy()
-        cluster_value = bundle_a.objects[-1].x_misp_value
+        custom = bundle_a.objects[-1]
+        cluster_value = self._misp_type_value(custom, 'x_misp_value')
         b_dict = json.loads(bundle_a.serialize())
         b_dict['id'] = 'bundle--5b8e0f9a-0000-4000-8000-0000000000c0'
         b_dict['objects'] = [
             stix_object for stix_object in b_dict['objects']
-            if stix_object['type'] != 'x-misp-galaxy-cluster'
+            if stix_object['type'] != custom['type']
         ]
         for stix_object in b_dict['objects']:
             if stix_object['type'] == 'grouping':
@@ -3860,6 +3861,16 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertIn(
             'Error loading the STIX object of type custom-galaxy-cluster',
             parser.errors[b_dict['id']]
+        )
+
+    def test_stix21_reused_parser_does_not_resolve_undefined_galaxy_cluster(self):
+        self._check_reused_parser_does_not_resolve_undefined_galaxy_cluster(
+            TestInternalSTIX21Bundles.get_bundle_with_custom_galaxy()
+        )
+
+    def test_stix21_reused_parser_does_not_resolve_undefined_galaxy_cluster_extension_syntax(self):
+        self._check_reused_parser_does_not_resolve_undefined_galaxy_cluster(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_custom_galaxy()
         )
 
     def test_stix21_parser_handles_objectless_bundle(self):
