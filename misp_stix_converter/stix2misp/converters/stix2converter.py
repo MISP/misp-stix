@@ -60,15 +60,20 @@ class _CustomSyntaxView(Mapping):
     values.
 
     The object's own properties come first, its MISP property extension
-    values next, each under the custom property name it stands for.
+    values next, each under the custom property name it stands for. A part
+    of the object whose values sit in a Nested Room - the PE extension, a
+    section, a registry value - is presented the same way, where the object
+    holds it.
     """
 
     def __init__(self, stix_object, values: dict, paths: dict,
-                 original_names: Optional[dict] = None):
+                 original_names: Optional[dict] = None,
+                 parts: Optional[dict] = None):
         self.__stix_object = stix_object
         self.__values = values
         self.__paths = paths
         self.__original_names = original_names or {}
+        self.__parts = parts or {}
 
     def __contains__(self, key: object) -> bool:
         return key in self.__values or key in self.__stix_object
@@ -76,6 +81,8 @@ class _CustomSyntaxView(Mapping):
     def __getitem__(self, key: str) -> Any:
         if key in self.__values:
             return self.__values[key]
+        if key in self.__parts:
+            return self.__parts[key]
         return self.__stix_object[key]
 
     def __iter__(self) -> Iterator[str]:
@@ -149,9 +156,15 @@ def _as_custom_syntax(
     custom property does, and nothing is salvaged from it.
 
     Only an object with an id carries the extension. A part of one - a PE
-    extension, a section, a registry value - is presented with no MISP
-    value of its own, whatever its `extensions` hold, and so is a STIX 2.0
-    observable, which no producer writes the extension on.
+    extension, a section, a registry value - takes its MISP values from the
+    Nested Room standing for it, in the object's extension: the view
+    presents the part with them wherever the object holds it, so a reader
+    reaching the part through the view reads them. Whatever the part's own
+    `extensions` hold is no MISP value. A list room lines up with its STIX
+    list item by item, so one that does not cannot say which item a value
+    belongs to, and costs the object as an unreadable value does. A STIX
+    2.0 observable, which no producer writes the extension on, is presented
+    with no MISP value.
 
     The object is read through the Mapping interface only, as a typed object
     and a Dict-Form Object both offer it. An object already presented is
@@ -167,9 +180,8 @@ def _as_custom_syntax(
     """
     if isinstance(stix_object, _CustomSyntaxView):
         return stix_object
-    values, paths = {}, {}
     if 'id' not in stix_object:
-        return _CustomSyntaxView(stix_object, values, paths)
+        return _CustomSyntaxView(stix_object, {}, {})
     path = f"extensions.'{_MISP_PROPERTY_EXTENSION_ID}'"
     extension = stix_object.get('extensions', {}).get(
         _MISP_PROPERTY_EXTENSION_ID, {}
@@ -178,7 +190,31 @@ def _as_custom_syntax(
         _unreadable_misp_value(path, 'a dictionary')
     if not isinstance(extension.get('original_names', {}), Mapping):
         _unreadable_misp_value(f'{path}.original_names', 'a dictionary')
-    for name, value in extension.items():
+    values, paths = _extension_values(
+        stix_object['id'], stix_object, extension, path, main_parser,
+        meta=meta, fixed_names=not meta
+    )
+    parts = _nested_parts(stix_object, extension, path, main_parser)
+    if not meta:
+        return _CustomSyntaxView(stix_object, values, paths, parts=parts)
+    return _CustomSyntaxView(
+        stix_object, values, paths, _extension_original_names(
+            stix_object['id'], extension.get('original_names', {}), values,
+            f'{path}.original_names', main_parser
+        ),
+        parts
+    )
+
+
+def _extension_values(
+        object_id: str, stix_part, body: Mapping, path: str,
+        main_parser: _MAIN_PARSER_TYPING, meta: bool = False,
+        fixed_names: bool = False) -> Tuple[dict, dict]:
+    # The MISP values one body of the extension holds for a part of the
+    # object, or the object itself, under the custom property names they
+    # stand for: the names the extension uses for itself are none of them
+    values, paths = {}, {}
+    for name, value in body.items():
         if name in _EXTENSION_RESERVED_NAMES:
             continue
         field = (
@@ -186,19 +222,83 @@ def _as_custom_syntax(
             else _custom_property_name_from_extension(name)
         )
         paths[field] = f'{path}.{name}'
-        _check_misp_value(name, value, paths[field], meta)
-        if field in stix_object:
+        _check_misp_value(name, value, paths[field], fixed_names)
+        if field in stix_part:
             main_parser._custom_syntax_collision_warning(
-                stix_object['id'], field, paths[field]
+                object_id, field, paths[field]
             )
         values[field] = value
-    if not meta:
-        return _CustomSyntaxView(stix_object, values, paths)
-    return _CustomSyntaxView(
-        stix_object, values, paths, _extension_original_names(
-            stix_object['id'], extension.get('original_names', {}), values,
-            f'{path}.original_names', main_parser
+    return values, paths
+
+
+def _nested_parts(stix_object, extension: Mapping, path: str,
+                  main_parser: _MAIN_PARSER_TYPING) -> dict:
+    # The parts of the object a Nested Room holds the values of, each
+    # presented with them, under the property of the object holding it
+    object_id = stix_object['id']
+    parts = {}
+    if 'windows_pebinary_ext' in extension:
+        room_path = f'{path}.windows_pebinary_ext'
+        room = extension['windows_pebinary_ext']
+        pe_extension = stix_object.get('extensions', {}).get(
+            'windows-pebinary-ext'
         )
+        if pe_extension is None or not isinstance(room, Mapping):
+            _unreadable_misp_value(
+                room_path, "a dictionary standing for the object's "
+                "windows-pebinary-ext extension"
+            )
+        pe_parts = {}
+        if 'sections' in room:
+            pe_parts['sections'] = _list_room_parts(
+                object_id, pe_extension.get('sections', []),
+                room['sections'], f'{room_path}.sections',
+                "extensions.'windows-pebinary-ext'.sections", main_parser
+            )
+        parts['extensions'] = {
+            **stix_object['extensions'],
+            'windows-pebinary-ext': _part_view(
+                object_id, pe_extension, room, room_path, main_parser,
+                pe_parts
+            )
+        }
+    if 'values' in extension:
+        parts['values'] = _list_room_parts(
+            object_id, stix_object.get('values', []), extension['values'],
+            f'{path}.values', 'values', main_parser
+        )
+    return parts
+
+
+def _list_room_parts(
+        object_id: str, items: list, room: Any, path: str, items_path: str,
+        main_parser: _MAIN_PARSER_TYPING) -> list:
+    # Room item n holds the MISP values of STIX item n, `{}` standing for an
+    # item with none: a room of another length would put values on the
+    # wrong item, so it is unreadable, not paired up to the shorter length
+    if not isinstance(room, list) or len(room) != len(items):
+        _unreadable_misp_value(
+            path, f'a list holding one item per item of {items_path}'
+        )
+    parts = []
+    for index, (item, room_item) in enumerate(zip(items, room)):
+        item_path = f'{path}[{index}]'
+        if not isinstance(room_item, Mapping):
+            _unreadable_misp_value(item_path, 'a dictionary')
+        parts.append(
+            _part_view(object_id, item, room_item, item_path, main_parser)
+        )
+    return parts
+
+
+def _part_view(
+        object_id: str, part, room: Mapping, path: str,
+        main_parser: _MAIN_PARSER_TYPING,
+        parts: Optional[dict] = None) -> _CustomSyntaxView:
+    # A part of the object, with the MISP values of the room standing for it
+    return _CustomSyntaxView(
+        part, *_extension_values(object_id, part, room, path, main_parser),
+        parts=parts
     )
 
 
@@ -219,10 +319,12 @@ def _extension_original_names(
     return known
 
 
-def _check_misp_value(name: str, value: Any, path: str, meta: bool):
-    # The two fixed MISP fields with a type of their own, which no meta key
-    # is, then the values of every other name: an item, or a list of items
-    fixed_field = None if meta else name
+def _check_misp_value(name: str, value: Any, path: str, fixed_names: bool):
+    # The two fixed MISP fields with a type of their own, which only the top
+    # level of a standard object's extension holds - no meta key and no
+    # Nested Room value is one - then the values of every other name: an
+    # item, or a list of items
+    fixed_field = name if fixed_names else None
     if fixed_field == 'opinion':
         if not isinstance(value, int) or isinstance(value, bool):
             _unreadable_misp_value(path, 'an integer')

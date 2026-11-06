@@ -1209,8 +1209,8 @@ class InternalSTIX2ObservableConverter(
 
     def _parse_file_observable(
             self, observable: _FILE_TYPING, object_id: str) -> Iterator[dict]:
-        if hasattr(observable, 'hashes'):
-            for hash_type, value in observable.hashes.items():
+        if 'hashes' in observable:
+            for hash_type, value in observable['hashes'].items():
                 yield self._handle_hash_attribute(hash_type, value, object_id)
         yield from self._parse_observable_fields_with_data(
             observable, 'file', object_id
@@ -1520,10 +1520,10 @@ class InternalSTIX2ObservableConverter(
     def _parse_pe_extension_observable(self, extension: _EXTENSION_TYPING,
                                        object_id: str) -> Iterator[dict]:
         feature = f'{object_id} - windows-pebinary-ext'
-        if hasattr(extension, 'optional_header'):
-            if hasattr(extension.optional_header, 'address_of_entry_point'):
+        if 'optional_header' in extension:
+            if 'address_of_entry_point' in extension['optional_header']:
                 mapping = self._mapping.entrypoint_address_attribute()
-                value = extension.optional_header.address_of_entry_point
+                value = extension['optional_header']['address_of_entry_point']
                 yield self._populate_object_attribute(
                     value, mapping, self._handle_object_id(
                         value, object_id, mapping['object_relation'],
@@ -1557,8 +1557,8 @@ class InternalSTIX2ObservableConverter(
                         feature=feature
                     )
                 )
-        if hasattr(section, 'hashes'):
-            for hash_type, hash_value in section.hashes.items():
+        if 'hashes' in section:
+            for hash_type, hash_value in section['hashes'].items():
                 mapping = self._mapping.file_hashes_mapping(hash_type)
                 if mapping is not None:
                     yield self._populate_object_attribute(

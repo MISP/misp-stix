@@ -3361,8 +3361,8 @@ class InternalSTIX2ObservedDataConverter(
         for attribute in attributes:
             pe_object.add_attribute(**attribute)
         misp_object = self.main_parser._add_misp_object(pe_object, observed_data)
-        if hasattr(extension, 'sections'):
-            for index, section in enumerate(extension.sections):
+        if 'sections' in extension:
+            for index, section in enumerate(extension['sections']):
                 section_object = self._create_misp_object(
                     'pe-section', observed_data,
                     object_id=f'{pe_prefix} - sections - {index}'
@@ -3387,19 +3387,23 @@ class InternalSTIX2ObservedDataConverter(
         for observable in observables.values():
             if observable.type != 'file':
                 continue
+            # Read through the view, which holds the MISP values of the PE
+            # extension and its sections too
+            observable = _as_custom_syntax(observable, self.main_parser)
             object_id = observed_data.id
             attributes = self._observables._parse_file_observable(observable, object_id)
             for attribute in attributes:
                 file_object.add_attribute(**attribute)
-            if hasattr(observable, 'parent_directory_ref'):
+            if 'parent_directory_ref' in observable:
                 file_object.add_attribute(
                     **self._observables._parse_file_parent_observable(
-                        observables[observable.parent_directory_ref], object_id
+                        observables[observable['parent_directory_ref']],
+                        object_id
                     )
                 )
-            if hasattr(observable, 'content_ref'):
+            if 'content_ref' in observable:
                 artifact = _as_custom_syntax(
-                    observables[observable.content_ref], self.main_parser
+                    observables[observable['content_ref']], self.main_parser
                 )
                 attribute = {
                     'value': artifact['x_misp_filename'],
@@ -3420,9 +3424,10 @@ class InternalSTIX2ObservedDataConverter(
             misp_object = self.main_parser._add_misp_object(
                 file_object, observed_data
             )
-            if getattr(observable, 'extensions', {}).get('windows-pebinary-ext'):
+            if observable.get('extensions', {}).get('windows-pebinary-ext'):
                 pe_uuid = self._object_from_file_extension_observable(
-                    observable.extensions['windows-pebinary-ext'], observed_data
+                    observable['extensions']['windows-pebinary-ext'],
+                    observed_data
                 )
                 misp_object.add_reference(pe_uuid, 'includes')
 
@@ -3844,13 +3849,16 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_pe_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         # A pe no file carries: the file the export writes around its
-        # extension holds nothing else, its name being the pe's own file name
-        observable = getattr(self, f'_fetch_observables_{version}')(
-            observed_data
+        # extension holds nothing else, its name being the pe's own file name.
+        # Read through the view, which holds the MISP values of the PE
+        # extension and its sections
+        observable = _as_custom_syntax(
+            getattr(self, f'_fetch_observables_{version}')(observed_data),
+            self.main_parser
         )
         self._object_from_pe_extension_observable(
             self._create_misp_object('pe', observed_data),
-            observable.extensions['windows-pebinary-ext'], observed_data
+            observable['extensions']['windows-pebinary-ext'], observed_data
         )
 
     def _object_from_pe_observable_v20(self, observed_data: ObservedData_v20):
@@ -3967,8 +3975,11 @@ class InternalSTIX2ObservedDataConverter(
     def _object_from_registry_key_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         regkey_object = self._create_misp_object('registry-key', observed_data)
-        observable = getattr(self, f'_fetch_observables_{version}')(
-            observed_data
+        # Read through the view, which holds the MISP values of the registry
+        # values too
+        observable = _as_custom_syntax(
+            getattr(self, f'_fetch_observables_{version}')(observed_data),
+            self.main_parser
         )
         attributes = self._observables._parse_registry_key_observable(
             observable, observed_data.id
@@ -4026,8 +4037,11 @@ class InternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object(
             'registry-key-value', observed_data
         )
-        observable = getattr(self, f'_fetch_observables_{version}')(
-            observed_data
+        # Read through the view, which holds the MISP values of the key's
+        # only value too
+        observable = _as_custom_syntax(
+            getattr(self, f'_fetch_observables_{version}')(observed_data),
+            self.main_parser
         )
         attributes = self._observables._parse_registry_key_observable(
             observable, observed_data.id, name='registry-key-value'
