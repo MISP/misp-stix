@@ -137,6 +137,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def __init__(self):
         super().__init__()
         self._creators: set = set()
+        self._definition_authors: set = set()
         self._mapping: Union[
             ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping
         ]
@@ -217,7 +218,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         object_type = stix_object['type']
         feature = self._mapping.stix_object_loading_mapping(object_type)
         if feature is None:
-            if object_type not in self._mapping.object_type_refs_to_skip():
+            if object_type == 'extension-definition':
+                # Its author is no creator of the content: an identity
+                # authoring nothing else converts to nothing, and the
+                # producer is still read from the content's creators
+                if 'created_by_ref' in stix_object:
+                    self._definition_authors.add(stix_object['created_by_ref'])
+            elif object_type not in self._mapping.object_type_refs_to_skip():
                 self._add_error(
                     f'Unable to load STIX object type: {object_type}'
                 )
@@ -323,6 +330,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         super()._reset_bundle_state()
         self._parsed_object_refs = set()
         self._creators = set()
+        self._definition_authors = set()
         self._analyst_data = defaultdict(list)
         self._clusters = {}
         self._consumed_invalid_ids = set()
@@ -1501,6 +1509,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 title = f'{self.event_title} {title}'
             return title
         return self.generic_info_field
+
+    def _is_author(self, identity_ref: str) -> bool:
+        # An identity authoring the content, or only the extension
+        # definitions the bundle carries, is no content of its own
+        return (
+            identity_ref in self._creators
+            or identity_ref in self._definition_authors
+        )
 
     def _handle_creator(self, reference: str) -> str:
         if reference in getattr(self, '_identity', {}):
