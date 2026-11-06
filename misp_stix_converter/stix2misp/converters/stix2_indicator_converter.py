@@ -1904,10 +1904,20 @@ class InternalSTIX2IndicatorConverter(
         away. Case is not such a narrowing, and a hash is the usual pair
         differing by it alone, so the comparison is lowered. A registry value
         is written with its `%` escaped in a pattern and bare in the
-        observable, so both of its forms are tried
+        observable, so both of its forms are tried. A pattern compares a
+        MISP timestamp in the form `str` gives it, where an observable read
+        from a bundle carries the STIX timestamp: that form is tried too
         """
-        value = str(value).lower()
+        text = str(value)
+        value = text.lower()
         candidates = {value, value.replace('\\%', '%')}
+        try:
+            candidates.add(
+                format_datetime(datetime.fromisoformat(text)).lower()
+            )
+        except (OverflowError, ValueError):
+            # Not a timestamp, or one UTC cannot hold
+            pass
         return not candidates.isdisjoint(observed_values)
 
     def _merged_indicator_warning(
