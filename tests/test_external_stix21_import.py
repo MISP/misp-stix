@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
+import re
 from .test_external_stix21_bundles import (
     TestExternalSTIX21Bundles, TLP_1_0_EXPECTED_TAGS, TLP_2_0_EXPECTED_TAGS)
 from ._test_stix import TestSTIX21
@@ -8,6 +10,7 @@ from ._test_stix_import import (
     SANITISED_PRODUCER, SANITISED_TAG_VALUE, SMUGGLING_PRODUCER,
     SMUGGLING_TAG_VALUE, TestExternalSTIX2Import, TestSTIX21Import,
     UUIDv4, MISP_org_uuid)
+from copy import deepcopy
 from uuid import uuid5
 
 _ACS_EXTENSION_ID = 'extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce'
@@ -857,6 +860,82 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.parser.parse_stix_bundle()
         self._check_dangling_object_ref_error(object_ref, self.parser.errors)
         self.assertEqual(len(self.parser.misp_event.attributes), 1)
+
+    def test_stix21_identities_authoring_only_definitions_convert_to_nothing(self):
+        # The identities authoring nothing but the extension definitions a
+        # collection with no Report carries - the MISP Project identity of
+        # the MISP Extensions, a third party's - are no organisation of the
+        # content, and the content's creator stays the producer
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_extension_definitions()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self.assertEqual(event.objects, [])
+        self.assertEqual(
+            sorted(attribute.value for attribute in event.attributes),
+            ['185.194.93.14', '2001:4860:4860::8888', '8.8.8.8']
+        )
+        self.assertEqual(
+            [tag.name for tag in event.tags],
+            ['misp-galaxy:producer="MISP-Project"']
+        )
+        self.assertEqual(dict(self.parser.errors), {})
+
+    def test_stix21_misp_property_extension_is_ignored(self):
+        # The External parser reads the standard properties alone: the MISP
+        # property extension changes nothing, as `x_misp_*` properties do not
+        from stix2.parsing import dict_to_stix2
+        from misp_stix_converter import ExternalSTIX2toMISPParser
+        content = json.loads(
+            TestExternalSTIX21Bundles.get_bundle_with_extension_definitions().serialize()
+        )
+
+        def convert(content):
+            parser = ExternalSTIX2toMISPParser()
+            parser.load_stix_bundle(dict_to_stix2(content, allow_custom=True))
+            parser.parse_stix_bundle()
+            self.assertEqual(dict(parser.errors), {})
+            self.assertEqual(dict(parser.warnings), {})
+            return json.loads(parser.misp_event.to_json())
+
+        without_extension = deepcopy(content)
+        for stix_object in without_extension['objects']:
+            stix_object.pop('extensions', None)
+        event = convert(content)
+        self.assertEqual(event, convert(without_extension))
+        self.assertIn(
+            '8.8.8.8', [attribute['value'] for attribute in event['Attribute']]
+        )
+
+    def test_stix21_misp_types_are_reported_as_the_custom_types(self):
+        # The External parser loads no MISP custom type, in either syntax:
+        # a `misp-*` type is reported as the `x-misp-*` type standing for
+        # the same MISP record is
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_misp_types()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self.assertEqual(
+            (event.attributes, event.objects, event.galaxies), ([], [], [])
+        )
+        errors = self._reported_messages(self.parser.errors)
+        for misp_type in ('misp-attribute', 'misp-object', 'misp-galaxy-cluster'):
+            with self.subTest(misp_type=misp_type):
+                custom_type = f'x-{misp_type}'
+                own_errors = [
+                    error for error in errors
+                    if re.search(f'(?<!x-){misp_type}', error)
+                ]
+                self.assertIn(
+                    f'Unable to load STIX object type: {misp_type}', own_errors
+                )
+                self.assertEqual(
+                    own_errors,
+                    [
+                        error.replace(custom_type, misp_type)
+                        for error in errors if custom_type in error
+                    ]
+                )
 
     def test_stix21_carried_marking_refs_are_not_reported(self):
         # A Marking Definition reference is dangling only when the bundle

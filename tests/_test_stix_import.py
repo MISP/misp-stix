@@ -37,6 +37,14 @@ from .update_documentation import (
     ObjectsDocumentationUpdater)
 
 PATTERNS = ('_ATTRIBUTES', '_OBJECTS')
+# The fields of the `misp-*` types the custom property does not name once its
+# prefix is left out
+_MISP_TYPE_FIELDS = {
+    'misp-attribute': {'x_misp_type': 'attribute_type'},
+    'misp-galaxy-cluster': {
+        'x_misp_name': 'galaxy_name', 'x_misp_type': 'galaxy_type'
+    }
+}
 UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
 # A producer name asking for a second taxonomy entry inside the tag it is
@@ -274,6 +282,26 @@ class TestSTIX2Import(TestSTIX):
         )
 
     @staticmethod
+    def _misp_type_value(stix_object, field: str):
+        """Read a field of a fixture's custom MISP object, in either syntax.
+
+        An `x-misp-*` object carries it as the custom property, a `misp-*`
+        object under the name without the prefix, apart from the attribute
+        type and the galaxy type and name, which other STIX properties name
+        already.
+
+        :param stix_object: the fixture's `x-misp-*` or `misp-*` object
+        :param field: the `x_misp_` name of the field
+        :return: the value, or `None` when the object carries none
+        """
+        if field in stix_object:
+            return stix_object[field]
+        names = _MISP_TYPE_FIELDS.get(stix_object['type'], {})
+        return stix_object.get(
+            names.get(field, _custom_property_relation(field))
+        )
+
+    @staticmethod
     def _nested_room(stix_object, *steps) -> dict:
         """Read a Nested Room of a fixture object's MISP property extension.
 
@@ -326,6 +354,13 @@ class TestSTIX2Import(TestSTIX):
         dicts keep the string the document carried.
         """
         return datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+
+    @classmethod
+    def _stix_timestamp(cls, timestamp):
+        """The `datetime` of a fixture object's timestamp, typed or dict-form."""
+        if isinstance(timestamp, str):
+            return cls._dict_form_timestamp(timestamp)
+        return timestamp
 
     def _check_dangling_object_ref_error(self, object_ref, errors):
         """A reference to an object the bundle does not carry is named."""
@@ -4457,13 +4492,20 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(attribute.value, campaign.name)
 
     def _check_custom_attribute(self, attribute, custom_attribute):
-        self.assertEqual(attribute.uuid, custom_attribute.id.split('--')[1])
-        self.assertEqual(attribute.type, custom_attribute.x_misp_type)
-        self.assertEqual(attribute.category, custom_attribute.x_misp_category)
-        self.assertEqual(attribute.value, custom_attribute.x_misp_value)
-        self.assertEqual(attribute.timestamp, custom_attribute.modified)
-        if hasattr(custom_attribute, 'x_misp_comment'):
-            self.assertEqual(attribute.comment, custom_attribute.x_misp_comment)
+        self.assertEqual(attribute.uuid, custom_attribute['id'].split('--')[1])
+        for feature in ('type', 'category', 'value'):
+            self.assertEqual(
+                getattr(attribute, feature),
+                self._misp_type_value(custom_attribute, f'x_misp_{feature}')
+            )
+        for feature in ('comment', 'to_ids'):
+            value = self._misp_type_value(custom_attribute, f'x_misp_{feature}')
+            if value is not None:
+                self.assertEqual(getattr(attribute, feature), value)
+        self.assertEqual(
+            attribute.timestamp,
+            self._stix_timestamp(custom_attribute['modified'])
+        )
 
     def _check_indicator_attribute(self, attribute, indicator):
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
@@ -4635,8 +4677,13 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         cluster = galaxy.clusters[0]
         self._assert_multiple_equal(galaxy.type, cluster.type, 'tea-matrix')
         self.assertEqual(galaxy.name, 'Tea Matrix')
-        self.assertEqual(cluster.value, custom.x_misp_value)
-        self.assertEqual(cluster.description, custom.x_misp_description)
+        self.assertEqual(
+            cluster.value, self._misp_type_value(custom, 'x_misp_value')
+        )
+        self.assertEqual(
+            cluster.description,
+            self._misp_type_value(custom, 'x_misp_description')
+        )
 
     def _check_galaxy_fields(self, galaxy, stix_object, galaxy_type, galaxy_name):
         cluster = galaxy.clusters[0]
@@ -4992,15 +5039,23 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         return password
 
     def _check_custom_object(self, misp_object, custom_object):
-        self.assertEqual(misp_object.uuid, custom_object.id.split('--')[1])
-        self.assertEqual(misp_object.name, custom_object.x_misp_name)
+        self.assertEqual(misp_object.uuid, custom_object['id'].split('--')[1])
+        self.assertEqual(
+            misp_object.name, self._misp_type_value(custom_object, 'x_misp_name')
+        )
         self.assertEqual(
             getattr(misp_object, 'meta-category'),
-            custom_object.x_misp_meta_category
+            self._misp_type_value(custom_object, 'x_misp_meta_category')
         )
-        self.assertEqual(misp_object.timestamp, custom_object.modified)
-        self.assertEqual(len(misp_object.attributes), len(custom_object.x_misp_attributes))
-        for attribute, custom_attribute in zip(misp_object.attributes, custom_object.x_misp_attributes):
+        self.assertEqual(
+            misp_object.timestamp,
+            self._stix_timestamp(custom_object['modified'])
+        )
+        custom_attributes = self._misp_type_value(
+            custom_object, 'x_misp_attributes'
+        )
+        self.assertEqual(len(misp_object.attributes), len(custom_attributes))
+        for attribute, custom_attribute in zip(misp_object.attributes, custom_attributes):
             self.assertEqual(attribute.type, custom_attribute['type'])
             self.assertEqual(attribute.object_relation, custom_attribute['object_relation'])
             self.assertEqual(attribute.value, custom_attribute['value'])
@@ -5018,7 +5073,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
 
     def _check_custom_object_invalid_name(
             self, misp_object, custom_object, warnings):
-        rejected_name = custom_object.x_misp_name
+        rejected_name = self._misp_type_value(custom_object, 'x_misp_name')
         # The name never reached template resolution: the object is generic,
         # and carries no field that could only come from a template file.
         self.assertEqual(misp_object.name, 'unknown-template')
@@ -5036,7 +5091,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
         # The meta-category still comes from the STIX content itself.
         self.assertEqual(
-            misp_object.category, custom_object.x_misp_meta_category
+            misp_object.category,
+            self._misp_type_value(custom_object, 'x_misp_meta_category')
         )
         # Nothing is lost: the rejected name is kept as data.
         self.assertIn(rejected_name, misp_object.comment)
@@ -5046,13 +5102,15 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             if 'Invalid MISP object template name' in warning
         ]
         self.assertEqual(len(name_warnings), 1)
-        self.assertIn(custom_object.id, name_warnings[0])
+        self.assertIn(custom_object['id'], name_warnings[0])
         self.assertIn(rejected_name, name_warnings[0])
         return misp_object
 
     def _check_custom_object_injected_fields(
             self, misp_object, custom_object, warnings):
-        custom_attribute = custom_object.x_misp_attributes[0]
+        custom_attribute = self._misp_type_value(
+            custom_object, 'x_misp_attributes'
+        )[0]
         attribute = misp_object.attributes[0]
         self.assertEqual(attribute.type, custom_attribute['type'])
         self.assertEqual(
@@ -5063,22 +5121,31 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(attribute.comment, custom_attribute['comment'])
         self.assertEqual(attribute.to_ids, custom_attribute['to_ids'])
         self.assertEqual(attribute.uuid, custom_attribute['uuid'])
+        injected_fields = ['distribution', 'sharing_group_id', 'deleted', 'Tag']
+        if custom_object['type'] == 'misp-object':
+            # The Extension Syntax writes the first seen time of an item
+            self.assertEqual(
+                attribute.first_seen,
+                self._stix_timestamp(custom_attribute['first_seen'])
+            )
+        else:
+            injected_fields.append('first_seen')
         attribute_fields = attribute.to_dict()
-        for injected_field in ('distribution', 'sharing_group_id',
-                               'first_seen', 'deleted', 'Tag'):
+        for injected_field in injected_fields:
             self.assertNotIn(
                 injected_field, attribute_fields,
                 f'`{injected_field}` should not be set from STIX content'
             )
-        dropped_fields_warnings = [
+        dropped_fields_warning, = (
             warning for parser_warnings in warnings.values()
             for warning in parser_warnings
-            if all(field in warning for field
-                   in ('distribution', 'sharing_group_id', 'Tag',
-                       'first_seen', 'deleted'))
-        ]
-        self.assertEqual(len(dropped_fields_warnings), 1)
-        self.assertIn(custom_object.id, dropped_fields_warnings[0])
+            if warning.startswith('Dropped attribute fields')
+        )
+        self.assertEqual(
+            dropped_fields_warning.split(': ')[-1],
+            ', '.join(sorted(injected_fields))
+        )
+        self.assertIn(custom_object['id'], dropped_fields_warning)
 
     def _check_domain_ip_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)

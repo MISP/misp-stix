@@ -5,7 +5,7 @@ import json
 from ._test_stix import (
     MISP_ATTRIBUTE_EXTENSION_ID, MISP_GALAXY_CLUSTER_EXTENSION_ID,
     MISP_OBJECT_EXTENSION_ID, MISP_PROJECT_IDENTITY_ID,
-    MISP_PROPERTY_EXTENSION_ID, PACKAGED_MISP_EXTENSIONS)
+    MISP_PROPERTY_EXTENSION_ID, packaged_misp_extension)
 from ._test_stix_import import (
     SMUGGLING_TAG_PREDICATE, SMUGGLING_TAG_VALUE, UNUSABLE_TAG_SLOT,
     TestSTIX2Bundles)
@@ -4621,6 +4621,345 @@ _EXTENSION_SYNTAX_ATTACK_PATTERN_OBJECT = {
         }
     }
 }
+_EXTENSION_SYNTAX_BUNDLE_WITH_INVALID_UUIDS = [
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--12345678-90ab-cdef-1234-567890abcdef",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "MISP-Project",
+        "identity_class": "organization"
+    },
+    {
+        "type": "grouping",
+        "spec_version": "2.1",
+        "id": "grouping--fedcba09-8765-4321-fedc-ba0987654321",
+        "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "MISP-STIX-Converter test event",
+        "context": "suspicious-activity",
+        "labels": ["Threat-Report", 'misp:tool="MISP-STIX-Converter"'],
+        "object_refs": [
+            "attack-pattern--00000000-0000-0000-0000-000000000000",
+            "course-of-action--11111111-1111-1111-1111-111111111111",
+            "indicator--22222222-2222-2222-2222-222222222222",
+            "malware--33333333-3333-3333-3333-333333333333",
+            "relationship--74caa0d0-9366-4f19-94ec-1ec52a9e042e",
+            "relationship--88c41265-5fe6-4514-86a4-9f3034db4397",
+            "attack-pattern--44444444-4444-4444-4444-444444444444",
+            "observed-data--55555555-5555-5555-5555-555555555555",
+            "autonomous-system--55555555-5555-5555-5555-555555555555",
+            "misp-object--66666666-6666-6666-6666-666666666666",
+            "course-of-action--77777777-7777-7777-7777-777777777777",
+            "indicator--88888888-8888-8888-8888-888888888888",
+            "vulnerability--99999999-9999-9999-9999-999999999999",
+            "relationship--6b34f83c-f1db-4f39-a813-4ac86c1f2fe6",
+            "relationship--0ded93a1-38e5-4d2d-aecb-1f0e98daedb7",
+            "relationship--94057569-8790-4fd7-9a05-ed0a054a2390",
+            "relationship--f5134684-d988-42bc-964e-f2a4686c42a0",
+            "relationship--e239566f-cfb0-437d-a4b2-0695c9ceffe7",
+            "relationship--2cac5500-e293-4a61-a751-9d7ea9624692"
+        ]
+    },
+    {
+        "type": "attack-pattern",
+        "spec_version": "2.1",
+        "id": "attack-pattern--00000000-0000-0000-0000-000000000000",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Access Token Manipulation",
+        "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
+        "kill_chain_phases": [
+            {"kill_chain_name": "mitre-attack", "phase_name": "defense-evasion"},
+            {"kill_chain_name": "mitre-attack", "phase_name": "privilege-escalation"}
+        ],
+        "labels": [
+            'misp:galaxy-name="Attack Pattern"',
+            'misp:galaxy-type="mitre-attack-pattern"'
+        ],
+        "external_references": [
+            {"source_name": "mitre-attack", "external_id": "T1134"},
+            {"source_name": "url", "url": "https://attack.mitre.org/techniques/T1134"}
+        ],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "mitre_platforms": "Windows"
+            }
+        }
+    },
+    {
+        "type": "course-of-action",
+        "spec_version": "2.1",
+        "id": "course-of-action--11111111-1111-1111-1111-111111111111",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Automated Exfiltration Mitigation",
+        "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+        "labels": [
+            'misp:galaxy-name="Course of Action"',
+            'misp:galaxy-type="mitre-course-of-action"'
+        ],
+        "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--22222222-2222-2222-2222-222222222222",
+        "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Domain test attribute",
+        "pattern": "[domain-name:value = 'circl.lu']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "Network activity"}
+        ],
+        "labels": ['misp:type="domain"', 'misp:category="Network activity"']
+    },
+    {
+        "type": "malware",
+        "spec_version": "2.1",
+        "id": "malware--33333333-3333-3333-3333-333333333333",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "BISCUIT",
+        "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+        "is_family": True,
+        "labels": ['misp:galaxy-name="Malware"', 'misp:galaxy-type="mitre-malware"'],
+        "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--74caa0d0-9366-4f19-94ec-1ec52a9e042e",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "indicates",
+        "source_ref": "indicator--22222222-2222-2222-2222-222222222222",
+        "target_ref": "attack-pattern--00000000-0000-0000-0000-000000000000"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--88c41265-5fe6-4514-86a4-9f3034db4397",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "has",
+        "source_ref": "indicator--22222222-2222-2222-2222-222222222222",
+        "target_ref": "course-of-action--11111111-1111-1111-1111-111111111111"
+    },
+    {
+        "type": "attack-pattern",
+        "spec_version": "2.1",
+        "id": "attack-pattern--44444444-4444-4444-4444-444444444444",
+        "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Buffer Overflow in Local Command-Line Utilities",
+        "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
+        "labels": ['misp:name="attack-pattern"', 'misp:meta-category="vulnerability"'],
+        "external_references": [{"source_name": "capec", "external_id": "CAPEC-9"}],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+                "related_weakness": ["CWE-118", "CWE-120"],
+                "solutions": "Carefully review the service\\'s implementation before making it available to users."
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--55555555-5555-5555-5555-555555555555",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "network-traffic--55555555-1111-1111-1111-555555555555",
+            "ipv4-addr--55555555-2222-2222-2222-555555555555"
+        ],
+        "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--55555555-1111-1111-1111-555555555555",
+        "dst_ref": "ipv4-addr--55555555-2222-2222-2222-555555555555",
+        "dst_port": 5678,
+        "protocols": ["tcp"]
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--55555555-2222-2222-2222-555555555555",
+        "value": "5.6.7.8"
+    },
+    {
+        "type": "misp-object",
+        "spec_version": "2.1",
+        "id": "misp-object--66666666-6666-6666-6666-666666666666",
+        "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:name="btc-wallet"', 'misp:meta-category="financial"'],
+        "extensions": {
+            MISP_OBJECT_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "name": "btc-wallet",
+        "meta_category": "financial",
+        "attributes": [
+            {
+                "uuid": "66666666-1111-1111-1111-666666666666",
+                "type": "btc",
+                "object_relation": "wallet-address",
+                "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+                "to_ids": True
+            },
+            {
+                "uuid": "66666666-2222-2222-2222-666666666666",
+                "type": "float",
+                "object_relation": "balance_BTC",
+                "value": "2.25036953",
+                "to_ids": False
+            },
+            {
+                "uuid": "66666666-3333-3333-3333-666666666666",
+                "type": "float",
+                "object_relation": "BTC_received",
+                "value": "3.35036953",
+                "to_ids": False
+            },
+            {
+                "uuid": "66666666-4444-4444-4444-666666666666",
+                "type": "float",
+                "object_relation": "BTC_sent",
+                "value": "1.1",
+                "to_ids": False
+            }
+        ]
+    },
+    {
+        "type": "course-of-action",
+        "spec_version": "2.1",
+        "id": "course-of-action--77777777-7777-7777-7777-777777777777",
+        "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
+        "description": "Block communication between the PIVY agents and the C2 Server",
+        "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "cost": "Low",
+                "efficacy": "High",
+                "impact": "Low",
+                "objective": "Block communication between the PIVY agents and the C2 Server",
+                "stage": "Response",
+                "type": "Perimeter Blocking"
+            }
+        }
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--88888888-8888-8888-8888-888888888888",
+        "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[(network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '443' AND network-traffic:start = '2020-10-25T16:22:00Z']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "vulnerability",
+        "spec_version": "2.1",
+        "id": "vulnerability--99999999-9999-9999-9999-999999999999",
+        "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "CVE-2021-29921",
+        "description": "In Python before 3.9.5, the ipaddress library mishandles leading zero characters in the octets of an IP address string.",
+        "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
+        "external_references": [
+            {"source_name": "cve", "external_id": "CVE-2021-29921"}
+        ]
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--6b34f83c-f1db-4f39-a813-4ac86c1f2fe6",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "threatens",
+        "source_ref": "attack-pattern--44444444-4444-4444-4444-444444444444",
+        "target_ref": "indicator--88888888-8888-8888-8888-888888888888"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--0ded93a1-38e5-4d2d-aecb-1f0e98daedb7",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "related-to",
+        "source_ref": "observed-data--55555555-5555-5555-5555-555555555555",
+        "target_ref": "indicator--88888888-8888-8888-8888-888888888888"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--94057569-8790-4fd7-9a05-ed0a054a2390",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "connected-to",
+        "source_ref": "misp-object--66666666-6666-6666-6666-666666666666",
+        "target_ref": "indicator--88888888-8888-8888-8888-888888888888"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--f5134684-d988-42bc-964e-f2a4686c42a0",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "protects-against",
+        "source_ref": "course-of-action--77777777-7777-7777-7777-777777777777",
+        "target_ref": "vulnerability--99999999-9999-9999-9999-999999999999"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--e239566f-cfb0-437d-a4b2-0695c9ceffe7",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "protected-with",
+        "source_ref": "indicator--88888888-8888-8888-8888-888888888888",
+        "target_ref": "course-of-action--77777777-7777-7777-7777-777777777777"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--2cac5500-e293-4a61-a751-9d7ea9624692",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "affects",
+        "source_ref": "vulnerability--99999999-9999-9999-9999-999999999999",
+        "target_ref": "indicator--88888888-8888-8888-8888-888888888888"
+    }
+]
 _EXTENSION_SYNTAX_BUNDLE_WITH_MULTIPLE_REPORTS = [
     {
         "name": "MISP-STIX-Converter test event with autonomous systems",
@@ -5337,6 +5676,375 @@ _EXTENSION_SYNTAX_CREDENTIAL_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5b1f9378-46d4-494b-a4c1-044e0a00020f"
     }
 ]
+_EXTENSION_SYNTAX_CUSTOM_ATTRIBUTES = [
+    {
+        "type": "misp-attribute",
+        "spec_version": "2.1",
+        "id": "misp-attribute--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:type="btc"', 'misp:category="Financial fraud"'],
+        "extensions": {
+            MISP_ATTRIBUTE_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "attribute_type": "btc",
+        "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+        "category": "Financial fraud",
+        "comment": "Btc test attribute",
+        "to_ids": True
+    },
+    {
+        "type": "misp-attribute",
+        "spec_version": "2.1",
+        "id": "misp-attribute--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:type="iban"', 'misp:category="Financial fraud"'],
+        "extensions": {
+            MISP_ATTRIBUTE_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "attribute_type": "iban",
+        "value": "LU1234567890ABCDEF1234567890",
+        "category": "Financial fraud",
+        "comment": "IBAN test attribute",
+        "to_ids": True
+    },
+    {
+        "type": "misp-attribute",
+        "spec_version": "2.1",
+        "id": "misp-attribute--d94bdd2c-3603-4044-8b70-20090e7526ad",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:type="http-method"', 'misp:category="Network activity"'],
+        "extensions": {
+            MISP_ATTRIBUTE_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "attribute_type": "http-method",
+        "value": "POST",
+        "category": "Network activity",
+        "to_ids": False
+    },
+    {
+        "type": "misp-attribute",
+        "spec_version": "2.1",
+        "id": "misp-attribute--1af096a0-efa1-4331-9300-a6b5eb4df2e6",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:type="port"', 'misp:category="Network activity"'],
+        "extensions": {
+            MISP_ATTRIBUTE_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "attribute_type": "port",
+        "value": "8443",
+        "category": "Network activity",
+        "to_ids": False
+    },
+    {
+        "type": "misp-attribute",
+        "spec_version": "2.1",
+        "id": "misp-attribute--8be8065b-ca71-4210-976e-2804665a502d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:type="size-in-bytes"', 'misp:category="Other"'],
+        "extensions": {
+            MISP_ATTRIBUTE_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "attribute_type": "size-in-bytes",
+        "value": "1234",
+        "category": "Other",
+        "to_ids": False
+    },
+    {
+        "type": "misp-attribute",
+        "spec_version": "2.1",
+        "id": "misp-attribute--f0b5b638-81b4-4509-bd40-1e114955caf4",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:type="user-agent"', 'misp:category="Network activity"'],
+        "extensions": {
+            MISP_ATTRIBUTE_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "attribute_type": "user-agent",
+        "value": "Mozilla Firefox",
+        "category": "Network activity",
+        "comment": "User-agent test attribute",
+        "to_ids": False
+    }
+]
+_EXTENSION_SYNTAX_CUSTOM_GALAXY = {
+    "type": "misp-galaxy-cluster",
+    "spec_version": "2.1",
+    "id": "misp-galaxy-cluster--24430dc6-9c27-4b3c-a5e7-6dda478fffa0",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "labels": ['misp:galaxy-name="Tea Matrix"', 'misp:galaxy-type="tea-matrix"'],
+    "extensions": {
+        MISP_GALAXY_CLUSTER_EXTENSION_ID: {"extension_type": "new-sdo"}
+    },
+    "galaxy_name": "Tea Matrix",
+    "galaxy_type": "tea-matrix",
+    "value": "Milk in tea",
+    "description": "Milk in tea"
+}
+_EXTENSION_SYNTAX_CUSTOM_OBJECTS = [
+    {
+        "type": "misp-object",
+        "spec_version": "2.1",
+        "id": "misp-object--695e7924-2518-4054-9cea-f82853d37410",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:name="bank-account"', 'misp:meta-category="financial"'],
+        "extensions": {
+            MISP_OBJECT_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "name": "bank-account",
+        "meta_category": "financial",
+        "attributes": [
+            {
+                "type": "iban",
+                "object_relation": "iban",
+                "value": "LU1234567890ABCDEF1234567890",
+                "to_ids": True,
+                "uuid": "8acaad62-227a-4988-96e7-4586847421a2"
+            },
+            {
+                "type": "bic",
+                "object_relation": "swift",
+                "value": "CTBKLUPP",
+                "to_ids": True,
+                "uuid": "c53382a1-cf4b-4901-a890-1611dbcc7101"
+            },
+            {
+                "type": "bank-account-nr",
+                "object_relation": "account",
+                "value": "1234567890",
+                "to_ids": True,
+                "uuid": "c7c9f782-582f-4218-af79-e7901237e468"
+            },
+            {
+                "type": "text",
+                "object_relation": "institution-name",
+                "value": "Central Bank",
+                "to_ids": False,
+                "uuid": "c206e7b4-7333-40a3-bf02-9647d32f9df2"
+            },
+            {
+                "type": "text",
+                "object_relation": "account-name",
+                "value": "John Smith's bank account",
+                "to_ids": False,
+                "uuid": "f388d5e6-e4eb-401d-8ea4-efdd519659a1"
+            },
+            {
+                "type": "text",
+                "object_relation": "beneficiary",
+                "value": "John Smith",
+                "to_ids": False,
+                "uuid": "c1ea07c0-a855-4c47-9df2-4acc0d3c4e63"
+            },
+            {
+                "type": "text",
+                "object_relation": "currency-code",
+                "value": "EUR",
+                "to_ids": False,
+                "uuid": "5421d979-9af5-45ae-8c81-5005a4d7fc55"
+            }
+        ]
+    },
+    {
+        "type": "misp-object",
+        "spec_version": "2.1",
+        "id": "misp-object--6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:name="btc-wallet"', 'misp:meta-category="financial"'],
+        "extensions": {
+            MISP_OBJECT_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "name": "btc-wallet",
+        "meta_category": "financial",
+        "attributes": [
+            {
+                "type": "btc",
+                "object_relation": "wallet-address",
+                "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+                "to_ids": True,
+                "uuid": "b25b2538-36e3-4418-a42a-440eed163ffa"
+            },
+            {
+                "type": "float",
+                "object_relation": "balance_BTC",
+                "value": "2.25036953",
+                "to_ids": False,
+                "uuid": "dd142f6f-d8a0-4143-92b3-3b50e7cb1c51"
+            },
+            {
+                "type": "float",
+                "object_relation": "BTC_received",
+                "value": "3.35036953",
+                "to_ids": False,
+                "uuid": "7fd93652-5713-4390-bd15-94ec77e9c6d1"
+            },
+            {
+                "type": "float",
+                "object_relation": "BTC_sent",
+                "value": "1.1",
+                "to_ids": False,
+                "uuid": "c5c0532c-2a63-4f40-86a7-df27914a177e"
+            }
+        ]
+    },
+    {
+        "type": "misp-object",
+        "spec_version": "2.1",
+        "id": "misp-object--868037d5-d804-4f1d-8016-f296361f9c68",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:name="person"', 'misp:meta-category="misc"'],
+        "extensions": {
+            MISP_OBJECT_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "name": "person",
+        "meta_category": "misc",
+        "attributes": [
+            {
+                "type": "first-name",
+                "object_relation": "first-name",
+                "value": "John",
+                "to_ids": False,
+                "uuid": "37c42710-aaf7-4f10-956b-f8eb7adffb81"
+            },
+            {
+                "type": "last-name",
+                "object_relation": "last-name",
+                "value": "Smith",
+                "to_ids": False,
+                "uuid": "05583483-4d7f-496a-aa1b-279d484b5966"
+            },
+            {
+                "type": "nationality",
+                "object_relation": "nationality",
+                "value": "USA",
+                "to_ids": False,
+                "uuid": "a4e174fc-f341-432f-beb3-27b99ec22541"
+            },
+            {
+                "type": "passport-number",
+                "object_relation": "passport-number",
+                "value": "ABA9875413",
+                "to_ids": False,
+                "uuid": "f6f12b78-5f96-4c64-9462-2e881d70cd4a"
+            },
+            {
+                "type": "phone-number",
+                "object_relation": "phone-number",
+                "value": "0123456789",
+                "to_ids": False,
+                "uuid": "6c0a87f4-54a3-401a-a37f-13b2996d4d37"
+            }
+        ]
+    },
+    {
+        "type": "misp-object",
+        "spec_version": "2.1",
+        "id": "misp-object--3e76898a-fcb1-485b-ac24-d450fe8c54bc",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:name="report"', 'misp:meta-category="misc"'],
+        "extensions": {
+            MISP_OBJECT_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "name": "report",
+        "meta_category": "misc",
+        "attributes": [
+            {
+                "type": "text",
+                "object_relation": "summary",
+                "value": "It is compromised",
+                "to_ids": False,
+                "uuid": "11798cf8-1f53-448d-b424-e0bd7402492c"
+            },
+            {
+                "type": "text",
+                "object_relation": "type",
+                "value": "Report",
+                "to_ids": False,
+                "uuid": "84a5575e-bbe4-4a55-a75d-c4a91b0d1e23"
+            },
+            {
+                "type": "attachment",
+                "value": "report.md",
+                "to_ids": False,
+                "object_relation": "report-file",
+                "data": "VGhyZWF0IFJlcG9ydAoKSXQgaXMgY29tcHJvbWlzZWQK",
+                "uuid": "5742717c-7689-4440-af20-3cb44edb45cf"
+            }
+        ]
+    }
+]
+_EXTENSION_SYNTAX_CUSTOM_OBJECT_WITH_INJECTED_FIELDS = {
+    "type": "misp-object",
+    "spec_version": "2.1",
+    "id": "misp-object--695e7924-2518-4054-9cea-f82853d37410",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "labels": ['misp:name="bank-account"', 'misp:meta-category="financial"'],
+    "extensions": {
+        MISP_OBJECT_EXTENSION_ID: {"extension_type": "new-sdo"}
+    },
+    "name": "bank-account",
+    "meta_category": "financial",
+    "attributes": [
+        {
+            "type": "iban",
+            "object_relation": "iban",
+            "value": "LU1234567890ABCDEF1234567890",
+            "category": "Financial fraud",
+            "comment": "Attribute with injected fields",
+            "to_ids": True,
+            "uuid": "8acaad62-227a-4988-96e7-4586847421a2",
+            "distribution": "3",
+            "sharing_group_id": "42",
+            "Tag": [{"name": "tlp:white"}],
+            "first_seen": "2020-10-25T16:22:00.000Z",
+            "deleted": True
+        }
+    ]
+}
+_EXTENSION_SYNTAX_CUSTOM_OBJECT_WITH_INVALID_NAME = {
+    "type": "misp-object",
+    "spec_version": "2.1",
+    "id": "misp-object--0e9f0ad0-2f16-4bdb-a1a0-2f1a4bfd0b0e",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "labels": ['misp:name="bank-account"', 'misp:meta-category="financial"'],
+    "extensions": {
+        MISP_OBJECT_EXTENSION_ID: {"extension_type": "new-sdo"}
+    },
+    "name": "../../../../../../../../planted",
+    "meta_category": "financial",
+    "attributes": [
+        {
+            "type": "iban",
+            "object_relation": "iban",
+            "value": "LU1234567890ABCDEF1234567890",
+            "to_ids": True,
+            "uuid": "8acaad62-227a-4988-96e7-4586847421a3"
+        }
+    ]
+}
 _EXTENSION_SYNTAX_DOMAIN_IP_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -6440,6 +7148,121 @@ _EXTENSION_SYNTAX_MALWARE_GALAXY = {
         }
     }
 }
+_EXTENSION_SYNTAX_MISP_ATTRIBUTE_FIELDS = [
+    {
+        "type": "misp-attribute",
+        "spec_version": "2.1",
+        "id": "misp-attribute--e4df1d69-b2a4-49f1-88d9-6ee4f14ac21b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:type="btc"', 'misp:category="Financial fraud"'],
+        "extensions": {
+            MISP_ATTRIBUTE_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "attribute_type": "btc",
+        "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+        "category": "Financial fraud",
+        "comment": "Btc test attribute, not for detection",
+        "to_ids": False,
+        "first_seen": "2020-10-25T16:22:00.000Z",
+        "last_seen": "2020-10-26T16:22:00.000Z"
+    },
+    {
+        "type": "misp-attribute",
+        "spec_version": "2.1",
+        "id": "misp-attribute--318e79a0-bd1a-4440-9224-84fc09c591bb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:type="malware-sample"', 'misp:category="Payload delivery"'],
+        "extensions": {
+            MISP_ATTRIBUTE_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "attribute_type": "malware-sample",
+        "value": "oui|not an md5",
+        "category": "Payload delivery",
+        "comment": "Malware sample with an invalid MD5",
+        "to_ids": True
+    }
+]
+_EXTENSION_SYNTAX_MISP_GALAXY_CLUSTER_FIELDS = [
+    {
+        "type": "misp-galaxy-cluster",
+        "spec_version": "2.1",
+        "id": "misp-galaxy-cluster--1f0ee241-12df-4cca-b612-dcd483765f52",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:galaxy-name="Herbal Tea"', 'misp:galaxy-type="herbal-tea"'],
+        "extensions": {
+            MISP_GALAXY_CLUSTER_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "galaxy_name": "Herbal Tea",
+        "galaxy_type": "herbal-tea",
+        "galaxy_description": "Infusions that are no tea",
+        "value": "Rooibos",
+        "description": "Red bush | from the Cederberg",
+        "meta": {
+            "kill_chain": ["herbal-tea:red", "herbal-tea:caffeine-free"],
+            "origin_Temp_Hex": "South Africa",
+            "supported": "Yes"
+        },
+        "original_names": {"origin_Temp_Hex": "origin:Temp.Hex"}
+    },
+    {
+        "type": "misp-galaxy-cluster",
+        "spec_version": "2.1",
+        "id": "misp-galaxy-cluster--e1bdbbf9-929e-4e79-b472-b9ec676a6e60",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:galaxy-name="Tea Matrix"', 'misp:galaxy-type="tea-matrix"'],
+        "extensions": {
+            MISP_GALAXY_CLUSTER_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "galaxy_name": "Tea Matrix",
+        "galaxy_type": "tea-matrix",
+        "galaxy_description": "Not the description MISP ships",
+        "value": "Milk in tea",
+        "description": "Milk in tea"
+    }
+]
+_EXTENSION_SYNTAX_MISP_OBJECT_FIELDS = {
+    "type": "misp-object",
+    "spec_version": "2.1",
+    "id": "misp-object--881c81c9-2b7d-4153-83e1-920eac498691",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "labels": ['misp:name="bank-account"', 'misp:meta-category="financial"'],
+    "extensions": {
+        MISP_OBJECT_EXTENSION_ID: {"extension_type": "new-sdo"}
+    },
+    "name": "bank-account",
+    "meta_category": "financial",
+    "comment": "Bank account of the threat actor",
+    "first_seen": "2020-10-25T16:22:00.000Z",
+    "last_seen": "2020-10-26T16:22:00.000Z",
+    "attributes": [
+        {
+            "type": "iban",
+            "object_relation": "iban",
+            "value": "LU1234567890ABCDEF1234567890",
+            "category": "Financial fraud",
+            "comment": "IBAN, not for detection",
+            "to_ids": False,
+            "uuid": "47043984-78a5-453d-b229-6ef50249393e",
+            "first_seen": "2020-10-25T18:22:00.000Z",
+            "last_seen": "2020-10-26T14:22:00.000Z"
+        },
+        {
+            "type": "bic",
+            "object_relation": "swift",
+            "value": "CTBKLUPP",
+            "to_ids": True,
+            "uuid": "a10053eb-5f8c-4035-88be-76568cc4cc4f"
+        }
+    ]
+}
 _EXTENSION_SYNTAX_MUTEX_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -6695,6 +7518,206 @@ _EXTENSION_SYNTAX_NEWS_AGENCY_OBJECT = {
         }
     }
 }
+_EXTENSION_SYNTAX_OBJECTS_WITH_REFERENCES = [
+    {
+        "type": "attack-pattern",
+        "spec_version": "2.1",
+        "id": "attack-pattern--7205da54-70de-4fa7-9b34-e14e63fe6787",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Buffer Overflow in Local Command-Line Utilities",
+        "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
+        "labels": ['misp:name="attack-pattern"', 'misp:meta-category="vulnerability"'],
+        "external_references": [{"source_name": "capec", "external_id": "CAPEC-9"}],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+                "related_weakness": ["CWE-118", "CWE-120"],
+                "solutions": "Carefully review the service\\'s implementation before making it available to users."
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": ["autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f"],
+        "labels": ['misp:name="asn"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "autonomous-system",
+        "spec_version": "2.1",
+        "id": "autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "number": 66642,
+        "name": "AS name",
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "subnet_announced": ["1.2.3.4", "8.8.8.8"]
+            }
+        }
+    },
+    {
+        "type": "misp-object",
+        "spec_version": "2.1",
+        "id": "misp-object--6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:name="btc-wallet"', 'misp:meta-category="financial"'],
+        "extensions": {
+            MISP_OBJECT_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "name": "btc-wallet",
+        "meta_category": "financial",
+        "attributes": [
+            {
+                "type": "btc",
+                "object_relation": "wallet-address",
+                "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+                "to_ids": True
+            },
+            {
+                "type": "float",
+                "object_relation": "balance_BTC",
+                "value": "2.25036953",
+                "to_ids": False
+            },
+            {
+                "type": "float",
+                "object_relation": "BTC_received",
+                "value": "3.35036953",
+                "to_ids": False
+            },
+            {
+                "type": "float",
+                "object_relation": "BTC_sent",
+                "value": "1.1",
+                "to_ids": False
+            }
+        ]
+    },
+    {
+        "type": "course-of-action",
+        "spec_version": "2.1",
+        "id": "course-of-action--5d514ff9-ac30-4fb5-b9e7-3eb4a964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
+        "description": "Block communication between the PIVY agents and the C2 Server",
+        "labels": ['misp:name="course-of-action"', 'misp:meta-category="misc"'],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "cost": "Low",
+                "efficacy": "High",
+                "impact": "Low",
+                "objective": "Block communication between the PIVY agents and the C2 Server",
+                "stage": "Response",
+                "type": "Perimeter Blocking"
+            }
+        }
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[(network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '443' AND network-traffic:start = '2020-10-25T16:22:00Z']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="ip-port"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "vulnerability",
+        "spec_version": "2.1",
+        "id": "vulnerability--651a981f-6f59-4609-b735-e57efb9d44df",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "CVE-2021-29921",
+        "description": "In Python before 3.9.5, the ipaddress library mishandles leading zero characters in the octets of an IP address string.",
+        "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
+        "external_references": [
+            {"source_name": "cve", "external_id": "CVE-2021-29921"}
+        ]
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--6b34f83c-f1db-4f39-a813-4ac86c1f2fe6",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "threatens",
+        "source_ref": "attack-pattern--7205da54-70de-4fa7-9b34-e14e63fe6787",
+        "target_ref": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--0ded93a1-38e5-4d2d-aecb-1f0e98daedb7",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "includes",
+        "source_ref": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "target_ref": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--94057569-8790-4fd7-9a05-ed0a054a2390",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "connected-to",
+        "source_ref": "misp-object--6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
+        "target_ref": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--f5134684-d988-42bc-964e-f2a4686c42a0",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "protects-against",
+        "source_ref": "course-of-action--5d514ff9-ac30-4fb5-b9e7-3eb4a964451a",
+        "target_ref": "vulnerability--651a981f-6f59-4609-b735-e57efb9d44df"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--e239566f-cfb0-437d-a4b2-0695c9ceffe7",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "protected-with",
+        "source_ref": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+        "target_ref": "course-of-action--5d514ff9-ac30-4fb5-b9e7-3eb4a964451a"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--2cac5500-e293-4a61-a751-9d7ea9624692",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "affects",
+        "source_ref": "vulnerability--651a981f-6f59-4609-b735-e57efb9d44df",
+        "target_ref": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f"
+    }
+]
 _EXTENSION_SYNTAX_ORGANIZATION_OBJECT = {
     "type": "identity",
     "spec_version": "2.1",
@@ -7241,6 +8264,21 @@ _EXTENSION_SYNTAX_SCRIPT_OBJECTS = [
         }
     }
 ]
+_EXTENSION_SYNTAX_STIX_MALWARE_GALAXY = {
+    "type": "misp-galaxy-cluster",
+    "spec_version": "2.1",
+    "id": "misp-galaxy-cluster--b9c0d1e2-f3a4-5678-9abc-def012345678",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "labels": ['misp:galaxy-name="STIX 2.1 Malware"', 'misp:galaxy-type="stix-2.1-malware"'],
+    "extensions": {
+        MISP_GALAXY_CLUSTER_EXTENSION_ID: {"extension_type": "new-sdo"}
+    },
+    "galaxy_name": "STIX 2.1 Malware",
+    "galaxy_type": "stix-2.1-malware",
+    "value": "AsyncRAT",
+    "description": "AsyncRAT is a remote access tool."
+}
 _EXTENSION_SYNTAX_THREAT_ACTOR_GALAXY = {
     "type": "threat-actor",
     "spec_version": "2.1",
@@ -13851,12 +14889,6 @@ _TLP_2_0_MARKING_DEFINITIONS = [
 ]
 
 
-def _packaged_misp_extension(identifier: str) -> dict:
-    with open(PACKAGED_MISP_EXTENSIONS / f'{identifier}.json', 'rt',
-              encoding='utf-8') as f:
-        return json.load(f)
-
-
 def _custom_syntax_pattern_path(name: str) -> str:
     # Where a pattern compares a MISP value in the Custom Syntax
     return f'x_misp_{name}'
@@ -13993,7 +15025,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         if not used:
             return []
         return [
-            _packaged_misp_extension(identifier)
+            packaged_misp_extension(identifier)
             for identifier in (MISP_PROJECT_IDENTITY_ID, *used)
         ]
 
@@ -15013,6 +16045,15 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_CUSTOM_OBJECT_WITH_INJECTED_FIELDS)
 
     @classmethod
+    def get_bundle_with_custom_object_with_injected_fields_extension_syntax(cls):
+        """The new-format copy of the injected fields: named outside the
+        Extension Syntax fixtures, as the schema refuses the injected item
+        keys."""
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_CUSTOM_OBJECT_WITH_INJECTED_FIELDS
+        )
+
+    @classmethod
     def get_bundle_with_custom_object_with_invalid_name(cls, name=None):
         custom_object = _CUSTOM_OBJECT_WITH_INVALID_NAME
         if name is not None:
@@ -15472,6 +16513,33 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return observed_data, observable
 
     @classmethod
+    def get_bundle_with_misp_types_with_unknown_properties(cls):
+        """The `misp-*` types carrying properties of the MISP records they
+        stand for that they leave out: named outside the Extension Syntax
+        fixtures, as the schemas refuse them."""
+        attribute = deepcopy(_EXTENSION_SYNTAX_MISP_ATTRIBUTE_FIELDS[0])
+        attribute.update(
+            {
+                'uuid': '3abc4d86-3ead-41b2-9487-430ae8f6c33c',
+                'distribution': '3', 'disable_correlation': True
+            }
+        )
+        misp_object = deepcopy(_EXTENSION_SYNTAX_MISP_OBJECT_FIELDS)
+        misp_object.update(
+            {
+                'template_uuid': '0cfa3a87-eb53-495f-9a5d-db12154cbb63',
+                'template_version': '42', 'distribution': '3'
+            }
+        )
+        galaxy_cluster = deepcopy(_EXTENSION_SYNTAX_MISP_GALAXY_CLUSTER_FIELDS[0])
+        galaxy_cluster.update(
+            {'source': 'Unknown source', 'authors': ['Someone'], 'version': 42}
+        )
+        return cls.__assemble_extension_syntax_bundle(
+            attribute, misp_object, galaxy_cluster
+        )
+
+    @classmethod
     def get_bundle_with_malformed_nested_rooms(cls):
         # Nested Rooms the readers cannot read, each on an Observed Data of
         # its own, next to well-formed ones. Named outside the schema sweep,
@@ -15628,6 +16696,26 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_colliding_analyst_opinion_uuids(cls):
+        indicator, opinion = deepcopy(_EXTENSION_SYNTAX_ANALYST_DATA_SAMPLES[:2])
+        domain_indicator = deepcopy(_DOMAIN_INDICATOR_ATTRIBUTE)
+        custom_opinion = deepcopy(_DICT_FORM_OBJECTS[1])
+        custom_opinion['id'] = (
+            f"x-misp-analyst-opinion--{opinion['id'].split('--')[1]}"
+        )
+        custom_opinion['object_ref'] = domain_indicator['id']
+        return cls.__assemble_extension_syntax_bundle(
+            indicator, opinion, domain_indicator, unreferenced=(custom_opinion,)
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_colliding_custom_galaxy_cluster_uuid(cls):
+        malware = deepcopy(_EXTENSION_SYNTAX_MALWARE_GALAXY)
+        custom = deepcopy(_EXTENSION_SYNTAX_CUSTOM_GALAXY)
+        custom['id'] = f"misp-galaxy-cluster--{malware['id'].split('--')[1]}"
+        return cls.__assemble_extension_syntax_bundle(malware, custom)
+
+    @classmethod
     def get_extension_syntax_bundle_with_colliding_galaxy_cluster_uuids(cls):
         malware = deepcopy(_EXTENSION_SYNTAX_MALWARE_GALAXY)
         threat_actor = deepcopy(_EXTENSION_SYNTAX_THREAT_ACTOR_GALAXY)
@@ -15665,9 +16753,35 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_custom_attributes(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_CUSTOM_ATTRIBUTES
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_custom_galaxy(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_CUSTOM_GALAXY
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_custom_labels(cls):
         return cls.__assemble_extension_syntax_bundle(
             *cls.__custom_labels(_EXTENSION_SYNTAX_DOMAIN_IP_INDICATOR_OBJECT)
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_custom_object_with_invalid_name(
+            cls, name=None):
+        custom_object = _EXTENSION_SYNTAX_CUSTOM_OBJECT_WITH_INVALID_NAME
+        if name is not None:
+            custom_object = {**custom_object, 'name': name}
+        return cls.__assemble_extension_syntax_bundle(custom_object)
+
+    @classmethod
+    def get_extension_syntax_bundle_with_custom_objects(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_CUSTOM_OBJECTS
         )
 
     @classmethod
@@ -15780,6 +16894,25 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
                 _EXTENSION_SYNTAX_IMAGE_OBSERVABLE_OBJECT,
                 f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.filename"
             )
+        )
+
+    @classmethod
+    def get_bundle_with_invalid_uuids_extension_syntax(cls):
+        """The new-format copy of the invalid uuids: named outside the
+        Extension Syntax fixtures, as the base schemas refuse the uuids. The
+        MISP Extensions follow the organisation identity, as the Export
+        writes them."""
+        identity, *stix_objects = deepcopy(
+            _EXTENSION_SYNTAX_BUNDLE_WITH_INVALID_UUIDS
+        )
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [
+            identity, *cls.__misp_extensions(*stix_objects), *stix_objects
+        ]
+        return dict_to_stix2(
+            bundle,
+            allow_custom=True,
+            interoperability=True
         )
 
     @classmethod
@@ -15961,6 +17094,58 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_misp_attribute_fields(cls):
+        btc, sample = deepcopy(_EXTENSION_SYNTAX_MISP_ATTRIBUTE_FIELDS)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            sample['data'] = b64encode(f.read()).decode()
+        return cls.__assemble_extension_syntax_bundle(btc, sample)
+
+    @classmethod
+    def get_extension_syntax_bundle_with_misp_galaxy_cluster_fields(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_MISP_GALAXY_CLUSTER_FIELDS
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_misp_object_fields(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_MISP_OBJECT_FIELDS
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_misp_project_organisation(
+            cls, report: bool = True):
+        """The custom attributes of the organisation sharing the MISP Project
+        uuid: the bundle carries its identity once, the organisation's own,
+        which authors the content and the MISP Extension definitions both.
+        With no report, the content is a collection."""
+        identity = {
+            **deepcopy(cls.__identity), 'id': MISP_PROJECT_IDENTITY_ID,
+            'name': 'CIRCL'
+        }
+        attributes = [
+            {**deepcopy(attribute), 'created_by_ref': MISP_PROJECT_IDENTITY_ID}
+            for attribute in _EXTENSION_SYNTAX_CUSTOM_ATTRIBUTES
+        ]
+        definitions = [
+            stix_object for stix_object in cls.__misp_extensions(*attributes)
+            if stix_object['id'] != MISP_PROJECT_IDENTITY_ID
+        ]
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [identity, *definitions]
+        if report:
+            grouping = deepcopy(cls.__grouping)
+            grouping['created_by_ref'] = MISP_PROJECT_IDENTITY_ID
+            grouping.update(
+                cls._populate_references(
+                    *(attribute['id'] for attribute in attributes)
+                )
+            )
+            bundle['objects'].append(grouping)
+        bundle['objects'].extend(attributes)
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
     def get_extension_syntax_bundle_with_mutex_indicator_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             _EXTENSION_SYNTAX_MUTEX_INDICATOR_OBJECT
@@ -16028,6 +17213,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
             *deepcopy(_EXTENSION_SYNTAX_BUNDLE_WITH_NO_REPORT)
         ]
         return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_extension_syntax_bundle_with_object_references(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_OBJECTS_WITH_REFERENCES
+        )
 
     @classmethod
     def get_extension_syntax_bundle_with_organization_object(cls):
@@ -16204,6 +17395,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_single_report(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_BUNDLE_WITH_NO_REPORT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_stix_galaxy(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_STIX_MALWARE_GALAXY
         )
 
     @classmethod

@@ -61,6 +61,13 @@ PACKAGED_MISP_EXTENSIONS = (
 )
 
 
+def packaged_misp_extension(identifier: str) -> dict:
+    # A packaged MISP Extension object, as an Extension Syntax bundle carries it
+    with open(PACKAGED_MISP_EXTENSIONS / f'{identifier}.json', 'rt',
+              encoding='utf-8') as f:
+        return json.load(f)
+
+
 def append_further_values(misp_object: dict, relation: str, values: tuple,
                           to_ids: bool) -> list:
     # Further values of a relation the MISP object holds: each a copy of its
