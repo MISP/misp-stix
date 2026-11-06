@@ -5,7 +5,8 @@ from .exceptions import InvalidHashValueError, _UnbuildableRecordError
 from .misp_to_stix2 import MISPtoSTIX2Parser, _PatternLocation
 from .stix21_mapping import MISPtoSTIX21Mapping
 from ..tools.misp_object_templates import (
-    _CUSTOM_PROPERTY_PREFIX, _ORIGINAL_NAMES_PROPERTY)
+    _CUSTOM_PROPERTY_PREFIX, _MISP_PROPERTY_EXTENSION_ID,
+    _ORIGINAL_NAMES_PROPERTY, _extension_property_name)
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
@@ -17,6 +18,7 @@ from pymisp import (
 from stix2.properties import (
     DictionaryProperty, IDProperty, ListProperty, ReferenceProperty,
     StringProperty, TimestampProperty)
+from stix2.utils import format_datetime
 from stix2.v21.bundle import Bundle
 from stix2.v21.common import MarkingDefinition
 from stix2.v21.observables import (
@@ -107,6 +109,8 @@ class CustomGalaxyCluster:
 
 
 class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
+    _misp_value_location = 'in the MISP property extension'
+
     def __init__(self, use_cti_uuids=False):
         super().__init__(use_cti_uuids)
         self._version = '2.1'
@@ -1018,8 +1022,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 objects.append(Artifact(**args))
                 file_args['content_ref'] = artifact_id
             else:
-                # The leftovers write it as a custom property, next to its
-                # further values
+                # The leftovers write it in the MISP property extension,
+                # next to its further values
                 attributes['malware-sample'] = value[0]
             if attributes.get('attachment'):
                 value = self._select_single_feature(attributes, 'attachment')
@@ -1034,8 +1038,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 args['id'] = f'artifact--{uuid}'
                 objects.append(Artifact(**args))
             else:
-                # The leftovers write it as a custom property, next to its
-                # further values
+                # The leftovers write it in the MISP property extension,
+                # next to its further values
                 attributes['attachment'] = value[0]
         if attributes or repeated:
             file_args.update(
@@ -1285,8 +1289,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 objects.append(Artifact(**args))
                 file_args['content_ref'] = artifact_id
             else:
-                # The leftovers write it as a custom property, next to its
-                # further values
+                # The leftovers write it in the MISP property extension,
+                # next to its further values
                 attributes['malware-sample'] = value[0]
         file_args.update(
             self._parse_lnk_args(
@@ -2133,8 +2137,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     #                      MISP VALUES WRITING FUNCTIONS                       #
     ############################################################################
 
-    # STIX 2.1 still writes the MISP values as custom properties, on the
-    # object or on its nested part they belong to, and the MISP records no
+    # STIX 2.1 writes the MISP values a standard object leaves over in the
+    # MISP property extension. Its nested parts, its fixed MISP fields and
+    # the galaxy meta still go as custom properties, and the MISP records no
     # STIX object maps as `x-misp-*` objects, as STIX 2.0 does
 
     @staticmethod
@@ -2194,8 +2199,24 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return f'x-misp-{kind}'
 
     @staticmethod
+    def _extension_property_value(value: Any) -> Any:
+        # The body holds its values as the bundle carries them: a datetime
+        # pymisp parsed goes as the timestamp stix2 serialises it to
+        if isinstance(value, list):
+            return [
+                MISPtoSTIX21Parser._extension_property_value(item)
+                for item in value
+            ]
+        if isinstance(value, datetime):
+            return format_datetime(value)
+        return value
+
+    @staticmethod
     def _is_misp_value_property(name: str, value: Any) -> bool:
-        return name.startswith(_CUSTOM_PROPERTY_PREFIX)
+        # The leftovers of an object all sit in the MISP property extension
+        return name == 'extensions' and list(value) == [
+            _MISP_PROPERTY_EXTENSION_ID
+        ]
 
     def _misp_value_pattern_path(
             self, location: _PatternLocation, name: str) -> str:
@@ -2240,9 +2261,28 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _set_leftovers(
             self, args: dict, leftovers: dict, room: Optional[dict] = None):
-        args['allow_custom'] = True
+        if room is not None:
+            # A part nested in a STIX object holds its leftovers itself
+            args['allow_custom'] = True
+            for relation, value in leftovers.items():
+                args[self._custom_property_name(relation)] = value
+            return
         for relation, value in leftovers.items():
-            args[self._custom_property_name(relation)] = value
+            # The body comes with the first value: an object with nothing
+            # left over carries none
+            body = args.setdefault('extensions', {}).setdefault(
+                _MISP_PROPERTY_EXTENSION_ID,
+                {'extension_type': 'property-extension'}
+            )
+            name = _extension_property_name(relation)
+            if name in body:
+                # Two values on one name, from relations folding or escaped
+                # to it or from one relation written twice: the last value
+                # wins, and the value it replaces is reported lost
+                self._extension_property_collision_warning(
+                    self._current_misp_object, relation, name
+                )
+            body[name] = self._extension_property_value(value)
 
     def _set_meta_value(
             self, meta_args: dict, key: str, values: Any, cluster_value: str):

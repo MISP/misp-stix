@@ -103,6 +103,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             'object': '_define_stix_object_id'
         }
         self._markings = {}
+        # The MISP object being converted, which the messages about the MISP
+        # values of its STIX objects name
+        self._current_misp_object: Optional[MISPObject | dict] = None
 
     def parse_misp_attribute(self, attribute: MISPAttribute | dict):
         self._results_handling_method = '_append_SDO_without_refs'
@@ -1528,6 +1531,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     ############################################################################
 
     def _resolve_object(self, misp_object: MISPObject | dict):
+        self._current_misp_object = misp_object
         try:
             object_name = misp_object['name']
             to_call = self._mapping.objects_mapping(object_name)
@@ -3593,6 +3597,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if misp_object['used']:
                     continue
                 file_object = misp_object['misp_object']
+                self._current_misp_object = file_object
                 try:
                     self._resolve_file_to_parse(file_object, file_uuid)
                 except Exception as exception:
@@ -3603,6 +3608,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if misp_object['used']:
                     continue
                 pe_object = misp_object['misp_object']
+                self._current_misp_object = pe_object
                 try:
                     self._resolve_pe_to_parse(pe_object)
                 except Exception as exception:
@@ -3619,6 +3625,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if misp_object['used']:
                     continue
                 registry_key = misp_object['misp_object']
+                self._current_misp_object = registry_key
                 try:
                     self._resolve_registry_key_to_parse(registry_key)
                 except Exception as exception:
@@ -3630,6 +3637,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 if misp_object['used']:
                     continue
                 registry_value = misp_object['misp_object']
+                self._current_misp_object = registry_value
                 try:
                     self._parse_registry_key_value_object(registry_value)
                 except Exception as exception:
@@ -3639,6 +3647,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             objects_to_parse = self._objects_to_parse['annotation']
             for misp_object in objects_to_parse.values():
                 annotation_object = misp_object['misp_object']
+                self._current_misp_object = annotation_object
                 custom = (
                     annotation_object.get('ObjectReference') is None or
                     not self._annotates(

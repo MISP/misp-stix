@@ -26,6 +26,9 @@ _CANONICAL_FLOAT = re.compile(r'[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?')
 
 class MISPtoSTIXParser(AbstractParser):
     __composite_separators = ('|', '_')
+    # Where a MISP value no STIX property holds is written, as the warnings
+    # about such a value say it
+    _misp_value_location = 'as a custom property'
     __published_fields = ('published', 'publish_timestamp')
     __PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
 
@@ -421,6 +424,16 @@ class MISPtoSTIXParser(AbstractParser):
             f'{galaxy_type} galaxy in event not mapped.'
         )
 
+    def _extension_property_collision_warning(
+            self, misp_object: Union[MISPObject, dict], relation: str,
+            name: str):
+        self._add_warning(
+            f"MISP object {misp_object['name']} (uuid: "
+            f"{misp_object['uuid']}): relation \"{relation}\" is written as "
+            f'"{name}" in the MISP property extension, already set by another '
+            'value of the same object, the last value wins.'
+        )
+
     def _galaxy_meta_key_reserved_warning(
             self, value: str, key: str, feature: str):
         self._add_warning(
@@ -472,7 +485,7 @@ class MISPtoSTIXParser(AbstractParser):
             self, relation: str, value: Any, record: str, kind: str):
         self._add_warning(
             f'{relation!r} in the {record} is not a canonical {kind}: '
-            f'{value!r} written as a custom property.'
+            f'{value!r} written {self._misp_value_location}.'
         )
 
     @staticmethod
