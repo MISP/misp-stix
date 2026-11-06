@@ -21,7 +21,8 @@ from .update_documentation import (
 from ._test_stix import (
     MISP_ATTRIBUTE_EXTENSION_ID, MISP_GALAXY_CLUSTER_EXTENSION_ID,
     MISP_OBJECT_EXTENSION_ID, MISP_PROJECT_IDENTITY_ID,
-    MISP_PROPERTY_EXTENSION_ID, PACKAGED_MISP_EXTENSIONS, TestSTIX21)
+    MISP_PROPERTY_EXTENSION_ID, PACKAGED_MISP_EXTENSIONS, TestSTIX21,
+    spell_non_pattern_value)
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export, TestSTIX21Export
 
 
@@ -885,7 +886,8 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         )
         self.assertEqual(stix_object.opinion, opinion)
         self.assertEqual(
-            stix_object.x_misp_opinion, int(misp_layer['opinion'])
+            self._misp_extension(stix_object)['opinion'],
+            int(misp_layer['opinion'])
         )
         self.assertEqual(stix_object.explanation, misp_layer['comment'])
         self.assertEqual(stix_object.authors, [misp_layer['authors']])
@@ -936,7 +938,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         self.assertEqual(opinion.explanation, "False positive Sighting")
         self.assertEqual(opinion.opinion, "strongly-disagree")
         self.assertEqual(
-            opinion.x_misp_author_ref,
+            self._misp_extension(opinion)['author_ref'],
             f"identity--{sighting['Organisation']['uuid']}"
         )
 
@@ -1023,6 +1025,38 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
             'based-on'
         )
         self._check_analyst_note(event_note, self.parser._misp_event.notes[0])
+
+    @staticmethod
+    def _get_event_with_analyst_data_on_custom_records():
+        # The first attribute and the object, of a type and a template no
+        # STIX object maps, go out as custom objects with their analyst data
+        event = get_event_with_analyst_data()
+        event['Event']['Attribute'][0]['type'] = 'comment'
+        event['Event']['Object'][0]['name'] = 'unmapped-template'
+        return event
+
+    def _test_event_with_analyst_data_on_custom_records(self, event):
+        self.parser.parse_misp_event(event)
+        self.assertEqual(self.parser.errors, {})
+        attribute = self.parser._misp_event.attributes[0]
+        misp_object = self.parser._misp_event.objects[0]
+        opinions = {
+            stix_object.object_refs[0]: stix_object
+            for stix_object in self.parser.stix_objects
+            if stix_object.type == 'opinion'
+        }
+        for custom_id, misp_opinion in (
+                (f"x-misp-attribute--{attribute['uuid']}",
+                 attribute['Opinion'][0]),
+                (f"x-misp-object--{misp_object['uuid']}",
+                 misp_object['Opinion'][0])):
+            with self.subTest(custom_id=custom_id):
+                opinion = opinions[custom_id]
+                self.assertEqual(opinion.id, f"opinion--{misp_opinion['uuid']}")
+                self.assertEqual(
+                    self._misp_extension(opinion)['opinion'],
+                    int(misp_opinion['opinion'])
+                )
 
     def _test_event_with_attribute_confidence_tags(self, event):
         tlp_tag, *confidence_tags = event['Tag']
@@ -1249,6 +1283,10 @@ class TestSTIX21JSONEventExport(TestSTIX21EventExport):
         event = get_event_with_analyst_data()
         self._test_event_with_analyst_data(event['Event'])
 
+    def test_event_with_analyst_data_on_custom_records(self):
+        event = self._get_event_with_analyst_data_on_custom_records()
+        self._test_event_with_analyst_data_on_custom_records(event['Event'])
+
     def test_event_with_attribute_confidence_tags(self):
         event = get_event_with_attribute_confidence_tags()
         self._test_event_with_attribute_confidence_tags(event['Event'])
@@ -1294,6 +1332,12 @@ class TestSTIX21MISPEventExport(TestSTIX21EventExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_analyst_data(misp_event)
+
+    def test_event_with_analyst_data_on_custom_records(self):
+        event = self._get_event_with_analyst_data_on_custom_records()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_analyst_data_on_custom_records(misp_event)
 
     def test_event_with_attribute_confidence_tags(self):
         event = get_event_with_attribute_confidence_tags()
@@ -3719,11 +3763,12 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(hashes['MD5'], _md5['value'])
         self.assertEqual(hashes['SHA-1'], _sha1['value'])
         self.assertEqual(hashes['SHA-256'], _sha256['value'])
-        self.assertEqual(_file.x_misp_attachment['value'], _attachment['value'])
+        attachment = self._misp_extension(_file)['attachment']
+        self.assertEqual(attachment['value'], _attachment['value'])
         data = _attachment['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
-        self.assertEqual(_file.x_misp_attachment['data'], data)
+        self.assertEqual(attachment['data'], data)
         self.assertEqual(_file.content_ref, artifact_ref)
         self._assert_multiple_equal(
             _file.parent_directory_ref, directory.id, directory_ref,
@@ -3742,7 +3787,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(artifact.payload_bin, data)
         filename, md5 = _malware_sample['value'].split('|')
         self.assertEqual(artifact.hashes['MD5'], md5)
-        self.assertEqual(artifact.x_misp_filename, filename)
+        self.assertEqual(self._misp_extension(artifact)['filename'], filename)
 
     def _check_hashlookup_observable_object(self, misp_object, observable, object_ref):
         (filename, filesize, known_malicious, md5, sha1, sha256, ssdeep, tlsh,
@@ -3823,8 +3868,9 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             data = b64encode(data.getvalue()).decode()
         self.assertEqual(artifact.payload_bin, data)
         self.assertEqual(artifact.mime_type, 'image/png')
-        self.assertEqual(artifact.x_misp_url, url['value'])
-        self.assertEqual(artifact.x_misp_filename, attachment['value'])
+        extension = self._misp_extension(artifact)
+        self.assertEqual(extension['url'], url['value'])
+        self.assertEqual(extension['filename'], attachment['value'])
         self.assertEqual(self._misp_extension(_file)['image_text'], text['value'])
 
     def _check_ip_port_observable_object(self, misp_object, observables, object_refs):
@@ -3893,7 +3939,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(artifact.payload_bin, data)
         self.assertEqual(artifact.mime_type, 'application/zip')
         filename, md5 = malware_sample['value'].split('|')
-        self.assertEqual(artifact.x_misp_filename, filename)
+        self.assertEqual(self._misp_extension(artifact)['filename'], filename)
         self.assertEqual(artifact.hashes['MD5'], md5)
 
     def _check_mutex_observable_object(self, misp_object, mutex, object_ref):
@@ -4743,6 +4789,63 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                     if stix_object.type == 'url'
                 )
                 self.assertEqual(self._misp_extension(url)[name], value)
+
+    def _test_event_with_fixed_field_name_collision(self):
+        # A relation folding to the name of a fixed MISP field the object
+        # writes too: the field's value wins, and the other one is reported
+        event = get_event_with_file_object()
+        misp_object = self._spell_object_relations(
+            event, 'file', {}, ('attachment', 'Attachment', 'other')
+        )
+        attachment = next(
+            attribute['value'] for attribute in misp_object['Attribute']
+            if attribute['object_relation'] == 'attachment'
+        )
+        self.parser = self._export_event(MISPtoSTIX21Parser, event)
+        self.assertEqual(self.parser.errors, {})
+        self.assertEqual(
+            self.parser.warnings[event['Event']['uuid']],
+            [
+                f"MISP object file (uuid: {misp_object['uuid']}): relation "
+                '"attachment" is written as "attachment" in the MISP property '
+                'extension, already set by another value of the same object, '
+                'the last value wins.'
+            ]
+        )
+        _file, = (
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object.type == 'file'
+        )
+        self.assertEqual(self._misp_extension(_file)['attachment'], attachment)
+
+    def _test_event_with_malware_sample_invalid_md5(self):
+        # A malware sample with no valid MD5 to split keeps its value whole,
+        # under its fixed MISP field name
+        event = spell_non_pattern_value(
+            get_event_with_file_object_with_artifact(), 'file',
+            'malware-sample', 'oui|not an md5'
+        )
+        misp_object = event['Event']['Object'][0]
+        self.parser = self._export_event(MISPtoSTIX21Parser, event)
+        self.assertEqual(
+            self.parser.errors[event['Event']['uuid']],
+            [
+                f"Error with the file object (uuid: {misp_object['uuid']}): "
+                'Invalid MD5 value.'
+            ]
+        )
+        artifact, = (
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object.type == 'artifact'
+        )
+        self.assertNotIn('hashes', artifact)
+        self.assertEqual(
+            self._misp_extension(artifact),
+            {
+                'extension_type': 'property-extension',
+                'malware_sample': 'oui|not an md5'
+            }
+        )
 
     def _test_event_with_directory_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
@@ -7257,6 +7360,12 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_extension_property_name_collision(self):
         self._test_event_with_extension_property_name_collision()
 
+    def test_event_with_fixed_field_name_collision(self):
+        self._test_event_with_fixed_field_name_collision()
+
+    def test_event_with_malware_sample_invalid_md5(self):
+        self._test_event_with_malware_sample_invalid_md5()
+
 
 class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
     def test_embedded_indicator_object_galaxy(self):
@@ -7864,6 +7973,12 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
 
     def test_event_with_extension_property_name_collision(self):
         self._test_event_with_extension_property_name_collision()
+
+    def test_event_with_fixed_field_name_collision(self):
+        self._test_event_with_fixed_field_name_collision()
+
+    def test_event_with_malware_sample_invalid_md5(self):
+        self._test_event_with_malware_sample_invalid_md5()
 
 
 class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):

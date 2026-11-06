@@ -2315,9 +2315,14 @@
                 "mtime": "2022-10-25T16:22:00Z",
                 "parent_directory_ref": "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
                 "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                "x_misp_attachment": {
-                    "value": "non",
-                    "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "attachment": {
+                            "value": "non",
+                            "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+                        }
+                    }
                 }
             },
             {
@@ -2337,7 +2342,12 @@
                 },
                 "encryption_algorithm": "mime-type-indicated",
                 "decryption_key": "infected",
-                "x_misp_filename": "oui"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "filename": "oui"
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -3640,8 +3650,13 @@
                 "id": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
                 "mime_type": "image/png",
                 "payload_bin": "iVBORw0KGgoAAAANSUhEUgA[...]gEefQAAAABJRU5ErkJggg==",
-                "x_misp_filename": "STIX.png",
-                "x_misp_url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "filename": "STIX.png",
+                        "url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -4169,7 +4184,12 @@
                 },
                 "encryption_algorithm": "mime-type-indicated",
                 "decryption_key": "infected",
-                "x_misp_filename": "oui"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "filename": "oui"
+                    }
+                }
             },
             {
                 "type": "indicator",
