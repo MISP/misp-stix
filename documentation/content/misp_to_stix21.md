@@ -7,13 +7,29 @@
 | MISP datastructure | STIX object|
 | -- | -- |
 | Event | `Report` or `Grouping` |
-| Attribute | `Indicator` or `Observable` in most cases, `Vulnerability`, `Campaign` or `Custom Object` otherwise |
-| Object | `Indicator` or `Observable` in most cases, `Vulnerability`, `Threat Actor`, `Course of Action` or `Custom Object` otherwise |
-| Galaxy | `Vulnerability`, `Threat Actor`, or `Course of Action` |
+| Attribute | `Indicator` or `Observable` in most cases, `Vulnerability`, `Campaign` or `misp-attribute` otherwise |
+| Object | `Indicator` or `Observable` in most cases, `Vulnerability`, `Threat Actor`, `Course of Action` or `misp-object` otherwise |
+| Galaxy | `Vulnerability`, `Threat Actor`, `Course of Action` or `misp-galaxy-cluster` |
 
 ##### Detailed mapping
 
 The detailed mapping for events and its contained structures, with explanations and examples, is available [here](misp_events_to_stix21.md)
+
+#### MISP Extensions
+
+The MISP content no standard STIX 2.1 object or property holds is carried in four MISP Extensions, STIX 2.1 extension definitions created by the MISP Project:
+- the **MISP Attribute Extension** defines `misp-attribute`, for a MISP attribute no standard STIX object represents;
+- the **MISP Object Extension** defines `misp-object`, for a MISP object no standard STIX object represents, with its attributes;
+- the **MISP Galaxy Cluster Extension** defines `misp-galaxy-cluster`, for a galaxy cluster no standard STIX object represents;
+- the **MISP Property Extension** is a property extension of the standard STIX objects: it holds the values of the MISP object relations and galaxy cluster meta keys their standard properties leave over, a few MISP fields such as an opinion score or an attachment, and the values of the MISP objects nested in a STIX structure (a PE and its sections in a file, the values of a registry key).
+
+A bundle carries the extension definitions it uses, with the MISP Project identity creating them, once each: in an event, ahead of the Report or Grouping of the first event using them; in a collection, ahead of the first object using them. The detailed mappings leave them out.
+
+- The extension definitions packaged with the library: [`misp_stix_converter/data/misp_extensions/`](../misp_stix_converter/data/misp_extensions/)
+- Their JSON schemas and examples: [`data/misp-extensions/extension-definition-specifications/misp-5ec/`](../data/misp-extensions/extension-definition-specifications/misp-5ec/)
+- Their documentation: [MISP Extensions for STIX 2.1](../data/misp-extensions/extension-definition-specifications/misp-5ec/README.md)
+
+STIX 2.0 has no extension definitions: the STIX 2.0 export keeps writing this content as custom objects (`x-misp-attribute`, `x-misp-object`, `x-misp-galaxy-cluster`) and custom properties (`x_misp_*`), as the STIX 2.1 export did up to version 2026.10.12.
 
 #### Attributes to STIX 2.1 mapping
 
