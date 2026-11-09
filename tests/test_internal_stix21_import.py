@@ -413,9 +413,14 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         # bundles from before the channel, or with a stale one, are Custom
         # Syntax bundles, which the export wrote until the MISP property
         # extension and the import still reads. So the edit runs on the
-        # export rendered as the Custom Syntax wrote it.
-        return super()._rewrite_original_names(
+        # export rendered as the Custom Syntax wrote it. A custom galaxy
+        # cluster keeps the channel of its `misp-galaxy-cluster` type, which
+        # spells its `meta` keys as the custom property did.
+        bundle = super()._rewrite_original_names(
             cls._in_custom_syntax(bundle), edit_channel
+        )
+        return super()._rewrite_original_names(
+            bundle, edit_channel, channel_name='original_names'
         )
 
     @staticmethod
@@ -467,7 +472,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
     def test_stix21_unknown_original_names_entry_on_a_custom_galaxy(self):
         from misp_stix_converter import MISPtoSTIX21Parser
         self._check_unknown_original_names_entry_on_a_custom_galaxy(
-            MISPtoSTIX21Parser()
+            MISPtoSTIX21Parser(), channel_name='original_names'
         )
 
     def test_stix21_colliding_galaxy_meta_keys_round_trip(self):
@@ -1122,9 +1127,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
     def test_stix21_unreadable_original_names_cost_the_misp_galaxy_cluster(self):
         # A channel that is no dictionary spells no meta key: the cluster is
         # lost with the per-object error naming it, and nothing is read from
-        # the channel on the way
+        # the channel on the way. The export registers the type, whose class
+        # refuses such a channel as the object loads
         from misp_stix_converter import InternalSTIX2toMISPParser
-        from stix2.parsing import dict_to_stix2
+        from misp_stix_converter.tools.stix2_loading_helpers import (
+            load_stix2_content)
         content = json.loads(
             TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_misp_galaxy_cluster_fields().serialize()
         )
@@ -1133,12 +1140,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             if stix_object['id'] == cluster_id:
                 stix_object['original_names'] = 'origin:Temp.Hex'
         parser = InternalSTIX2toMISPParser()
-        parser.load_stix_bundle(dict_to_stix2(content, allow_custom=True))
+        parser.load_stix_bundle(load_stix2_content(content))
         parser.parse_stix_bundle()
         self.assertEqual(dict(parser.warnings), {})
         error, = self._reported_messages(parser.errors)
-        for text in (cluster_id, 'original_names: a dictionary is expected'):
-            self.assertIn(text, error)
+        self.assertIn(cluster_id, error)
         self.assertEqual(
             [galaxy.type for galaxy in parser.misp_event.galaxies],
             ['tea-matrix']

@@ -3,7 +3,8 @@
 
 import inspect
 import json
-from datetime import datetime
+from collections import defaultdict
+from datetime import datetime, timezone
 from jsonschema import Draft202012Validator
 from misp_stix_converter import (
     InternalSTIX2toMISPParser, InvalidMISPInputError, MISPtoSTIX21Mapping,
@@ -12,6 +13,7 @@ from pathlib import Path
 from pymisp import MISPAttribute, MISPEvent
 from referencing import Registry, Resource
 from stix2.parsing import parse as stix2_parse
+from stix2.v21.bundle import Bundle
 from . import test_events
 from .test_events import *
 from .test_internal_stix21_bundles import TestInternalSTIX21Bundles
@@ -1046,9 +1048,9 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
             if stix_object.type == 'opinion'
         }
         for custom_id, misp_opinion in (
-                (f"x-misp-attribute--{attribute['uuid']}",
+                (f"misp-attribute--{attribute['uuid']}",
                  attribute['Opinion'][0]),
-                (f"x-misp-object--{misp_object['uuid']}",
+                (f"misp-object--{misp_object['uuid']}",
                  misp_object['Opinion'][0])):
             with self.subTest(custom_id=custom_id):
                 opinion = opinions[custom_id]
@@ -1057,6 +1059,53 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
                     self._misp_extension(opinion)['opinion'],
                     int(misp_opinion['opinion'])
                 )
+
+    @staticmethod
+    def _get_event_with_sightings_and_references_on_custom_records():
+        # A custom attribute, sighted and reported as a false positive, and a
+        # custom object referring to it
+        event = get_event_with_custom_objects()
+        btc, *_ = get_event_with_stix2_custom_attributes()['Event']['Attribute']
+        btc['Sighting'] = get_event_with_sightings()['Event']['Attribute'][0]['Sighting']
+        event['Event']['Attribute'] = [btc]
+        bank_account = event['Event']['Object'][0]
+        bank_account['ObjectReference'] = [
+            {
+                'uuid': 'c3f8b3a2-6c43-4a8e-9a43-2b8e1f0b3c71',
+                'object_uuid': bank_account['uuid'],
+                'referenced_uuid': btc['uuid'],
+                'relationship_type': 'related-to'
+            }
+        ]
+        return event
+
+    def _test_event_with_sightings_and_references_on_custom_records(self, event):
+        # The `misp-*` types are registered, and none is a custom type: a
+        # Sighting, an Opinion, a Relationship and a Bundle refer to them
+        # with no `allow_custom`
+        self.parser.parse_misp_event(event)
+        self.assertEqual(self.parser.errors, {})
+        attribute_id = f"misp-attribute--{self.parser._misp_event.attributes[0]['uuid']}"
+        object_id = f"misp-object--{self.parser._misp_event.objects[0]['uuid']}"
+        references = defaultdict(list)
+        for stix_object in self.parser.stix_objects:
+            if stix_object.type == 'sighting':
+                references['sighting'].append(stix_object.sighting_of_ref)
+            elif stix_object.type == 'opinion':
+                references['opinion'].extend(stix_object.object_refs)
+            elif stix_object.type == 'relationship':
+                references['relationship'].append(
+                    (stix_object.source_ref, stix_object.target_ref)
+                )
+        self.assertEqual(
+            references,
+            {
+                'sighting': [attribute_id] * 2,
+                'opinion': [attribute_id] * 2,
+                'relationship': [(object_id, attribute_id)]
+            }
+        )
+        Bundle(*self.parser.stix_objects)
 
     def _test_event_with_attribute_confidence_tags(self, event):
         tlp_tag, *confidence_tags = event['Tag']
@@ -1093,7 +1142,9 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         misp_objects = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
         *attributes, email_message_id = self.parser._misp_event.attributes
-        stix_objects = self._check_bundle_features(142)
+        # The network-connection object, both its addresses failing
+        # validation, holds no attribute for a misp-object to carry
+        stix_objects = self._check_bundle_features(141)
         indicators = [obj for obj in stix_objects if obj.type == 'indicator']
         email_message_id_indicator = indicators.pop(19)
         self._check_spec_versions(stix_objects)
@@ -1287,6 +1338,12 @@ class TestSTIX21JSONEventExport(TestSTIX21EventExport):
         event = self._get_event_with_analyst_data_on_custom_records()
         self._test_event_with_analyst_data_on_custom_records(event['Event'])
 
+    def test_event_with_sightings_and_references_on_custom_records(self):
+        event = self._get_event_with_sightings_and_references_on_custom_records()
+        self._test_event_with_sightings_and_references_on_custom_records(
+            event['Event']
+        )
+
     def test_event_with_attribute_confidence_tags(self):
         event = get_event_with_attribute_confidence_tags()
         self._test_event_with_attribute_confidence_tags(event['Event'])
@@ -1338,6 +1395,14 @@ class TestSTIX21MISPEventExport(TestSTIX21EventExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_analyst_data_on_custom_records(misp_event)
+
+    def test_event_with_sightings_and_references_on_custom_records(self):
+        event = self._get_event_with_sightings_and_references_on_custom_records()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_sightings_and_references_on_custom_records(
+            misp_event
+        )
 
     def test_event_with_attribute_confidence_tags(self):
         event = get_event_with_attribute_confidence_tags()
@@ -1926,7 +1991,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         )
         self._assert_multiple_equal(
             custom.id, custom_ref,
-            f"x-misp-galaxy-cluster--{custom_galaxy['GalaxyCluster'][0]['uuid']}"
+            f"misp-galaxy-cluster--{custom_galaxy['GalaxyCluster'][0]['uuid']}"
         )
         self._assert_multiple_equal(
             observed_data.id, od_ref, f"observed-data--{attribute['uuid']}"
@@ -2107,6 +2172,24 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         object_refs = self._check_grouping_features(grouping, identity_id)
         for attribute, custom_object, object_ref in zip(attributes, custom_objects, object_refs):
             self._run_custom_attribute_tests(attribute, custom_object, object_ref, identity_id)
+
+    def _test_event_with_malware_sample_attribute_with_invalid_md5(self, event):
+        orgc = event['Orgc']
+        self.parser.parse_misp_event(event)
+        attribute = self.parser._misp_event.attributes[0]
+        identity, grouping, custom_object = self.parser.stix_objects
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_ref, = self._check_grouping_features(grouping, identity_id)
+        # Carried where the custom properties lost them
+        for field in ('data', 'first_seen', 'last_seen'):
+            self.assertIn(field, custom_object)
+        self.assertIs(custom_object.to_ids, False)
+        self._run_custom_attribute_tests(
+            attribute, custom_object, object_ref, identity_id
+        )
 
     def _test_event_with_domain_indicator_attribute(self, event):
         attribute, observable, object_refs, pattern = self._run_indicator_tests(event)
@@ -2402,6 +2485,12 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
             'export'
         )
         attributes_documentation.check_export_mapping()
+        custom_attributes_documentation = AttributesDocumentationUpdater(
+            'misp_custom_attributes_to_stix21',
+            self._custom_attributes_v21,
+            'export'
+        )
+        custom_attributes_documentation.check_export_mapping()
 
     def test_embedded_indicator_attribute_galaxy(self):
         event = get_embedded_indicator_attribute_galaxy()
@@ -2450,6 +2539,18 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
     def test_event_with_custom_attributes(self):
         event = get_event_with_stix2_custom_attributes()
         self._test_event_with_custom_attributes(event['Event'])
+        for attribute, custom_attribute in zip(
+                self.parser._misp_event.attributes,
+                self.parser.stix_objects[2:]):
+            self._populate_custom_attributes_documentation(
+                attribute, custom_attribute
+            )
+
+    def test_event_with_malware_sample_attribute_with_invalid_md5(self):
+        event = get_event_with_malware_sample_attribute_with_invalid_md5()
+        self._test_event_with_malware_sample_attribute_with_invalid_md5(
+            event['Event']
+        )
 
     def test_event_with_domain_indicator_attribute(self):
         event = get_event_with_domain_attribute()
@@ -2933,6 +3034,14 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_custom_attributes(misp_event)
+
+    def test_event_with_malware_sample_attribute_with_invalid_md5(self):
+        event = get_event_with_malware_sample_attribute_with_invalid_md5()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_malware_sample_attribute_with_invalid_md5(
+            misp_event
+        )
 
     def test_event_with_domain_indicator_attribute(self):
         event = get_event_with_domain_attribute()
@@ -4414,8 +4523,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         self._assert_multiple_equal(
             custom.id, custom_ref,
-            f"x-misp-galaxy-cluster--{event_custom_galaxy['GalaxyCluster'][0]['uuid']}",
-            f"x-misp-galaxy-cluster--{custom_galaxy['GalaxyCluster'][0]['uuid']}"
+            f"misp-galaxy-cluster--{event_custom_galaxy['GalaxyCluster'][0]['uuid']}",
+            f"misp-galaxy-cluster--{custom_galaxy['GalaxyCluster'][0]['uuid']}"
         )
         self._assert_multiple_equal(
             observed_data.id, observed_data_ref,
@@ -4729,6 +4838,19 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         object_refs = self._check_grouping_features(grouping, identity_id)
         for misp_object, custom_object, object_ref in zip(misp_objects, custom_objects, object_refs):
             self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
+
+    def _test_event_with_custom_objects_with_first_and_last_seen(self, event):
+        self._test_event_with_custom_object(event)
+        bank_account, btc_wallet, _ = self.parser.stix_objects[2:]
+        # Carried where the custom properties lost them
+        for field in ('first_seen', 'last_seen'):
+            self.assertIn(field, bank_account)
+        self.assertEqual(
+            bank_account.attributes[0]['first_seen'], '2020-10-25T16:22:00Z'
+        )
+        self.assertEqual(
+            btc_wallet.attributes[1]['last_seen'], '2020-10-26T16:22:00Z'
+        )
 
     def _test_event_with_non_conforming_object_relations(self, event):
         self._remove_object_ids_flags(event)
@@ -5082,6 +5204,49 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 'malware_sample': 'oui|not an md5'
             }
         )
+
+    def _test_event_with_objects_left_without_attributes(self):
+        # pymisp drops the attributes failing its validation. An object left
+        # with none has nothing for a `misp-object` to carry, whichever route
+        # leads there: a template no route maps, a mapped route failing, a
+        # section no pe takes
+        from .test_events import _BASE_EVENT
+        event = deepcopy(_BASE_EVENT)
+        event['Event']['Object'] = [
+            {
+                'name': name, 'meta-category': 'misc', 'uuid': object_uuid,
+                'timestamp': '1603642920',
+                'Attribute': [
+                    {
+                        'uuid': attribute_uuid, 'type': attribute_type,
+                        'object_relation': attribute_type, 'value': value
+                    }
+                ]
+            } for name, object_uuid, attribute_uuid, attribute_type, value in (
+                ('unmapped-template', '3f2f0c5e-4a5e-4b8e-9c3e-0d6c7e1a2b01',
+                 '3f2f0c5e-4a5e-4b8e-9c3e-0d6c7e1a2b02', 'ip-src',
+                 '"1.2.3.4"'),
+                ('network-connection', '3f2f0c5e-4a5e-4b8e-9c3e-0d6c7e1a2b03',
+                 '3f2f0c5e-4a5e-4b8e-9c3e-0d6c7e1a2b04', 'ip-dst',
+                 "'5.6.7.8'"),
+                ('pe-section', '3f2f0c5e-4a5e-4b8e-9c3e-0d6c7e1a2b05',
+                 '3f2f0c5e-4a5e-4b8e-9c3e-0d6c7e1a2b06', 'md5',
+                 'not an md5')
+            )
+        ]
+        self.parser = self._export_event(MISPtoSTIX21Parser, event)
+        self.assertNotIn(
+            'misp-object',
+            [stix_object.type for stix_object in self.parser.stix_objects]
+        )
+        for misp_object in event['Event']['Object']:
+            with self.subTest(name=misp_object['name']):
+                self.assertIn(
+                    f"The {misp_object['name']} object (uuid: "
+                    f"{misp_object['uuid']}) holds no attribute: a "
+                    'misp-object needs one, so the object is not exported.',
+                    self._object_errors(misp_object)
+                )
 
     # An Indicator compares a MISP value where the observable holds it: in
     # the MISP property extension, behind its id
@@ -6129,7 +6294,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             autonomous_system.id, as_ref, f"autonomous-system--{as_object['uuid']}"
         )
         self._assert_multiple_equal(
-            custom.id, custom_ref, f"x-misp-object--{btc_object['uuid']}"
+            custom.id, custom_ref, f"misp-object--{btc_object['uuid']}"
         )
         self._assert_multiple_equal(
             coa.id, coa_ref, f"course-of-action--{coa_object['uuid']}"
@@ -6333,11 +6498,11 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 *_, custom = self.parser.stix_objects
                 self.assertEqual(
                     [stix_object.type for stix_object in self.parser.stix_objects],
-                    ['identity', 'grouping', 'x-misp-object']
+                    ['identity', 'grouping', 'misp-object']
                 )
                 self.assertEqual(
                     [(attribute['object_relation'], attribute['value'])
-                     for attribute in custom.x_misp_attributes],
+                     for attribute in custom.attributes],
                     [('pid', '0x1f'), ('name', 'TestProcess')]
                 )
 
@@ -6426,7 +6591,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 )
                 self.assertEqual(
                     [stix_object.type for stix_object in self.parser.stix_objects],
-                    ['identity', 'grouping', 'x-misp-object']
+                    ['identity', 'grouping', 'misp-object']
                 )
 
     def _test_event_with_file_objects_non_canonical_sizes(self):
@@ -6681,13 +6846,13 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             )
             self.assertEqual(
                 [stix_object.type for stix_object in self.parser.stix_objects],
-                ['identity', 'grouping', 'x-misp-object']
+                ['identity', 'grouping', 'misp-object']
             )
             *_, custom = self.parser.stix_objects
             self.assertIn(
                 ('latitude', 'nan'),
                 [(attribute['object_relation'], attribute['value'])
-                 for attribute in custom.x_misp_attributes]
+                 for attribute in custom.attributes]
             )
 
     def _test_event_with_network_objects_non_canonical_numbers(self):
@@ -6864,12 +7029,12 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 *_, custom = self.parser.stix_objects
                 self.assertEqual(
                     [stix_object.type for stix_object in self.parser.stix_objects],
-                    ['identity', 'grouping', 'x-misp-object']
+                    ['identity', 'grouping', 'misp-object']
                 )
                 self.assertIn(
                     ('asn', '007'),
                     [(attribute['object_relation'], attribute['value'])
-                     for attribute in custom.x_misp_attributes]
+                     for attribute in custom.attributes]
                 )
 
         event = get_event_with_asn_object()
@@ -6895,12 +7060,12 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         *_, custom = self.parser.stix_objects
         self.assertEqual(
             [stix_object.type for stix_object in self.parser.stix_objects],
-            ['identity', 'grouping', 'x-misp-object']
+            ['identity', 'grouping', 'misp-object']
         )
         self.assertNotIn(
             'asn',
             [attribute['object_relation']
-             for attribute in custom.x_misp_attributes]
+             for attribute in custom.attributes]
         )
 
     def _test_event_with_number_attributes_non_canonical(self):
@@ -6930,10 +7095,10 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 identity, grouping, *custom_attributes = self.parser.stix_objects
                 self.assertEqual(
                     [custom.type for custom in custom_attributes],
-                    ['x-misp-attribute'] * 4
+                    ['misp-attribute'] * 4
                 )
                 self.assertEqual(
-                    [(custom.x_misp_type, custom.x_misp_value)
+                    [(custom.attribute_type, custom.value)
                      for custom in custom_attributes],
                     list(spellings)
                 )
@@ -7016,6 +7181,12 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
             'export'
         )
         objects_documentation.check_export_mapping()
+        custom_objects_documentation = ObjectsDocumentationUpdater(
+            'misp_custom_objects_to_stix21',
+            self._custom_objects_v21,
+            'export'
+        )
+        custom_objects_documentation.check_export_mapping()
 
     # Only the JSON input path: with a MISPEvent, pymisp resolves the template
     # while the caller builds the event, before misp-stix sees any of it.
@@ -7177,6 +7348,18 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_custom_objects(self):
         event = get_event_with_custom_objects()
         self._test_event_with_custom_object(event['Event'])
+        for misp_object, custom_object in zip(
+                self.parser._misp_event.objects,
+                self.parser.stix_objects[2:]):
+            self._populate_custom_objects_documentation(
+                misp_object, custom_object
+            )
+
+    def test_event_with_custom_objects_with_first_and_last_seen(self):
+        event = get_event_with_custom_objects_with_first_and_last_seen()
+        self._test_event_with_custom_objects_with_first_and_last_seen(
+            event['Event']
+        )
 
     def test_event_with_artifact_url_indicator_object(self):
         event = get_event_with_artifact_url_object()
@@ -7767,6 +7950,9 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_malware_sample_invalid_md5(self):
         self._test_event_with_malware_sample_invalid_md5()
 
+    def test_event_with_objects_left_without_attributes(self):
+        self._test_event_with_objects_left_without_attributes()
+
     def test_event_with_misp_values_compared_through_a_list(self):
         self._test_event_with_misp_values_compared_through_a_list()
 
@@ -7906,6 +8092,14 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_custom_object(misp_event)
+
+    def test_event_with_custom_objects_with_first_and_last_seen(self):
+        event = get_event_with_custom_objects_with_first_and_last_seen()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_custom_objects_with_first_and_last_seen(
+            misp_event
+        )
 
     def test_event_with_artifact_url_indicator_object(self):
         event = get_event_with_artifact_url_object()
@@ -8407,6 +8601,9 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
 
     def test_event_with_malware_sample_invalid_md5(self):
         self._test_event_with_malware_sample_invalid_md5()
+
+    def test_event_with_objects_left_without_attributes(self):
+        self._test_event_with_objects_left_without_attributes()
 
     def test_event_with_misp_values_compared_through_a_list(self):
         self._test_event_with_misp_values_compared_through_a_list()
@@ -9061,6 +9258,26 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._test_attributes_collection_with_sector_galaxy(
             get_attributes_collection_with_sector_galaxy()
         )
+
+    def test_attributes_collection_with_custom_galaxy(self):
+        # With no timestamp to give the cluster, the `misp-galaxy-cluster`,
+        # whose type requires both, is created and modified at export time
+        attributes = get_attributes_collection_with_custom_galaxy()
+        cluster = attributes['Galaxy'][0]['GalaxyCluster'][0]
+        self.assertNotIn('timestamp', cluster)
+        before = datetime.now(timezone.utc).replace(microsecond=0)
+        self.parser.parse_misp_attributes(attributes)
+        after = datetime.now(timezone.utc)
+        custom_galaxy, = (
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object.type == 'misp-galaxy-cluster'
+        )
+        self.assertEqual(
+            custom_galaxy.id, f"misp-galaxy-cluster--{cluster['uuid']}"
+        )
+        self.assertEqual(custom_galaxy.created, custom_galaxy.modified)
+        self.assertLessEqual(before, custom_galaxy.created)
+        self.assertLessEqual(custom_galaxy.created, after)
 
     def test_attributes_collection_with_meta_less_galaxies(self):
         self._test_attributes_collection_with_meta_less_galaxies(

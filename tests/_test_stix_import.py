@@ -3657,23 +3657,25 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         return value if isinstance(value, list) else [value]
 
     @staticmethod
-    def _rewrite_original_names(bundle, edit_channel):
+    def _rewrite_original_names(
+            bundle, edit_channel, channel_name=_ORIGINAL_NAMES_PROPERTY):
         """The same bundle, with every channel passed through `edit_channel`.
 
         :param bundle: the exported bundle
         :param edit_channel: takes the channel of one object and returns the
             channel to write, or `None` to drop the property
+        :param channel_name: the property holding the channel
         """
         def rewritten(stix_object):
-            if _ORIGINAL_NAMES_PROPERTY not in stix_object:
+            if channel_name not in stix_object:
                 return stix_object
             fields = {
                 field: value for field, value in stix_object.items()
-                if field != _ORIGINAL_NAMES_PROPERTY
+                if field != channel_name
             }
-            channel = edit_channel(stix_object[_ORIGINAL_NAMES_PROPERTY])
+            channel = edit_channel(stix_object[channel_name])
             if channel is not None:
-                fields[_ORIGINAL_NAMES_PROPERTY] = channel
+                fields[channel_name] = channel
             return type(stix_object)(**fields, allow_custom=True)
 
         return type(bundle)(
@@ -3698,7 +3700,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(dict(self.parser.errors), {})
 
     def _check_custom_galaxy_meta_keys_round_trip(self, export_parser):
-        """The `x_misp_meta` keys of a custom galaxy cluster, channel only."""
+        """The `meta` keys of a custom galaxy cluster, channel only."""
         from .test_events import (
             get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset)
         event = (
@@ -3706,7 +3708,10 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
         expected = event['Event']['Galaxy'][0]['GalaxyCluster'][0]['meta']
         meta = self._round_trip_galaxy_cluster_meta(export_parser, event)
-        self.assertEqual(meta, expected)
+        self.assertEqual(
+            {key: self._meta_elements(value) for key, value in meta.items()},
+            {key: self._meta_elements(value) for key, value in expected.items()}
+        )
         self.assertEqual(dict(self.parser.warnings), {})
         self.assertEqual(dict(self.parser.errors), {})
 
@@ -3751,9 +3756,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(dict(self.parser.errors), {})
 
     def _check_unknown_original_names_entry_on_a_custom_galaxy(
-            self, export_parser):
-        """The same report on the `x-misp-galaxy-cluster` path, where the
-        channel spells `x_misp_meta` keys rather than property names."""
+            self, export_parser, channel_name=_ORIGINAL_NAMES_PROPERTY):
+        """The same report on the custom galaxy cluster path, where the
+        channel spells `meta` keys rather than property names."""
         from .test_events import (
             get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset)
         event = (
@@ -3767,10 +3772,11 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             }
         )
         self.assertNotIn('Never Written', meta)
-        self.assertEqual(meta, expected)
-        reports = self._reports_matching(
-            self.parser.warnings, _ORIGINAL_NAMES_PROPERTY
+        self.assertEqual(
+            {key: self._meta_elements(value) for key, value in meta.items()},
+            {key: self._meta_elements(value) for key, value in expected.items()}
         )
+        reports = self._reports_matching(self.parser.warnings, channel_name)
         self.assertEqual(len(reports), 1, reports)
         self.assertIn('"never-written"', reports[0])
         self.assertEqual(dict(self.parser.errors), {})

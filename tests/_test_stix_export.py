@@ -23,8 +23,9 @@ from uuid import uuid5, UUID
 from misp_stix_converter.tools.misp_object_templates import (
     _custom_property_name, _extension_property_name)
 from ._test_stix import (
-    MISP_PROPERTY_EXTENSION_ID, PLANTED_TEMPLATE, TestSTIX,
-    append_further_values, spell_non_pattern_value)
+    MISP_ATTRIBUTE_EXTENSION_ID, MISP_GALAXY_CLUSTER_EXTENSION_ID,
+    MISP_OBJECT_EXTENSION_ID, MISP_PROPERTY_EXTENSION_ID, PLANTED_TEMPLATE,
+    TestSTIX, append_further_values, spell_non_pattern_value)
 
 _DEFAULT_ORGNAME = 'MISP'
 _ATTRIBUTE_EXCLUSION_LIST = ('disable_correlation', 'to_ids')
@@ -984,40 +985,6 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(course_of_action.description, description['value'])
         self._check_course_of_action_misp_values(course_of_action, attributes)
 
-    def _check_custom_galaxy_features(self, stix_object, galaxy, timestamp):
-        cluster = galaxy['GalaxyCluster'][0]
-        self.assertEqual(stix_object.type, 'x-misp-galaxy-cluster')
-        self.assertEqual(stix_object.id, f"x-misp-galaxy-cluster--{cluster['uuid']}")
-        self.assertEqual(stix_object.created, timestamp)
-        self.assertEqual(stix_object.modified, timestamp)
-        self.assertEqual(stix_object.x_misp_name, galaxy['name'])
-        self.assertEqual(stix_object.x_misp_type, cluster['type'])
-        self.assertEqual(stix_object.x_misp_value, cluster['value'])
-        self.assertEqual(
-            stix_object.x_misp_description,
-            f"{galaxy['description']} | {cluster['description']}"
-        )
-        self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
-        self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
-        if 'meta' in cluster:
-            # `x_misp_meta` is a dictionary: keys keep case and `-` (STIX §2.3),
-            # every other character outside the dictionary charset folds to `_`
-            self.assertEqual(
-                stix_object.x_misp_meta,
-                {
-                    _DICTIONARY_META_KEYS[key]: value
-                    for key, value in cluster['meta'].items()
-                }
-            )
-            self._check_original_names(
-                stix_object,
-                {
-                    _DICTIONARY_META_KEYS[key]: key
-                    for key in cluster['meta']
-                    if _DICTIONARY_META_KEYS[key] != key
-                }
-            )
-
     def _check_email_address(self, address_object, address, display_name=None):
         self.assertEqual(address_object.type, 'email-addr')
         self.assertEqual(address_object.value, address)
@@ -1404,7 +1371,7 @@ class TestSTIX2Export(TestSTIX):
             self.parser.parse_misp_event(event['Event'])
         self.assertEqual(self._get_indicators(), [])
         self.assertIn(
-            'x-misp-object',
+            self._custom_object_type,
             [stix_object['type'] for stix_object in self.parser.stix_objects]
         )
         object_errors = self._object_errors(misp_object)
@@ -1415,70 +1382,6 @@ class TestSTIX2Export(TestSTIX):
                 f"(uuid: {misp_object['uuid']}):"
             )
         )
-
-    def _test_pe_object_falling_back_keeps_its_sections(self, parser_class):
-        # A pe the export fails to build goes out as the custom object, with
-        # an Error, and its sections go out as theirs: nothing of the pe
-        # sections is left behind, whether a file carries the pe or not, and
-        # the file stays a file, with or without custom properties of its own
-        from .test_events import (
-            get_event_with_file_and_pe_objects, get_event_with_pe_objects)
-
-        def get_event_with_native_file_and_pe_objects():
-            event = get_event_with_file_and_pe_objects()
-            file_object = event['Event']['Object'][0]
-            file_object['Attribute'] = [
-                attribute for attribute in file_object['Attribute']
-                if attribute['object_relation'] != 'entropy'
-            ]
-            return event
-
-        for fixture in (get_event_with_file_and_pe_objects,
-                        get_event_with_native_file_and_pe_objects,
-                        get_event_with_pe_objects):
-            for to_ids in (False, True):
-                with self.subTest(fixture=fixture.__name__, to_ids=to_ids):
-                    event = fixture()
-                    for misp_object in event['Event']['Object']:
-                        for attribute in misp_object['Attribute']:
-                            attribute['to_ids'] = to_ids
-                    pe, section = (
-                        next(
-                            misp_object
-                            for misp_object in event['Event']['Object']
-                            if misp_object['name'] == name
-                        ) for name in ('pe', 'pe-section')
-                    )
-                    self.parser = parser_class()
-                    with patch.object(
-                            self.parser, '_create_PE_extension',
-                            side_effect=RuntimeError('PE extension')):
-                        self.parser.parse_misp_event(
-                            self._parser_input(event)
-                        )
-                    self.assertEqual(len(self._object_errors(pe)), 1)
-                    custom_objects = {
-                        stix_object.x_misp_name: stix_object
-                        for stix_object in self.parser.stix_objects
-                        if stix_object.type == 'x-misp-object'
-                    }
-                    self.assertEqual(
-                        sorted(custom_objects), ['pe', 'pe-section']
-                    )
-                    custom_section = custom_objects['pe-section']
-                    self.assertEqual(
-                        custom_section.id, f"x-misp-object--{section['uuid']}"
-                    )
-                    self.assertEqual(
-                        [
-                            attribute['value'] for attribute
-                            in custom_section.x_misp_attributes
-                        ],
-                        [
-                            attribute['value']
-                            for attribute in section['Attribute']
-                        ]
-                    )
 
     def _check_person_object(self, identity, misp_object, person_ref, identity_id):
         self.assertEqual(identity.type, 'identity')
@@ -1672,25 +1575,6 @@ class TestSTIX2Export(TestSTIX):
             for attribute in misp_object['Attribute']:
                 attribute['to_ids'] = False
 
-    def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
-        attribute_type = attribute['type']
-        category = attribute['category']
-        custom_type = 'x-misp-attribute'
-        self.assertEqual(custom_object.type, custom_type)
-        self._assert_multiple_equal(
-            custom_object.id,
-            f"{custom_type}--{attribute['uuid']}",
-            object_ref
-        )
-        self.assertEqual(custom_object.created_by_ref, identity_id)
-        self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
-        self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
-        self.assertEqual(custom_object.x_misp_type, attribute_type)
-        self.assertEqual(custom_object.x_misp_category, category)
-        if attribute.get('comment'):
-            self.assertEqual(custom_object.x_misp_comment, attribute['comment'])
-        self.assertEqual(custom_object.x_misp_value, attribute['value'])
-
     def _run_invalid_object_name_tests(self, event, rejected_name):
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
@@ -1703,12 +1587,11 @@ class TestSTIX2Export(TestSTIX):
             getattr(misp_object, 'meta-category', None),
             PLANTED_TEMPLATE['meta-category']
         )
-        self.assertEqual(custom_object.x_misp_name, 'unknown-template')
         self.assertEqual(
             custom_object.labels[0], 'misp:name="unknown-template"'
         )
         # Nothing is lost: the rejected name is kept as data.
-        self.assertIn(rejected_name, custom_object.x_misp_comment)
+        self._check_rejected_name_custom_object(custom_object, rejected_name)
         self.assertIn(event['uuid'], self.parser.warnings)
         name_warnings = [
             warning for warning in self.parser.warnings[event['uuid']]
@@ -1718,9 +1601,9 @@ class TestSTIX2Export(TestSTIX):
         self.assertIn(rejected_name, name_warnings[0])
 
     def _check_invalid_object_name_collection(self, parser, rejected_name):
-        custom_object = parser.stix_objects[-1]
-        self.assertEqual(custom_object.x_misp_name, 'unknown-template')
-        self.assertIn(rejected_name, custom_object.x_misp_comment)
+        self._check_rejected_name_custom_object(
+            parser.stix_objects[-1], rejected_name
+        )
         name_warnings = [
             warning for warning in parser.warnings['objects collection']
             if 'Invalid MISP object template name' in warning
@@ -1788,39 +1671,6 @@ class TestSTIX2Export(TestSTIX):
         )
         self.assertNotIn('counts', results)
 
-    def _run_custom_object_tests(self, misp_object, custom_object, object_ref, identity_id):
-        name = misp_object['name']
-        category = misp_object['meta-category']
-        custom_type = 'x-misp-object'
-        self.assertEqual(custom_object.type, custom_type)
-        self._assert_multiple_equal(
-            custom_object.id,
-            f"{custom_type}--{misp_object['uuid']}",
-            object_ref
-        )
-        self.assertEqual(custom_object.created_by_ref, identity_id)
-        self.assertEqual(custom_object.labels[0], f'misp:name="{name}"')
-        self.assertEqual(custom_object.labels[1], f'misp:meta-category="{category}"')
-        self.assertEqual(custom_object.x_misp_name, name)
-        self.assertEqual(custom_object.x_misp_meta_category, category)
-        if misp_object.get('comment'):
-            self.assertEqual(custom_object.x_misp_comment, misp_object['comment'])
-        for custom_attribute, attribute in zip(custom_object.x_misp_attributes, misp_object['Attribute']):
-            for feature in ('type', 'object_relation', 'value'):
-                try:
-                    self.assertEqual(custom_attribute[feature], attribute[feature])
-                except AssertionError:
-                    if '(s)' in attribute[feature]:
-                        self.assertEqual(custom_attribute[feature], attribute[feature].replace('(s)', ''))
-            for feature in ('category', 'comment', 'to_ids', 'uuid'):
-                if attribute.get(feature):
-                    self.assertEqual(custom_attribute[feature], attribute[feature])
-            if attribute.get('data'):
-                data = attribute['data']
-                if not isinstance(data, str):
-                    data = b64encode(data.getvalue()).decode()
-                self.assertEqual(custom_attribute['data'], data)
-
     def _sanitise_pattern_value(self, value):
         sanitised = self._sanitise_registry_key_value(value)
         return sanitised.replace("'", "\\'").replace('"', '\\\\"')
@@ -1843,6 +1693,7 @@ class TestSTIX2Export(TestSTIX):
 
 
 class TestSTIX20Export(TestSTIX2Export):
+    _custom_object_type = 'x-misp-object'
     _misp_value_location = 'as a custom property'
     _pattern_segment_relations = _PATTERN_SEGMENT_RELATIONS
     _attributes_v20 = defaultdict(lambda: defaultdict(dict))
@@ -1887,6 +1738,160 @@ class TestSTIX20Export(TestSTIX2Export):
             ]
             return
         self._objects_v20[name]['STIX'] = json.loads(stix_objects.serialize())
+
+    def _check_custom_galaxy_features(self, stix_object, galaxy, timestamp):
+        cluster = galaxy['GalaxyCluster'][0]
+        self.assertEqual(stix_object.type, 'x-misp-galaxy-cluster')
+        self.assertEqual(stix_object.id, f"x-misp-galaxy-cluster--{cluster['uuid']}")
+        self.assertEqual(stix_object.created, timestamp)
+        self.assertEqual(stix_object.modified, timestamp)
+        self.assertEqual(stix_object.x_misp_name, galaxy['name'])
+        self.assertEqual(stix_object.x_misp_type, cluster['type'])
+        self.assertEqual(stix_object.x_misp_value, cluster['value'])
+        self.assertEqual(
+            stix_object.x_misp_description,
+            f"{galaxy['description']} | {cluster['description']}"
+        )
+        self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
+        self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
+        if 'meta' in cluster:
+            # `x_misp_meta` is a dictionary: keys keep case and `-` (STIX §2.3),
+            # every other character outside the dictionary charset folds to `_`
+            self.assertEqual(
+                stix_object.x_misp_meta,
+                {
+                    _DICTIONARY_META_KEYS[key]: value
+                    for key, value in cluster['meta'].items()
+                }
+            )
+            self._check_original_names(
+                stix_object,
+                {
+                    _DICTIONARY_META_KEYS[key]: key
+                    for key in cluster['meta']
+                    if _DICTIONARY_META_KEYS[key] != key
+                }
+            )
+
+    def _test_pe_object_falling_back_keeps_its_sections(self, parser_class):
+        # A pe the export fails to build goes out as the custom object, with
+        # an Error, and its sections go out as theirs: nothing of the pe
+        # sections is left behind, whether a file carries the pe or not, and
+        # the file stays a file, with or without custom properties of its own
+        from .test_events import (
+            get_event_with_file_and_pe_objects, get_event_with_pe_objects)
+
+        def get_event_with_native_file_and_pe_objects():
+            event = get_event_with_file_and_pe_objects()
+            file_object = event['Event']['Object'][0]
+            file_object['Attribute'] = [
+                attribute for attribute in file_object['Attribute']
+                if attribute['object_relation'] != 'entropy'
+            ]
+            return event
+
+        for fixture in (get_event_with_file_and_pe_objects,
+                        get_event_with_native_file_and_pe_objects,
+                        get_event_with_pe_objects):
+            for to_ids in (False, True):
+                with self.subTest(fixture=fixture.__name__, to_ids=to_ids):
+                    event = fixture()
+                    for misp_object in event['Event']['Object']:
+                        for attribute in misp_object['Attribute']:
+                            attribute['to_ids'] = to_ids
+                    pe, section = (
+                        next(
+                            misp_object
+                            for misp_object in event['Event']['Object']
+                            if misp_object['name'] == name
+                        ) for name in ('pe', 'pe-section')
+                    )
+                    self.parser = parser_class()
+                    with patch.object(
+                            self.parser, '_create_PE_extension',
+                            side_effect=RuntimeError('PE extension')):
+                        self.parser.parse_misp_event(
+                            self._parser_input(event)
+                        )
+                    self.assertEqual(len(self._object_errors(pe)), 1)
+                    custom_objects = {
+                        stix_object.x_misp_name: stix_object
+                        for stix_object in self.parser.stix_objects
+                        if stix_object.type == 'x-misp-object'
+                    }
+                    self.assertEqual(
+                        sorted(custom_objects), ['pe', 'pe-section']
+                    )
+                    custom_section = custom_objects['pe-section']
+                    self.assertEqual(
+                        custom_section.id, f"x-misp-object--{section['uuid']}"
+                    )
+                    self.assertEqual(
+                        [
+                            attribute['value'] for attribute
+                            in custom_section.x_misp_attributes
+                        ],
+                        [
+                            attribute['value']
+                            for attribute in section['Attribute']
+                        ]
+                    )
+
+    def _check_rejected_name_custom_object(self, custom_object, rejected_name):
+        self.assertEqual(custom_object.x_misp_name, 'unknown-template')
+        self.assertIn(rejected_name, custom_object.x_misp_comment)
+
+    def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
+        attribute_type = attribute['type']
+        category = attribute['category']
+        custom_type = 'x-misp-attribute'
+        self.assertEqual(custom_object.type, custom_type)
+        self._assert_multiple_equal(
+            custom_object.id,
+            f"{custom_type}--{attribute['uuid']}",
+            object_ref
+        )
+        self.assertEqual(custom_object.created_by_ref, identity_id)
+        self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
+        self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
+        self.assertEqual(custom_object.x_misp_type, attribute_type)
+        self.assertEqual(custom_object.x_misp_category, category)
+        if attribute.get('comment'):
+            self.assertEqual(custom_object.x_misp_comment, attribute['comment'])
+        self.assertEqual(custom_object.x_misp_value, attribute['value'])
+
+    def _run_custom_object_tests(self, misp_object, custom_object, object_ref, identity_id):
+        name = misp_object['name']
+        category = misp_object['meta-category']
+        custom_type = 'x-misp-object'
+        self.assertEqual(custom_object.type, custom_type)
+        self._assert_multiple_equal(
+            custom_object.id,
+            f"{custom_type}--{misp_object['uuid']}",
+            object_ref
+        )
+        self.assertEqual(custom_object.created_by_ref, identity_id)
+        self.assertEqual(custom_object.labels[0], f'misp:name="{name}"')
+        self.assertEqual(custom_object.labels[1], f'misp:meta-category="{category}"')
+        self.assertEqual(custom_object.x_misp_name, name)
+        self.assertEqual(custom_object.x_misp_meta_category, category)
+        if misp_object.get('comment'):
+            self.assertEqual(custom_object.x_misp_comment, misp_object['comment'])
+        for custom_attribute, attribute in zip(custom_object.x_misp_attributes, misp_object['Attribute']):
+            for feature in ('type', 'object_relation', 'value'):
+                try:
+                    self.assertEqual(custom_attribute[feature], attribute[feature])
+                except AssertionError:
+                    if '(s)' in attribute[feature]:
+                        self.assertEqual(custom_attribute[feature], attribute[feature].replace('(s)', ''))
+            for feature in ('category', 'comment', 'to_ids', 'uuid'):
+                if attribute.get(feature):
+                    self.assertEqual(custom_attribute[feature], attribute[feature])
+            if attribute.get('data'):
+                data = attribute['data']
+                if not isinstance(data, str):
+                    data = b64encode(data.getvalue()).decode()
+                self.assertEqual(custom_attribute['data'], data)
 
     def _check_custom_property_names(self, stix_object):
         # STIX 2.0 §7.1 / STIX 2.1 §11.1.1: custom property names are ASCII,
@@ -2108,11 +2113,14 @@ class TestSTIX20Export(TestSTIX2Export):
 
 
 class TestSTIX21Export(TestSTIX2Export):
+    _custom_object_type = 'misp-object'
     _misp_value_location = 'in the MISP property extension'
     _pattern_segment_relations = _EXTENSION_PATTERN_SEGMENT_RELATIONS
     _attributes_v21 = defaultdict(lambda: defaultdict(dict))
     _objects_v21 = defaultdict(lambda: defaultdict(dict))
     _galaxies_v21 = defaultdict(lambda: defaultdict(dict))
+    _custom_attributes_v21 = {}
+    _custom_objects_v21 = {}
 
     def _check_extension_property_names(self, stix_object):
         # The base schema of an extension body binds a name to a-z, 0-9 and
@@ -2141,12 +2149,12 @@ class TestSTIX21Export(TestSTIX2Export):
         # The channel maps a wire name the fold or the escape changed to the
         # MISP spelling, and lists nothing the two left alone. A standard
         # object carries it in its MISP property extension, keyed by the
-        # names the body holds; a custom galaxy cluster as a custom property,
-        # keyed by `x_misp_meta` key. Its keys are dictionary keys: STIX 2.1
+        # names the body holds; a custom galaxy cluster as a property of its
+        # own, keyed by `meta` key. Its keys are dictionary keys: STIX 2.1
         # §2.3, `A-Z`, `a-z`, `0-9`, `-` and `_`.
-        if stix_object.type == 'x-misp-galaxy-cluster':
-            holder, channel = stix_object, 'x_misp_original_names'
-            carried = set(stix_object.get('x_misp_meta', ()))
+        if stix_object.type == 'misp-galaxy-cluster':
+            holder, channel = stix_object, 'original_names'
+            carried = set(stix_object.get('meta', ()))
         else:
             holder = stix_object.get('extensions', {}).get(
                 MISP_PROPERTY_EXTENSION_ID, {}
@@ -2163,6 +2171,235 @@ class TestSTIX21Export(TestSTIX2Export):
             self.assertIn(name, carried)
             self.assertNotEqual(name, original)
 
+    def _check_custom_galaxy_features(self, stix_object, galaxy, timestamp):
+        cluster = galaxy['GalaxyCluster'][0]
+        self.assertEqual(stix_object.type, 'misp-galaxy-cluster')
+        self.assertEqual(stix_object.id, f"misp-galaxy-cluster--{cluster['uuid']}")
+        self._check_misp_type_extension(
+            stix_object, MISP_GALAXY_CLUSTER_EXTENSION_ID
+        )
+        self.assertEqual(stix_object.created, timestamp)
+        self.assertEqual(stix_object.modified, timestamp)
+        # A cluster is not authored by the exporting organisation
+        self.assertNotIn('created_by_ref', stix_object)
+        self.assertEqual(stix_object.galaxy_name, galaxy['name'])
+        self.assertEqual(stix_object.galaxy_type, cluster['type'])
+        self.assertEqual(stix_object.galaxy_description, galaxy['description'])
+        self.assertEqual(stix_object.value, cluster['value'])
+        # The cluster's own description, apart from its galaxy's
+        self.assertEqual(stix_object.description, cluster['description'])
+        self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
+        self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
+        for field in ('source', 'authors', 'version'):
+            self.assertNotIn(field, stix_object)
+        if 'meta' in cluster:
+            # `meta` is a dictionary: keys keep case and `-` (STIX §2.3),
+            # every other character outside the dictionary charset folds to
+            # `_`. A value of one item goes as the item
+            self.assertEqual(
+                stix_object.meta,
+                {
+                    _DICTIONARY_META_KEYS[key]: (
+                        value[0] if isinstance(value, list) and len(value) == 1
+                        else value
+                    )
+                    for key, value in cluster['meta'].items()
+                }
+            )
+            self._check_original_names(
+                stix_object,
+                {
+                    _DICTIONARY_META_KEYS[key]: key
+                    for key in cluster['meta']
+                    if _DICTIONARY_META_KEYS[key] != key
+                }
+            )
+
+    def _check_misp_type_extension(self, stix_object, extension_id):
+        # A `misp-*` object names its own definition, and no other
+        self.assertEqual(list(stix_object.extensions), [extension_id])
+        self.assertEqual(
+            stix_object.extensions[extension_id].extension_type, 'new-sdo'
+        )
+
+    def _check_misp_seen_fields(self, stix_object, data_layer):
+        # Written whenever set
+        for field in ('first_seen', 'last_seen'):
+            if data_layer.get(field):
+                self.assertEqual(
+                    stix_object[field], self._datetime_from_str(data_layer[field])
+                )
+            else:
+                self.assertNotIn(field, stix_object)
+
+    def _check_rejected_name_custom_object(self, custom_object, rejected_name):
+        self.assertEqual(custom_object.name, 'unknown-template')
+        self.assertIn(rejected_name, custom_object.comment)
+
+    def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
+        attribute_type = attribute['type']
+        category = attribute['category']
+        custom_type = 'misp-attribute'
+        self.assertEqual(custom_object.type, custom_type)
+        self._assert_multiple_equal(
+            custom_object.id,
+            f"{custom_type}--{attribute['uuid']}",
+            object_ref
+        )
+        self._check_misp_type_extension(
+            custom_object, MISP_ATTRIBUTE_EXTENSION_ID
+        )
+        self.assertEqual(custom_object.created_by_ref, identity_id)
+        self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
+        self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
+        self.assertEqual(custom_object.attribute_type, attribute_type)
+        self.assertEqual(custom_object.category, category)
+        if attribute.get('comment'):
+            self.assertEqual(custom_object.comment, attribute['comment'])
+        self.assertEqual(custom_object.value, attribute['value'])
+        # Written whether true or false
+        self.assertIs(custom_object.to_ids, attribute['to_ids'])
+        self._check_misp_seen_fields(custom_object, attribute)
+        if attribute.get('data'):
+            data = attribute['data']
+            if not isinstance(data, str):
+                data = b64encode(data.getvalue()).decode()
+            self.assertEqual(custom_object.data, data)
+        else:
+            self.assertNotIn('data', custom_object)
+        # The id carries the uuid
+        for field in ('uuid', 'distribution', 'disable_correlation'):
+            self.assertNotIn(field, custom_object)
+
+    def _run_custom_object_tests(self, misp_object, custom_object, object_ref, identity_id):
+        name = misp_object['name']
+        category = misp_object['meta-category']
+        custom_type = 'misp-object'
+        self.assertEqual(custom_object.type, custom_type)
+        self._assert_multiple_equal(
+            custom_object.id,
+            f"{custom_type}--{misp_object['uuid']}",
+            object_ref
+        )
+        self._check_misp_type_extension(
+            custom_object, MISP_OBJECT_EXTENSION_ID
+        )
+        self.assertEqual(custom_object.created_by_ref, identity_id)
+        self.assertEqual(custom_object.labels[0], f'misp:name="{name}"')
+        self.assertEqual(custom_object.labels[1], f'misp:meta-category="{category}"')
+        self.assertEqual(custom_object.name, name)
+        self.assertEqual(custom_object.meta_category, category)
+        if misp_object.get('comment'):
+            self.assertEqual(custom_object.comment, misp_object['comment'])
+        self._check_misp_seen_fields(custom_object, misp_object)
+        for field in ('uuid', 'distribution', 'template_uuid', 'template_version'):
+            self.assertNotIn(field, custom_object)
+        self.assertEqual(
+            len(custom_object.attributes), len(misp_object['Attribute'])
+        )
+        for custom_attribute, attribute in zip(custom_object.attributes, misp_object['Attribute']):
+            # Each item keeps MISP's own keys
+            self.assertEqual(custom_attribute['type'], attribute['type'])
+            self.assertEqual(
+                custom_attribute['object_relation'],
+                attribute['object_relation'].replace('(s)', '')
+            )
+            self.assertEqual(custom_attribute['value'], attribute['value'])
+            # Written whether true or false
+            self.assertIs(custom_attribute['to_ids'], attribute['to_ids'])
+            for feature in ('category', 'comment', 'uuid'):
+                if attribute.get(feature):
+                    self.assertEqual(custom_attribute[feature], attribute[feature])
+            for feature in ('first_seen', 'last_seen'):
+                if attribute.get(feature):
+                    self.assertEqual(
+                        self._datetime_from_str(custom_attribute[feature]),
+                        self._datetime_from_str(attribute[feature])
+                    )
+            if attribute.get('data'):
+                data = attribute['data']
+                if not isinstance(data, str):
+                    data = b64encode(data.getvalue()).decode()
+                self.assertEqual(custom_attribute['data'], data)
+            self.assertLessEqual(
+                set(custom_attribute),
+                {
+                    'type', 'object_relation', 'value', 'category', 'comment',
+                    'to_ids', 'uuid', 'data', 'first_seen', 'last_seen'
+                }
+            )
+
+    def _test_pe_object_falling_back_keeps_its_sections(self, parser_class):
+        # A pe the export fails to build goes out as the custom object, with
+        # an Error, and its sections go out as theirs: nothing of the pe
+        # sections is left behind, whether a file carries the pe or not, and
+        # the file stays a file, with or without MISP values of its own
+        from .test_events import (
+            get_event_with_file_and_pe_objects, get_event_with_pe_objects)
+
+        def get_event_with_native_file_and_pe_objects():
+            event = get_event_with_file_and_pe_objects()
+            file_object = event['Event']['Object'][0]
+            file_object['Attribute'] = [
+                attribute for attribute in file_object['Attribute']
+                if attribute['object_relation'] != 'entropy'
+            ]
+            return event
+
+        for fixture in (get_event_with_file_and_pe_objects,
+                        get_event_with_native_file_and_pe_objects,
+                        get_event_with_pe_objects):
+            for to_ids in (False, True):
+                with self.subTest(fixture=fixture.__name__, to_ids=to_ids):
+                    event = fixture()
+                    for misp_object in event['Event']['Object']:
+                        for attribute in misp_object['Attribute']:
+                            attribute['to_ids'] = to_ids
+                    pe, section = (
+                        next(
+                            misp_object
+                            for misp_object in event['Event']['Object']
+                            if misp_object['name'] == name
+                        ) for name in ('pe', 'pe-section')
+                    )
+                    self.parser = parser_class()
+                    with patch.object(
+                            self.parser, '_create_PE_extension',
+                            side_effect=RuntimeError('PE extension')):
+                        self.parser.parse_misp_event(
+                            self._parser_input(event)
+                        )
+                    self.assertEqual(len(self._object_errors(pe)), 1)
+                    custom_objects = {
+                        stix_object.name: stix_object
+                        for stix_object in self.parser.stix_objects
+                        if stix_object.type == 'misp-object'
+                    }
+                    self.assertEqual(
+                        sorted(custom_objects), ['pe', 'pe-section']
+                    )
+                    custom_section = custom_objects['pe-section']
+                    self.assertEqual(
+                        custom_section.id, f"misp-object--{section['uuid']}"
+                    )
+                    self.assertEqual(
+                        [
+                            attribute['value'] for attribute
+                            in custom_section.attributes
+                        ],
+                        [
+                            attribute['value']
+                            for attribute in section['Attribute']
+                        ]
+                    )
+                    self.assertFalse(
+                        [
+                            stix_object for stix_object
+                            in self.parser.stix_objects
+                            if stix_object.type.startswith('x-misp-')
+                        ]
+                    )
+
     def _populate_attributes_documentation(self, attribute, **kwargs):
         feature = attribute['type']
         self._attributes_v21[feature]['MISP'] = dict(
@@ -2175,6 +2412,19 @@ class TestSTIX21Export(TestSTIX2Export):
             ]
             return
         self._attributes_v21[feature]['STIX'] = json.loads(stix_objects.serialize())
+
+    def _populate_custom_attributes_documentation(self, attribute, stix_object):
+        # A custom attribute carries its `to_ids`, so the MISP side shows it
+        self._custom_attributes_v21[attribute['type']] = {
+            'MISP': dict(self._populate_attribute(attribute)),
+            'STIX': json.loads(stix_object.serialize())
+        }
+
+    def _populate_custom_objects_documentation(self, misp_object, stix_object):
+        self._custom_objects_v21[misp_object['name']] = {
+            'MISP': dict(self._populate_object(misp_object)),
+            'STIX': json.loads(stix_object.serialize())
+        }
 
     def _populate_galaxies_documentation(self, galaxy, name=None, summary=None, **kwargs):
         if name is None:

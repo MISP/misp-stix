@@ -4985,6 +4985,14 @@ def get_attributes_collection_with_sector_galaxy():
     }
 
 
+def get_attributes_collection_with_custom_galaxy():
+    # The event-level galaxy of an attributes collection has no timestamp
+    return {
+        'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)],
+        'Galaxy': [deepcopy(_TEST_TEA_MATRIX_GALAXY)]
+    }
+
+
 def get_attributes_collection_with_meta_less_galaxies():
     galaxies = []
     for galaxy in (
@@ -5712,6 +5720,21 @@ def get_event_with_malware_sample_attribute():
     return event
 
 
+def get_event_with_malware_sample_attribute_with_invalid_md5():
+    # A malware sample with no valid MD5 to split goes out as the custom
+    # attribute, with its payload, its first and last seen times, and its
+    # `to_ids` false
+    event = get_event_with_malware_sample_attribute()
+    event['Event']['Attribute'][0].update(
+        {
+            'value': 'oui|not an md5', 'to_ids': False,
+            'first_seen': '2020-10-25T16:22:00Z',
+            'last_seen': '2020-10-26T16:22:00.123456Z'
+        }
+    )
+    return event
+
+
 def get_event_with_mutex_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -6308,6 +6331,21 @@ def get_event_with_custom_objects():
         dict(_populate_object(_TEST_BTC_WALLET_OBJECT)),
         dict(_populate_object(_TEST_REPORT_OBJECT))
     ]
+    return event
+
+
+def get_event_with_custom_objects_with_first_and_last_seen():
+    # On an object no STIX object maps, and on some of its attributes
+    event = get_event_with_custom_objects()
+    bank_account, btc_wallet, _ = event['Event']['Object']
+    bank_account.update(
+        {
+            'first_seen': '2020-10-25T16:22:00Z',
+            'last_seen': '2020-10-26T16:22:00.123456Z'
+        }
+    )
+    bank_account['Attribute'][0]['first_seen'] = '2020-10-25T16:22:00Z'
+    btc_wallet['Attribute'][1]['last_seen'] = '2020-10-26T16:22:00Z'
     return event
 
 
