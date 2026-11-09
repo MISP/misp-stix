@@ -4629,8 +4629,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         name, certificate, domain = (attribute['value'] for attribute in misp_object['Attribute'])
         name_pattern, cert_pattern, domain_pattern = pattern[1:-1].split(' AND ')
         self.assertEqual(name_pattern, f"software:name = '{name}'")
-        self.assertEqual(cert_pattern, f"software:x_misp_certificate = '{certificate}'")
-        self.assertEqual(domain_pattern, f"software:x_misp_domain = '{domain}'")
+        self.assertEqual(cert_pattern, f"software:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.certificate = '{certificate}'")
+        self.assertEqual(domain_pattern, f"software:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.domain = '{domain}'")
 
     def _test_event_with_android_app_observable_object(self, event):
         misp_object, observables, object_refs = self._run_observable_from_object_tests(event)
@@ -4707,7 +4707,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         text_pattern = pattern[1:-1]
         self.assertEqual(
             text_pattern,
-            f"user-account:x_misp_{text['object_relation']} = '{text['value']}'"
+            f"user-account:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.text = '{text['value']}'"
         )
 
     def _test_event_with_credential_observable_object(self, event):
@@ -5083,6 +5083,129 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             }
         )
 
+    # An Indicator compares a MISP value where the observable holds it: in
+    # the MISP property extension, behind its id
+
+    def _object_indicator_pattern(self, event, misp_object):
+        # The pattern of the Indicator the MISP object exports to
+        self.parser = self._export_event(MISPtoSTIX21Parser, event)
+        self.assertEqual(self.parser.errors, {})
+        indicator, = (
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object.id == f"indicator--{misp_object['uuid']}"
+        )
+        return indicator.pattern
+
+    def _test_event_with_misp_values_compared_through_a_list(self):
+        # A value the observable holds in a list is compared through `[*]`:
+        # how many values the observable holds decides, not how many the
+        # pattern compares
+        path = f"file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.text"
+        for texts, pattern in (
+                (('a', 'b', 'c'), f"[{path}[*] = 'a' AND {path}[*] = 'c']"),
+                (('a', 'b'), f"[{path}[*] = 'a']"),
+                (('a',), f"[{path} = 'a']")):
+            with self.subTest(texts=texts):
+                event = get_event_with_file_object()
+                misp_object = self._spell_object_relations(
+                    event, 'file', {}, *(('text', 'text', text) for text in texts)
+                )
+                for attribute in misp_object['Attribute']:
+                    attribute['to_ids'] = attribute['value'] in ('a', 'c')
+                self.assertEqual(
+                    self._object_indicator_pattern(event, misp_object), pattern
+                )
+
+    def _test_event_with_misp_value_pattern_paths(self):
+        # A reference step goes in front of the extension, the path to a
+        # Nested Room behind its id, with the position of the part, and a
+        # value with data is compared on its data, then on its value
+        extension = f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'"
+
+        def flag(event, misp_object, relation):
+            for each in event['Event']['Object']:
+                for attribute in each['Attribute']:
+                    attribute['to_ids'] = (
+                        each is misp_object
+                        and attribute['object_relation'] == relation
+                    )
+
+        with self.subTest(location='parent_ref'):
+            event = get_event_with_process_object_v2()
+            misp_object = event['Event']['Object'][0]
+            flag(event, misp_object, 'parent-process-name')
+            self.assertEqual(
+                self._object_indicator_pattern(event, misp_object),
+                f"[process:parent_ref.{extension}.process_name = "
+                "'Friends_From_H']"
+            )
+        with self.subTest(location='section'):
+            event = get_event_with_file_and_pe_objects()
+            section = self._spell_object_relations(
+                event, 'pe-section', {}, ('text', 'text', 'Resources')
+            )
+            flag(event, section, 'text')
+            self.assertEqual(
+                self._object_indicator_pattern(
+                    event, event['Event']['Object'][0]
+                ),
+                f"[file:{extension}.windows_pebinary_ext.sections[0].text = "
+                "'Resources']"
+            )
+        with self.subTest(location='registry value'):
+            event = get_event_with_registry_key_and_values_objects()
+            value_object = event['Event']['Object'][2]
+            value_object['Attribute'].append(
+                {'type': 'text', 'object_relation': 'benign', 'value': 'Known'}
+            )
+            flag(event, value_object, 'benign')
+            self.assertEqual(
+                self._object_indicator_pattern(
+                    event, event['Event']['Object'][0]
+                ),
+                f"[windows-registry-key:{extension}.values[1].benign = "
+                "'Known']"
+            )
+        with self.subTest(location='data'):
+            event = get_event_with_account_objects_with_attachment()
+            misp_object = event['Event']['Object'][0]
+            avatar = next(
+                attribute for attribute in misp_object['Attribute']
+                if attribute['object_relation'] == 'user-avatar'
+            )
+            event['Event']['Object'] = [misp_object]
+            flag(event, misp_object, 'user-avatar')
+            path = f'user-account:{extension}.user_avatar'
+            self.assertEqual(
+                self._object_indicator_pattern(event, misp_object),
+                "[user-account:account_type = 'facebook' AND "
+                f"{path}.data = '{avatar['data']}' AND "
+                f"{path}.value = '{avatar['value']}']"
+            )
+        with self.subTest(location='data in a list'):
+            event = get_event_with_account_objects_with_attachment()
+            misp_object = event['Event']['Object'][0]
+            avatar = next(
+                attribute for attribute in misp_object['Attribute']
+                if attribute['object_relation'] == 'user-avatar'
+            )
+            misp_object['Attribute'].append(
+                {
+                    'type': 'attachment', 'object_relation': 'user-avatar',
+                    'value': 'second.png', 'data': 'c2Vjb25k'
+                }
+            )
+            event['Event']['Object'] = [misp_object]
+            flag(event, misp_object, 'user-avatar')
+            path = f'user-account:{extension}.user_avatar[*]'
+            self.assertEqual(
+                self._object_indicator_pattern(event, misp_object),
+                "[user-account:account_type = 'facebook' AND "
+                f"{path}.data = '{avatar['data']}' AND "
+                f"{path}.value = '{avatar['value']}' AND "
+                f"{path}.data = 'c2Vjb25k' AND {path}.value = 'second.png']"
+            )
+
     def _test_event_with_directory_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
         self._assert_multiple_equal(len(observables), len(object_refs), 1)
@@ -5139,7 +5262,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         _domain, _hostname, _ip, _ = (attribute['value'] for attribute in misp_object['Attribute'])
         domain_, hostname_, ip_ = pattern[1:-1].split(' AND ')
         self.assertEqual(domain_, f"domain-name:value = '{_domain}'")
-        self.assertEqual(hostname_, f"domain-name:x_misp_hostname = '{_hostname}'")
+        self.assertEqual(hostname_, f"domain-name:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.hostname = '{_hostname}'")
         self.assertEqual(ip_, f"domain-name:resolves_to_refs[*].value = '{_ip}'")
 
     def _test_event_with_domain_ip_observable_object_custom(self, event):
@@ -5262,7 +5385,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             data = b64encode(data.getvalue()).decode()
         self.assertEqual(ms_data, f"(file:content_ref.payload_bin = '{data}'")
         filename, md5 = _malware_sample.value.split('|')
-        self.assertEqual(ms_filename, f"file:content_ref.x_misp_filename = '{filename}'")
+        self.assertEqual(ms_filename, f"file:content_ref.extensions.'{MISP_PROPERTY_EXTENSION_ID}'.filename = '{filename}'")
         self.assertEqual(ms_md5, f"file:content_ref.hashes.MD5 = '{md5}'")
         self.assertEqual(mime_type, f"file:content_ref.mime_type = 'application/zip'")
         self.assertEqual(encryption, f"file:content_ref.encryption_algorithm = 'mime-type-indicated'")
@@ -5393,7 +5516,11 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             data = b64encode(data.getvalue()).decode()
         self.assertEqual(payload_bin, f"file:content_ref.payload_bin = '{data}'")
         self.assertEqual(mime_type, f"file:content_ref.mime_type = 'image/png'")
-        self.assertEqual(name_ref, f"file:content_ref.x_misp_filename = '{attachment['value']}'")
+        self.assertEqual(
+            name_ref,
+            f"file:content_ref.extensions.'{MISP_PROPERTY_EXTENSION_ID}'"
+            f".filename = '{attachment['value']}'"
+        )
         self.assertEqual(url_pattern, f"file:content_ref.url = '{url['value']}'")
 
     def _test_event_with_image_observable_object(self, event):
@@ -5464,7 +5591,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             data = b64encode(data.getvalue()).decode()
         self.assertEqual(ms_data, f"(file:content_ref.payload_bin = '{data}'")
         filename, md5 = malware_sample['value'].split('|')
-        self.assertEqual(ms_filename, f"file:content_ref.x_misp_filename = '{filename}'")
+        self.assertEqual(ms_filename, f"file:content_ref.extensions.'{MISP_PROPERTY_EXTENSION_ID}'.filename = '{filename}'")
         self.assertEqual(ms_md5, f"file:content_ref.hashes.MD5 = '{md5}'")
         self.assertEqual(mime_type, f"file:content_ref.mime_type = 'application/zip'")
         self.assertEqual(encryption, f"file:content_ref.encryption_algorithm = 'mime-type-indicated'")
@@ -5762,7 +5889,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 f"'{self._sanitise_registry_key_value(key)}'",
                 f"windows-registry-key:modified_time = "
                 f"'{self._datetime_from_str(modified)}'",
-                f"windows-registry-key:x_misp_hive = '{hive}'",
+                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.hive = '{hive}'",
                 f"windows-registry-key:values[0].data = '{data1}'",
                 f"windows-registry-key:values[0].data_type = '{data_type1}'",
                 f"windows-registry-key:values[0].name = '{name1}'",
@@ -5921,9 +6048,9 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         url_, domain_, host_, ip_ = pattern[1:-1].split(' AND ')
         self.assertEqual(url_, f"url:value = '{_url}'")
-        self.assertEqual(domain_, f"url:x_misp_domain = '{_domain}'")
-        self.assertEqual(host_, f"url:x_misp_host = '{_host}'")
-        self.assertEqual(ip_, f"url:x_misp_ip = '{_ip}'")
+        self.assertEqual(domain_, f"url:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.domain = '{_domain}'")
+        self.assertEqual(host_, f"url:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.host = '{_host}'")
+        self.assertEqual(ip_, f"url:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.misp_ip = '{_ip}'")
 
     def _test_event_with_url_observable_object(self, event):
         misp_object, observables, object_refs = self._run_observable_from_object_tests(event)
@@ -7640,6 +7767,12 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_malware_sample_invalid_md5(self):
         self._test_event_with_malware_sample_invalid_md5()
 
+    def test_event_with_misp_values_compared_through_a_list(self):
+        self._test_event_with_misp_values_compared_through_a_list()
+
+    def test_event_with_misp_value_pattern_paths(self):
+        self._test_event_with_misp_value_pattern_paths()
+
 
 class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
     def test_embedded_indicator_object_galaxy(self):
@@ -8274,6 +8407,12 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
 
     def test_event_with_malware_sample_invalid_md5(self):
         self._test_event_with_malware_sample_invalid_md5()
+
+    def test_event_with_misp_values_compared_through_a_list(self):
+        self._test_event_with_misp_values_compared_through_a_list()
+
+    def test_event_with_misp_value_pattern_paths(self):
+        self._test_event_with_misp_value_pattern_paths()
 
 
 class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):

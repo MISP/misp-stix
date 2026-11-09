@@ -90,6 +90,22 @@ _PATTERN_SEGMENT_RELATIONS = (
     ('Odd.Case/Relation', 'x_misp_odd_case_relation'),
     ('rel-with-dash', 'x_misp_rel_with_dash')
 )
+# The same relations in the MISP property extension, whose names fold them as
+# the custom property names do: the extension id is the segment the quotes
+# keep whole
+_EXTENSION_PATTERN_SEGMENT_RELATIONS = tuple(
+    (relation, f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.{name}")
+    for relation, name in (
+        ("rel' OR file:name = 'x", 'rel__or_file_name____x'),
+        ('rel]', 'rel_'),
+        ('rel=1', 'rel_1'),
+        ('weird relation', 'weird_relation'),
+        ("x'", 'misp_x_'),
+        ('a.b', 'a_b'),
+        ('Odd.Case/Relation', 'odd_case_relation'),
+        ('rel-with-dash', 'rel_with_dash')
+    )
+)
 
 
 class TestCollectionSTIXExport(unittest.TestCase):
@@ -629,19 +645,47 @@ class TestSTIX2Export(TestSTIX):
                     ]
                     if patterns[0] is None:
                         continue
+                    # A comparison stays the same one when the repeat makes
+                    # the MISP value it compares a list, reached through `[*]`
+                    patterns = [
+                        {
+                            self._comparison_at_any_count(comparison)
+                            for comparison in comparisons
+                        }
+                        for comparisons in patterns
+                    ]
                     if not to_ids:
                         self.assertEqual(*patterns)
                         continue
                     self.assertLessEqual(*patterns)
-                    # A further value with data compares its data too
+                    # A further value with data compares its data too, on the
+                    # path its value is compared on
+                    added = patterns[1] - patterns[0]
+                    paths = {comparison.split(' = ')[0] for comparison in added}
                     self.assertEqual(
                         {
                             self._comparable(self._compared_value(comparison))
-                            for comparison in patterns[1] - patterns[0]
-                            if not comparison.split(' = ')[0].endswith('.data')
+                            for comparison in added
+                            if not self._is_data_comparison(
+                                comparison.split(' = ')[0], paths
+                            )
                         },
                         {self._comparable(value) for value in values}
                     )
+
+    @staticmethod
+    def _comparison_at_any_count(comparison):
+        path, value = comparison.split(' = ', 1)
+        return f"{path.replace('[*]', '')} = {value}"
+
+    @staticmethod
+    def _is_data_comparison(path, paths):
+        # The data of a value with data, next to the value: not a relation
+        # named `data`
+        return (
+            path.endswith('.data')
+            and f"{path.removesuffix('.data')}.value" in paths
+        )
 
     # A value holding a quote or a backslash goes out as MISP gave it in
     # every property that is no pattern: only a pattern escapes them, a
@@ -1326,7 +1370,7 @@ class TestSTIX2Export(TestSTIX):
 
     def _check_pattern_metacharacter_relations(self, event_getter, prefix):
         value = 'metacharacter value'
-        for relation, segment in _PATTERN_SEGMENT_RELATIONS:
+        for relation, segment in self._pattern_segment_relations:
             with self.subTest(object_relation=relation):
                 self.setUp()
                 event = event_getter()
@@ -1356,9 +1400,7 @@ class TestSTIX2Export(TestSTIX):
         event = event_getter()
         self._add_object_ids_flag(event['Event'])
         misp_object = self._add_metacharacter_relation(event, 'rel]', 'V')
-        with patch.object(
-                self.parser, '_quote_custom_property',
-                lambda relation: f'x_misp_{relation}'):
+        with self._unquoted_misp_value_paths():
             self.parser.parse_misp_event(event['Event'])
         self.assertEqual(self._get_indicators(), [])
         self.assertIn(
@@ -1437,29 +1479,6 @@ class TestSTIX2Export(TestSTIX):
                             for attribute in section['Attribute']
                         ]
                     )
-
-    def _check_pe_and_section_pattern(self, pattern, pe, section):
-        _type, _, _, _original, _internal, *_, _imphash, _impfuzzy = (
-            attribute['value'] for attribute in pe['Attribute']
-        )
-        (imphash_, type_, original_, internal_, impfuzzy_,
-         name_, md5_, sha1_, sha256_, sha512_, ssdeep_) = pattern
-        prefix = "file:extensions.'windows-pebinary-ext'"
-        self.assertEqual(imphash_, f"{prefix}.imphash = '{_imphash}'")
-        self.assertEqual(type_, f"{prefix}.pe_type = '{_type}'")
-        self.assertEqual(original_, f"{prefix}.x_misp_original_filename = '{_original}'")
-        self.assertEqual(internal_, f"{prefix}.x_misp_internal_filename = '{_internal}'")
-        self.assertEqual(impfuzzy_, f"{prefix}.x_misp_impfuzzy = '{_impfuzzy}'")
-        _name, *_, _md5, _sha1, _sha256, _sha512, _ssdeep = (
-            attribute['value'] for attribute in section['Attribute']
-        )
-        prefix = f"{prefix}.sections[0]"
-        self.assertEqual(name_, f"{prefix}.name = '{_name}'")
-        self.assertEqual(md5_, f"{prefix}.hashes.MD5 = '{_md5}'")
-        self.assertEqual(sha1_, f"{prefix}.hashes.'SHA-1' = '{_sha1}'")
-        self.assertEqual(sha256_, f"{prefix}.hashes.'SHA-256' = '{_sha256}'")
-        self.assertEqual(sha512_, f"{prefix}.hashes.'SHA-512' = '{_sha512}'")
-        self.assertEqual(ssdeep_, f"{prefix}.hashes.SSDEEP = '{_ssdeep}'")
 
     def _check_person_object(self, identity, misp_object, person_ref, identity_id):
         self.assertEqual(identity.type, 'identity')
@@ -1825,6 +1844,7 @@ class TestSTIX2Export(TestSTIX):
 
 class TestSTIX20Export(TestSTIX2Export):
     _misp_value_location = 'as a custom property'
+    _pattern_segment_relations = _PATTERN_SEGMENT_RELATIONS
     _attributes_v20 = defaultdict(lambda: defaultdict(dict))
     _objects_v20 = defaultdict(lambda: defaultdict(dict))
     _galaxies_v20 = defaultdict(lambda: defaultdict(dict))
@@ -1972,6 +1992,29 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(hashes['SHA-512'], sha512)
         self.assertEqual(hashes['ssdeep' if 'ssdeep' in hashes else 'SSDEEP'], ssdeep)
 
+    def _check_pe_and_section_pattern(self, pattern, pe, section):
+        _type, _, _, _original, _internal, *_, _imphash, _impfuzzy = (
+            attribute['value'] for attribute in pe['Attribute']
+        )
+        (imphash_, type_, original_, internal_, impfuzzy_,
+         name_, md5_, sha1_, sha256_, sha512_, ssdeep_) = pattern
+        prefix = "file:extensions.'windows-pebinary-ext'"
+        self.assertEqual(imphash_, f"{prefix}.imphash = '{_imphash}'")
+        self.assertEqual(type_, f"{prefix}.pe_type = '{_type}'")
+        self.assertEqual(original_, f"{prefix}.x_misp_original_filename = '{_original}'")
+        self.assertEqual(internal_, f"{prefix}.x_misp_internal_filename = '{_internal}'")
+        self.assertEqual(impfuzzy_, f"{prefix}.x_misp_impfuzzy = '{_impfuzzy}'")
+        _name, *_, _md5, _sha1, _sha256, _sha512, _ssdeep = (
+            attribute['value'] for attribute in section['Attribute']
+        )
+        prefix = f"{prefix}.sections[0]"
+        self.assertEqual(name_, f"{prefix}.name = '{_name}'")
+        self.assertEqual(md5_, f"{prefix}.hashes.MD5 = '{_md5}'")
+        self.assertEqual(sha1_, f"{prefix}.hashes.'SHA-1' = '{_sha1}'")
+        self.assertEqual(sha256_, f"{prefix}.hashes.'SHA-256' = '{_sha256}'")
+        self.assertEqual(sha512_, f"{prefix}.hashes.'SHA-512' = '{_sha512}'")
+        self.assertEqual(ssdeep_, f"{prefix}.hashes.SSDEEP = '{_ssdeep}'")
+
     def _check_person_misp_values(self, identity, nationality, passport):
         self.assertEqual(identity.x_misp_nationality, nationality['value'])
         self.assertEqual(identity.x_misp_passport_number, passport['value'])
@@ -2036,6 +2079,13 @@ class TestSTIX20Export(TestSTIX2Export):
             collect(json.loads(stix_object.serialize()))
         return values
 
+    def _unquoted_misp_value_paths(self):
+        # The custom property names spelled as the relations, unquoted
+        return patch.object(
+            self.parser, '_quote_custom_property',
+            lambda relation: f'x_misp_{relation}'
+        )
+
     @staticmethod
     def _without_misp_values(stix_objects):
         # The STIX objects as written, without their custom properties nor
@@ -2059,6 +2109,7 @@ class TestSTIX20Export(TestSTIX2Export):
 
 class TestSTIX21Export(TestSTIX2Export):
     _misp_value_location = 'in the MISP property extension'
+    _pattern_segment_relations = _EXTENSION_PATTERN_SEGMENT_RELATIONS
     _attributes_v21 = defaultdict(lambda: defaultdict(dict))
     _objects_v21 = defaultdict(lambda: defaultdict(dict))
     _galaxies_v21 = defaultdict(lambda: defaultdict(dict))
@@ -2246,6 +2297,34 @@ class TestSTIX21Export(TestSTIX2Export):
             [key for key in section if key.startswith('x_misp_')]
         )
 
+    def _check_pe_and_section_pattern(self, pattern, pe, section):
+        _type, _, _, _original, _internal, *_, _imphash, _impfuzzy = (
+            attribute['value'] for attribute in pe['Attribute']
+        )
+        (imphash_, type_, original_, internal_, impfuzzy_,
+         name_, md5_, sha1_, sha256_, sha512_, ssdeep_) = pattern
+        prefix = "file:extensions.'windows-pebinary-ext'"
+        self.assertEqual(imphash_, f"{prefix}.imphash = '{_imphash}'")
+        self.assertEqual(type_, f"{prefix}.pe_type = '{_type}'")
+        # The PE values the extension leaves over sit in their Nested Room
+        room = (
+            f"file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'"
+            '.windows_pebinary_ext'
+        )
+        self.assertEqual(original_, f"{room}.original_filename = '{_original}'")
+        self.assertEqual(internal_, f"{room}.internal_filename = '{_internal}'")
+        self.assertEqual(impfuzzy_, f"{room}.impfuzzy = '{_impfuzzy}'")
+        _name, *_, _md5, _sha1, _sha256, _sha512, _ssdeep = (
+            attribute['value'] for attribute in section['Attribute']
+        )
+        prefix = f"{prefix}.sections[0]"
+        self.assertEqual(name_, f"{prefix}.name = '{_name}'")
+        self.assertEqual(md5_, f"{prefix}.hashes.MD5 = '{_md5}'")
+        self.assertEqual(sha1_, f"{prefix}.hashes.'SHA-1' = '{_sha1}'")
+        self.assertEqual(sha256_, f"{prefix}.hashes.'SHA-256' = '{_sha256}'")
+        self.assertEqual(sha512_, f"{prefix}.hashes.'SHA-512' = '{_sha512}'")
+        self.assertEqual(ssdeep_, f"{prefix}.hashes.SSDEEP = '{_ssdeep}'")
+
     def _check_person_misp_values(self, identity, nationality, passport):
         extension = self._misp_extension(identity)
         self.assertEqual(extension['nationality'], nationality['value'])
@@ -2331,6 +2410,16 @@ class TestSTIX21Export(TestSTIX2Export):
         for stix_object in stix_objects:
             collect(json.loads(stix_object.serialize()))
         return values
+
+    def _unquoted_misp_value_paths(self):
+        # The extension paths ending on the relations as spelled, unquoted
+        return patch.object(
+            self.parser, '_misp_value_pattern_path',
+            lambda location, name: (
+                f"{location.stix_type}:"
+                f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.{name}"
+            )
+        )
 
     @staticmethod
     def _without_misp_values(stix_objects):
