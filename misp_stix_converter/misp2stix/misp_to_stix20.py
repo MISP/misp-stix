@@ -1783,6 +1783,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _set_meta_seen_value(
             self, meta_args: dict, object_type: str, key: str, values: Any,
             cluster_value: str):
+        if object_type in self._mapping.types_without_seen_properties():
+            # A MISP value like any other meta the type has no property for
+            self._set_meta_value(meta_args, key, values, cluster_value)
+            return
         meta_args[key] = self._parse_datetime_meta_field(values)
 
     def _set_meta_value(
