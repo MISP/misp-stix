@@ -3735,9 +3735,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(hashes['SHA-256'], sha256)
         self.assertEqual(_file.size, int(size))
         self.assertEqual(self._misp_extension(_file)['entropy'], entropy)
-        self._check_pe_and_section_observable(
-            _file.extensions['windows-pebinary-ext'], pe, section
-        )
+        self._check_pe_and_section_observable(_file, pe, section)
 
     def _check_file_observable_object(self, misp_object, observables, object_refs):
         (_malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment,
@@ -4818,6 +4816,244 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         self.assertEqual(self._misp_extension(_file)['attachment'], attachment)
 
+    # The values of a MISP object nested in a STIX structure go in the
+    # Nested Room standing for its part, in the MISP property extension of
+    # the STIX object holding it, and the part holds STIX properties only
+
+    def _exported_object(self, event, stix_type):
+        # The one STIX object of the given type the event exports to, as the
+        # bundle writes it
+        self.parser = self._export_event(MISPtoSTIX21Parser, event)
+        self.assertEqual(self.parser.errors, {})
+        stix_object, = (
+            stix_object for stix_object in self.parser.stix_objects
+            if stix_object.type == stix_type
+        )
+        return json.loads(stix_object.serialize())
+
+    def _event_with_pe_leaving_no_value(self):
+        # A file and its pe, the pe holding only the values its STIX
+        # extension takes
+        event = get_event_with_file_and_pe_objects()
+        pe_object = self._spell_object_relations(event, 'pe', {})
+        pe_object['Attribute'] = [
+            attribute for attribute in pe_object['Attribute']
+            if attribute['object_relation'] in (
+                'type', 'entrypoint-address', 'number-sections', 'imphash'
+            )
+        ]
+        return event
+
+    def _test_event_with_nested_room_placeholders(self):
+        # A list room runs at full length, `{}` standing for an item holding
+        # nothing, so each room keeps the index of its item, before an item
+        # holding values as after one
+        event = get_event_with_file_and_pe_objects()
+        pe_object = self._spell_object_relations(event, 'pe', {})
+        section_uuid = 'b7f0f5a2-3d1e-4c6b-9a8f-2e4d6c8a0b13'
+        # A new list: the fixture shares its references with every other
+        pe_object['ObjectReference'] = [
+            *pe_object['ObjectReference'],
+            {
+                'uuid': 'c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f',
+                'object_uuid': pe_object['uuid'],
+                'referenced_uuid': section_uuid,
+                'relationship_type': 'includes',
+                'Object': {
+                    'uuid': section_uuid, 'name': 'pe-section',
+                    'meta-category': 'file'
+                }
+            }
+        ]
+        event['Event']['Object'].append(
+            {
+                'name': 'pe-section', 'meta-category': 'file',
+                'uuid': section_uuid, 'timestamp': pe_object['timestamp'],
+                'Attribute': [
+                    {
+                        'uuid': 'd4c3b2a1-6f5e-4d7c-9b8a-1f2e3d4c5b6a',
+                        'type': 'text', 'object_relation': 'name',
+                        'value': '.text'
+                    },
+                    {
+                        'uuid': 'e5d4c3b2-7a6f-4e8d-8c9b-2a3b4c5d6e7f',
+                        'type': 'text', 'object_relation': 'text',
+                        'value': 'Code section'
+                    }
+                ]
+            }
+        )
+        _file = self._exported_object(event, 'file')
+        self.assertEqual(
+            [
+                section['name'] for section
+                in _file['extensions']['windows-pebinary-ext']['sections']
+            ],
+            ['.rsrc', '.text']
+        )
+        self.assertEqual(
+            self._misp_extension(_file)['windows_pebinary_ext']['sections'],
+            [{}, {'text': 'Code section'}]
+        )
+        event = get_event_with_registry_key_and_values_objects()
+        self._spell_object_relations(
+            event, 'registry-key-value', {},
+            ('text', 'benign', 'Known to be legitimate')
+        )
+        registry_key = self._exported_object(event, 'windows-registry-key')
+        self.assertEqual(len(registry_key['values']), 2)
+        self.assertEqual(
+            self._misp_extension(registry_key)['values'],
+            [{'benign': 'Known to be legitimate'}, {}]
+        )
+
+    def _test_event_with_nested_room_lists_holding_nothing(self):
+        # A list room whose items would all be `{}` is left out
+        event = get_event_with_file_and_pe_objects()
+        _file = self._exported_object(event, 'file')
+        self.assertEqual(
+            len(_file['extensions']['windows-pebinary-ext']['sections']), 1
+        )
+        room = self._misp_extension(_file)['windows_pebinary_ext']
+        self.assertEqual(room['lang_id'], '080904B0')
+        self.assertNotIn('sections', room)
+        event = get_event_with_registry_key_and_values_objects()
+        registry_key = self._exported_object(event, 'windows-registry-key')
+        self.assertEqual(len(registry_key['values']), 2)
+        self.assertEqual(
+            self._misp_extension(registry_key),
+            {'extension_type': 'property-extension', 'hive': 'hklm'}
+        )
+
+    def _test_event_with_pe_room_holding_nothing(self):
+        # A PE and its section leaving no value over leave no room: the file
+        # carries its own values alone, and no MISP property extension when
+        # it has none
+        for file_values in (True, False):
+            with self.subTest(file_values=file_values):
+                event = self._event_with_pe_leaving_no_value()
+                file_object = self._spell_object_relations(event, 'file', {})
+                if not file_values:
+                    file_object['Attribute'] = [
+                        attribute for attribute in file_object['Attribute']
+                        if attribute['object_relation'] != 'entropy'
+                    ]
+                _file = self._exported_object(event, 'file')
+                self.assertEqual(
+                    _file['extensions']['windows-pebinary-ext']['imphash'],
+                    '23ea835ab4b9017c74dfb023d2301c99'
+                )
+                if not file_values:
+                    self.assertNotIn(
+                        MISP_PROPERTY_EXTENSION_ID, _file['extensions']
+                    )
+                    continue
+                self.assertEqual(
+                    self._misp_extension(_file),
+                    {'extension_type': 'property-extension', 'entropy': '1.234'}
+                )
+
+    def _test_event_with_pe_room_holding_sections_only(self):
+        # A section's values go in the room even when the PE leaves none
+        # over: the PE extension and its sections hold STIX properties only,
+        # so a section's value costs the PE nothing
+        event = self._event_with_pe_leaving_no_value()
+        self._spell_object_relations(
+            event, 'pe-section', {}, ('text', 'text', 'Resources')
+        )
+        _file = self._exported_object(event, 'file')
+        self.assertEqual(
+            _file['extensions']['windows-pebinary-ext']['sections'][0]['name'],
+            '.rsrc'
+        )
+        self.assertEqual(
+            self._misp_extension(_file)['windows_pebinary_ext'],
+            {'sections': [{'text': 'Resources'}]}
+        )
+
+    def _test_event_with_registry_value_holding_misp_values_only(self):
+        # The registry value keeps its STIX item, empty, so its room keeps
+        # its index
+        event = get_event_with_registry_key_and_values_objects()
+        event['Event']['Object'][2]['Attribute'] = [
+            {
+                'type': 'text', 'object_relation': 'benign',
+                'value': 'Known to be legitimate'
+            }
+        ]
+        registry_key = self._exported_object(event, 'windows-registry-key')
+        self.assertEqual(
+            registry_key['values'],
+            [{'name': 'Foo', 'data': 'qwerty', 'data_type': 'REG_SZ'}, {}]
+        )
+        self.assertEqual(
+            self._misp_extension(registry_key)['values'],
+            [{}, {'benign': 'Known to be legitimate'}]
+        )
+
+    def _test_event_with_registry_key_object_second_data(self):
+        # A registry key object's values are its own, its value relations
+        # included: a second data goes at the top level of its extension,
+        # not in a room of the STIX value its first one fills
+        event = get_event_with_registry_key_object()
+        self._spell_object_relations(
+            event, 'registry-key', {}, ('text', 'data', 'Second data')
+        )
+        registry_key = self._exported_object(event, 'windows-registry-key')
+        self.assertEqual(
+            registry_key['values'],
+            [
+                {
+                    'name': 'RegistryName', 'data': '%DATA%\\qwertyuiop',
+                    'data_type': 'REG_SZ'
+                }
+            ]
+        )
+        self.assertEqual(
+            self._misp_extension(registry_key),
+            {
+                'extension_type': 'property-extension', 'hive': 'hklm',
+                'data': 'Second data'
+            }
+        )
+
+    def _test_event_with_nested_room_name_collision(self):
+        # Two relations of a nested MISP object landing on one name of its
+        # room: the message names that object, not the one whose STIX object
+        # holds the room
+        for fixture, name, stix_type, extra, path in (
+                (get_event_with_file_and_pe_objects, 'pe', 'file',
+                 [('text', 'Company_Name', 'Other')],
+                 ('windows_pebinary_ext',)),
+                (get_event_with_file_and_pe_objects, 'pe-section', 'file',
+                 [('text', 'text', 'Code'), ('text', 'Text', 'Other')],
+                 ('windows_pebinary_ext', 'sections', 0)),
+                (get_event_with_registry_key_and_values_objects,
+                 'registry-key-value', 'windows-registry-key',
+                 [('text', 'benign', 'Known'), ('text', 'Benign', 'Other')],
+                 ('values', 0))):
+            with self.subTest(name=name):
+                event = fixture()
+                misp_object = self._spell_object_relations(
+                    event, name, {}, *extra
+                )
+                stix_object = self._exported_object(event, stix_type)
+                relation = extra[-1][1]
+                self.assertEqual(
+                    self.parser.warnings[event['Event']['uuid']],
+                    [
+                        f"MISP object {name} (uuid: {misp_object['uuid']}): "
+                        f'relation "{relation}" is written as '
+                        f'"{relation.lower()}" in the MISP property '
+                        'extension, already set by another value of the same '
+                        'object, the last value wins.'
+                    ]
+                )
+                room = self._misp_extension(stix_object)
+                for step in path:
+                    room = room[step]
+                self.assertEqual(room[relation.lower()], 'Other')
+
     def _test_event_with_malware_sample_invalid_md5(self):
         # A malware sample with no valid MD5 to split keeps its value whole,
         # under its fixed MISP field name
@@ -4885,10 +5121,17 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self._check_registry_key_value_observable_object(
             misp_object, observables[0], object_refs[0]
         )
+        # The registry key stands for the value alone: its values go in the
+        # room of the key's one value, none at the top level
         custom = misp_object['Attribute'][-1]
         self.assertEqual(
-            observables[0]['values'][0]['x_misp_benign'], custom['value']
+            self._misp_extension(observables[0]),
+            {
+                'extension_type': 'property-extension',
+                'values': [{'benign': custom['value']}]
+            }
         )
+        self.assertNotIn('x_misp_benign', observables[0]['values'][0])
 
     def _test_event_with_domain_ip_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
@@ -5422,16 +5665,12 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_pe_and_section_indicator_object(self, event):
         misp_objects, observable, pattern = self._run_indicator_from_objects_tests(event)
-        self._check_pe_and_section_observable(
-            observable.extensions['windows-pebinary-ext'], *misp_objects
-        )
+        self._check_pe_and_section_observable(observable, *misp_objects)
         self._check_pe_and_section_pattern(pattern[1:-1].split(' AND '), *misp_objects)
 
     def _test_event_with_pe_and_section_observable_object(self, event):
         misp_objects, observable = self._run_observable_from_objects_tests(event)
-        self._check_pe_and_section_observable(
-            observable.extensions['windows-pebinary-ext'], *misp_objects
-        )
+        self._check_pe_and_section_observable(observable, *misp_objects)
 
     def _test_event_with_person_object(self, event):
         orgc = event['Orgc']
@@ -5612,14 +5851,18 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         values = observable['values']
         self.assertEqual(len(values), 2)
-        for registry_value, misp_value in zip(values, (value1, value2)):
+        rooms = self._misp_extension(observable)['values']
+        self.assertEqual(len(rooms), 2)
+        for registry_value, room, misp_value in zip(
+                values, rooms, (value1, value2)):
             name, data, data_type, custom = (
                 attribute['value'] for attribute in misp_value['Attribute']
             )
             self.assertEqual(registry_value.name, name)
             self.assertEqual(registry_value.data, data)
             self.assertEqual(registry_value.data_type, data_type)
-            self.assertEqual(registry_value['x_misp_benign'], custom)
+            self.assertNotIn('x_misp_benign', registry_value)
+            self.assertEqual(room, {'benign': custom})
 
     def _test_event_with_script_objects(self, event):
         orgc = event['Orgc']
@@ -6101,8 +6344,9 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 self.assertEqual(file_object.size, 31)
 
     def _test_event_with_pe_objects_non_canonical_numbers(self):
-        # The custom properties go to the root of the extension, an optional
-        # header left empty is dropped, and the sections stay
+        # The values go to the room of the PE, those of a section to its
+        # item in the room's sections, an optional header left empty is
+        # dropped, and the sections stay
         for value, sections, section_size in (
                 ('007', '007', '007'), ('٣', '٣', '٣'),
                 ('0x1f', '8', '305152')):
@@ -6133,21 +6377,24 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 if value == '0x1f':
                     warnings = warnings[1:2]
                 self.assertEqual(self._parse_non_canonical(event), warnings)
-                extension = self._record_observables()[
+                _file = self._record_observables()[
                     f"file--{file_object['uuid']}"
-                ].extensions['windows-pebinary-ext']
+                ]
+                extension = _file.extensions['windows-pebinary-ext']
+                room = self._misp_extension(_file)['windows_pebinary_ext']
                 self.assertNotIn('optional_header', extension)
-                self.assertEqual(extension.x_misp_entrypoint_address, value)
+                self.assertEqual(room['entrypoint_address'], value)
                 section, = extension.sections
                 self.assertEqual(section.name, '.rsrc')
                 if value == '0x1f':
                     self.assertEqual(extension.number_of_sections, 8)
                     self.assertEqual(section.size, 305152)
+                    self.assertNotIn('sections', room)
                     continue
                 self.assertNotIn('number_of_sections', extension)
-                self.assertEqual(extension.x_misp_number_sections, value)
+                self.assertEqual(room['number_sections'], value)
                 self.assertNotIn('size', section)
-                self.assertEqual(section.x_misp_size_in_bytes, value)
+                self.assertEqual(room['sections'], [{'size_in_bytes': value}])
         event = get_event_with_file_and_pe_objects()
         file_object = self._spell_object_relations(event, 'file', {})
         self._spell_object_relations(
@@ -6184,11 +6431,17 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                         )
                     ]
                 )
-                section, = self._record_observables()[
+                _file = self._record_observables()[
                     f"file--{file_object['uuid']}"
-                ].extensions['windows-pebinary-ext'].sections
+                ]
+                section, = _file.extensions['windows-pebinary-ext'].sections
                 self.assertNotIn('entropy', section)
-                self.assertEqual(section.x_misp_entropy, value)
+                self.assertEqual(
+                    self._misp_extension(_file)['windows_pebinary_ext'][
+                        'sections'
+                    ],
+                    [{'entropy': value}]
+                )
                 self.parser.bundle.serialize()
         for value, number in (('7.5', 7.5), ('-1.5e3', -1500.0), ('7', 7.0)):
             with self.subTest(value=value):
@@ -7363,6 +7616,27 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_fixed_field_name_collision(self):
         self._test_event_with_fixed_field_name_collision()
 
+    def test_event_with_nested_room_placeholders(self):
+        self._test_event_with_nested_room_placeholders()
+
+    def test_event_with_nested_room_lists_holding_nothing(self):
+        self._test_event_with_nested_room_lists_holding_nothing()
+
+    def test_event_with_nested_room_name_collision(self):
+        self._test_event_with_nested_room_name_collision()
+
+    def test_event_with_pe_room_holding_nothing(self):
+        self._test_event_with_pe_room_holding_nothing()
+
+    def test_event_with_pe_room_holding_sections_only(self):
+        self._test_event_with_pe_room_holding_sections_only()
+
+    def test_event_with_registry_value_holding_misp_values_only(self):
+        self._test_event_with_registry_value_holding_misp_values_only()
+
+    def test_event_with_registry_key_object_second_data(self):
+        self._test_event_with_registry_key_object_second_data()
+
     def test_event_with_malware_sample_invalid_md5(self):
         self._test_event_with_malware_sample_invalid_md5()
 
@@ -7976,6 +8250,27 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
 
     def test_event_with_fixed_field_name_collision(self):
         self._test_event_with_fixed_field_name_collision()
+
+    def test_event_with_nested_room_placeholders(self):
+        self._test_event_with_nested_room_placeholders()
+
+    def test_event_with_nested_room_lists_holding_nothing(self):
+        self._test_event_with_nested_room_lists_holding_nothing()
+
+    def test_event_with_nested_room_name_collision(self):
+        self._test_event_with_nested_room_name_collision()
+
+    def test_event_with_pe_room_holding_nothing(self):
+        self._test_event_with_pe_room_holding_nothing()
+
+    def test_event_with_pe_room_holding_sections_only(self):
+        self._test_event_with_pe_room_holding_sections_only()
+
+    def test_event_with_registry_value_holding_misp_values_only(self):
+        self._test_event_with_registry_value_holding_misp_values_only()
+
+    def test_event_with_registry_key_object_second_data(self):
+        self._test_event_with_registry_key_object_second_data()
 
     def test_event_with_malware_sample_invalid_md5(self):
         self._test_event_with_malware_sample_invalid_md5()

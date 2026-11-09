@@ -1438,39 +1438,6 @@ class TestSTIX2Export(TestSTIX):
                         ]
                     )
 
-    def _check_pe_and_section_observable(self, extension, pe, section):
-        (_type, compilation, entrypoint, original, internal, desc, version,
-         lang, prod_name, prod_version, company, _copyright, sections, imphash,
-         impfuzzy) = (attribute['value'] for attribute in pe['Attribute'])
-        self.assertEqual(extension.pe_type, _type)
-        self.assertEqual(extension.imphash, imphash)
-        self.assertEqual(extension.number_of_sections, int(sections))
-        self.assertEqual(extension.optional_header['address_of_entry_point'], int(entrypoint))
-        self.assertEqual(extension.x_misp_company_name, company)
-        self.assertEqual(extension.x_misp_compilation_timestamp, compilation)
-        self.assertEqual(extension.x_misp_file_description, desc)
-        self.assertEqual(extension.x_misp_file_version, version)
-        self.assertEqual(extension.x_misp_impfuzzy, impfuzzy)
-        self.assertEqual(extension.x_misp_internal_filename, internal)
-        self.assertEqual(extension.x_misp_lang_id, lang)
-        self.assertEqual(extension.x_misp_legal_copyright, _copyright)
-        self.assertEqual(extension.x_misp_original_filename, original)
-        self.assertEqual(extension.x_misp_product_name, prod_name)
-        self.assertEqual(extension.x_misp_product_version, prod_version)
-        name, size, entropy, md5, sha1, sha256, sha512, ssdeep = (
-            attribute['value'] for attribute in section['Attribute']
-        )
-        section = extension.sections[0]
-        self.assertEqual(section.name, name)
-        self.assertEqual(section.size, int(size))
-        self.assertEqual(section.entropy, float(entropy))
-        hashes = section.hashes
-        self.assertEqual(hashes['MD5'], md5)
-        self.assertEqual(hashes['SHA-1'], sha1)
-        self.assertEqual(hashes['SHA-256'], sha256)
-        self.assertEqual(hashes['SHA-512'], sha512)
-        self.assertEqual(hashes['ssdeep' if 'ssdeep' in hashes else 'SSDEEP'], ssdeep)
-
     def _check_pe_and_section_pattern(self, pattern, pe, section):
         _type, _, _, _original, _internal, *_, _imphash, _impfuzzy = (
             attribute['value'] for attribute in pe['Attribute']
@@ -1972,6 +1939,39 @@ class TestSTIX20Export(TestSTIX2Export):
             meta['mitre_platforms']
         )
 
+    def _check_pe_and_section_observable(self, extension, pe, section):
+        (_type, compilation, entrypoint, original, internal, desc, version,
+         lang, prod_name, prod_version, company, _copyright, sections, imphash,
+         impfuzzy) = (attribute['value'] for attribute in pe['Attribute'])
+        self.assertEqual(extension.pe_type, _type)
+        self.assertEqual(extension.imphash, imphash)
+        self.assertEqual(extension.number_of_sections, int(sections))
+        self.assertEqual(extension.optional_header['address_of_entry_point'], int(entrypoint))
+        self.assertEqual(extension.x_misp_company_name, company)
+        self.assertEqual(extension.x_misp_compilation_timestamp, compilation)
+        self.assertEqual(extension.x_misp_file_description, desc)
+        self.assertEqual(extension.x_misp_file_version, version)
+        self.assertEqual(extension.x_misp_impfuzzy, impfuzzy)
+        self.assertEqual(extension.x_misp_internal_filename, internal)
+        self.assertEqual(extension.x_misp_lang_id, lang)
+        self.assertEqual(extension.x_misp_legal_copyright, _copyright)
+        self.assertEqual(extension.x_misp_original_filename, original)
+        self.assertEqual(extension.x_misp_product_name, prod_name)
+        self.assertEqual(extension.x_misp_product_version, prod_version)
+        name, size, entropy, md5, sha1, sha256, sha512, ssdeep = (
+            attribute['value'] for attribute in section['Attribute']
+        )
+        section = extension.sections[0]
+        self.assertEqual(section.name, name)
+        self.assertEqual(section.size, int(size))
+        self.assertEqual(section.entropy, float(entropy))
+        hashes = section.hashes
+        self.assertEqual(hashes['MD5'], md5)
+        self.assertEqual(hashes['SHA-1'], sha1)
+        self.assertEqual(hashes['SHA-256'], sha256)
+        self.assertEqual(hashes['SHA-512'], sha512)
+        self.assertEqual(hashes['ssdeep' if 'ssdeep' in hashes else 'SSDEEP'], ssdeep)
+
     def _check_person_misp_values(self, identity, nationality, passport):
         self.assertEqual(identity.x_misp_nationality, nationality['value'])
         self.assertEqual(identity.x_misp_passport_number, passport['value'])
@@ -2198,6 +2198,54 @@ class TestSTIX21Export(TestSTIX2Export):
             meta['mitre_platforms'][0]
         )
 
+    def _check_pe_and_section_observable(self, observable, pe, section):
+        (_type, compilation, entrypoint, original, internal, desc, version,
+         lang, prod_name, prod_version, company, _copyright, sections, imphash,
+         impfuzzy) = (attribute['value'] for attribute in pe['Attribute'])
+        extension = observable.extensions['windows-pebinary-ext']
+        self.assertEqual(extension.pe_type, _type)
+        self.assertEqual(extension.imphash, imphash)
+        self.assertEqual(extension.number_of_sections, int(sections))
+        self.assertEqual(extension.optional_header['address_of_entry_point'], int(entrypoint))
+        # The PE values sit in their room of the file's MISP property
+        # extension, the section left none, and the predefined extension
+        # holds STIX properties only
+        self.assertEqual(
+            self._misp_extension(observable)['windows_pebinary_ext'],
+            {
+                'compilation_timestamp': f'{compilation:%Y-%m-%dT%H:%M:%SZ}',
+                'original_filename': original,
+                'internal_filename': internal,
+                'file_description': desc,
+                'file_version': version,
+                'lang_id': lang,
+                'product_name': prod_name,
+                'product_version': prod_version,
+                'company_name': company,
+                'legal_copyright': _copyright,
+                'impfuzzy': impfuzzy
+            }
+        )
+        self.assertFalse(
+            [key for key in extension if key.startswith('x_misp_')]
+        )
+        name, size, entropy, md5, sha1, sha256, sha512, ssdeep = (
+            attribute['value'] for attribute in section['Attribute']
+        )
+        section = extension.sections[0]
+        self.assertEqual(section.name, name)
+        self.assertEqual(section.size, int(size))
+        self.assertEqual(section.entropy, float(entropy))
+        hashes = section.hashes
+        self.assertEqual(hashes['MD5'], md5)
+        self.assertEqual(hashes['SHA-1'], sha1)
+        self.assertEqual(hashes['SHA-256'], sha256)
+        self.assertEqual(hashes['SHA-512'], sha512)
+        self.assertEqual(hashes['SSDEEP'], ssdeep)
+        self.assertFalse(
+            [key for key in section if key.startswith('x_misp_')]
+        )
+
     def _check_person_misp_values(self, identity, nationality, passport):
         extension = self._misp_extension(identity)
         self.assertEqual(extension['nationality'], nationality['value'])
@@ -2251,23 +2299,30 @@ class TestSTIX21Export(TestSTIX2Export):
 
     @staticmethod
     def _misp_values(stix_objects, relation):
-        # Every value of a relation the MISP property extension carries, or
-        # a custom property of a part still holding its own, on any STIX
+        # Every value of a relation the MISP property extension carries, for
+        # the object or in the Nested Room of one of its parts, on any STIX
         # object - the value of a value carried with its data
         extension_name = _extension_property_name(relation)
-        custom_name = _custom_property_name(relation)
         values = []
         def add(value):
             for item in value if isinstance(value, list) else [value]:
                 values.append(item['value'] if isinstance(item, dict) else item)
+        def collect_body(body):
+            # A room holds the values of its part as the body holds the
+            # object's; the escape keeps any relation off the room names
+            for key, value in body.items():
+                if key == extension_name:
+                    add(value)
+                elif key == 'windows_pebinary_ext':
+                    collect_body(value)
+                elif key in ('sections', 'values'):
+                    for room in value:
+                        collect_body(room)
         def collect(content):
             if isinstance(content, dict):
                 for key, value in content.items():
-                    if key == custom_name:
-                        add(value)
-                    elif key == MISP_PROPERTY_EXTENSION_ID:
-                        if extension_name in value:
-                            add(value[extension_name])
+                    if key == MISP_PROPERTY_EXTENSION_ID:
+                        collect_body(value)
                     else:
                         collect(value)
             elif isinstance(content, list):
@@ -2281,13 +2336,12 @@ class TestSTIX21Export(TestSTIX2Export):
     def _without_misp_values(stix_objects):
         # The STIX objects as written, without their MISP values nor their
         # pattern: no MISP property extension, nor the extensions it was the
-        # only one of, nor the custom properties of the parts holding theirs
+        # only one of
         def strip(content):
             if isinstance(content, dict):
                 stripped = {
                     key: strip(value) for key, value in content.items()
                     if key != MISP_PROPERTY_EXTENSION_ID
-                    and not key.startswith('x_misp_')
                 }
                 if stripped.get('extensions') == {}:
                     del stripped['extensions']
