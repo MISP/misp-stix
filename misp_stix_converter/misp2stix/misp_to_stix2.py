@@ -6089,7 +6089,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _render_room_path(room_path: tuple) -> str:
         # Each key of the path goes behind a dot, each list index in brackets
         return ''.join(
-            f'[{step}]' if isinstance(step, int) else f'.{step}'
+            f'[{step}]' if isinstance(step, int)
+            else f'.{MISPtoSTIX2Parser._quote_segment(step)}'
             for step in room_path
         )
 

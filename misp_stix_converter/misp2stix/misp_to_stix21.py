@@ -114,6 +114,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         super().__init__(use_cti_uuids)
         self._version = '2.1'
         self._mapping = MISPtoSTIX21Mapping
+        # The MISP property extension bodies of the last Observed Data's
+        # observables, which its Indicator pattern compares, by the STIX type
+        # the pattern names and the reference it steps through
+        self._misp_value_bodies: dict = {}
 
     def _parse_event_report(
             self, event_report: MISPEventReport | dict) -> Note:
@@ -2060,6 +2064,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         getattr(self, self._results_handling_method)(observed_data)
         for observable in observables:
             getattr(self, self._results_handling_method)(observable)
+        self._keep_misp_value_bodies(observables)
         return observed_data
 
     @staticmethod
@@ -2241,19 +2246,53 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             _MISP_PROPERTY_EXTENSION_ID
         ]
 
+    def _keep_misp_value_bodies(self, observables: list):
+        # A MISP object's pattern is built after its Observed Data, and reads
+        # the values its observables hold: an observable another one
+        # references holds the values the pattern reaches through that
+        # reference
+        referenced = {
+            observable[step]: (observable.type, step)
+            for observable in observables
+            for step in ('parent_ref', 'content_ref') if step in observable
+        }
+        self._misp_value_bodies = {
+            referenced.get(observable.id, (observable.type, None)):
+                observable['extensions'][_MISP_PROPERTY_EXTENSION_ID]
+            for observable in observables
+            if _MISP_PROPERTY_EXTENSION_ID in observable.get('extensions', {})
+        }
+
+    def _misp_value_in_list(
+            self, location: _PatternLocation, name: str) -> bool:
+        room = self._misp_value_bodies.get(
+            (location.stix_type, location.reference_step), {}
+        )
+        try:
+            for step in location.room_path:
+                room = room[step]
+        except (IndexError, KeyError):
+            return False
+        return isinstance(room.get(name), list)
+
     def _misp_value_pattern_path(
             self, location: _PatternLocation, name: str) -> str:
-        steps = [location.reference_step] if location.reference_step else []
-        if location.room_path[:1] == ('windows_pebinary_ext',):
-            # The PE values sit on the predefined extension and its sections
-            steps.append(
-                "extensions.'windows-pebinary-ext'"
-                f'{self._render_room_path(location.room_path[1:])}'
-            )
-        # The MISP values of a registry value are compared at the top level of
-        # the key, not in the value where the observable writes them
-        steps.append(self._quote_custom_property(name))
-        return f"{location.stix_type}:{'.'.join(steps)}"
+        # The MISP values sit in the property extension of the observable,
+        # or of the one the reference step reaches, a nested part's in its
+        # Nested Room behind the id
+        segments = [location.reference_step] if location.reference_step else []
+        segments.extend(('extensions', _MISP_PROPERTY_EXTENSION_ID))
+        name = _extension_property_name(name)
+        path = (
+            '.'.join(self._quote_segment(segment) for segment in segments)
+            + self._render_room_path(location.room_path)
+            + f'.{self._quote_segment(name)}'
+        )
+        if self._misp_value_in_list(location, name):
+            # A comparison on a list holds through `[*]` only: a bare path to
+            # a list is false (§9.6.1)
+            path += '[*]'
+        return f'{location.stix_type}:{path}'
 
     @staticmethod
     def _parse_custom_object_attribute(
