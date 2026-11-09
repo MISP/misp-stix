@@ -4896,6 +4896,26 @@ def get_event_with_custom_vulnerability_galaxy(version: str):
     return event
 
 
+def get_event_with_galaxies_with_first_and_last_seen():
+    # `first_seen` / `last_seen` meta on the four galaxy types whose STIX 2.1
+    # object has no such property, and on an Intrusion Set, which has both
+    event = deepcopy(_BASE_EVENT)
+    galaxies = []
+    for galaxy, first_seen in (
+            (_TEST_ATTACK_PATTERN_GALAXY, '2017-05-31T21:30:00Z'),
+            (_TEST_TOOL_GALAXY, '2017-05-31T21:32:00Z'),
+            (_TEST_VULNERABILITY_GALAXY, '2015-01-27T00:00:00Z'),
+            (_TEST_CUSTOM_LOCATION_GALAXY, '1995-01-01T00:00:00Z'),
+            (_TEST_INTRUSION_SET_GALAXY, '2015-12-01T00:00:00Z')):
+        galaxy = deepcopy(galaxy)
+        galaxy['GalaxyCluster'][0]['meta'].update(
+            {'first_seen': [first_seen], 'last_seen': ['2020-10-25T16:22:00Z']}
+        )
+        galaxies.append(galaxy)
+    event['Event']['Galaxy'] = galaxies
+    return event
+
+
 def get_event_with_intrusion_set_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
@@ -5009,6 +5029,25 @@ def get_event_with_galaxy_meta_key_folding_to_the_channel():
     event = deepcopy(_BASE_EVENT)
     galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
     galaxy['GalaxyCluster'][0]['meta']['Original Names'] = ['not a spelling']
+    event['Event']['Galaxy'] = [galaxy]
+    return event
+
+
+def get_event_with_galaxy_meta_key_with_no_value():
+    # A meta key MISP holds no value for, which the fold would change
+    event = deepcopy(_BASE_EVENT)
+    galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
+    galaxy['GalaxyCluster'][0]['meta']['No Value'] = []
+    event['Event']['Galaxy'] = [galaxy]
+    return event
+
+
+def get_event_with_galaxy_meta_key_the_extension_escapes():
+    # A meta key whose fold ends with a suffix the base schema of a STIX 2.1
+    # extension body types as hex: the only one the galaxy corpus has
+    event = deepcopy(_BASE_EVENT)
+    galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
+    galaxy['GalaxyCluster'][0]['meta']['origin:Temp.Hex'] = ['China']
     event['Event']['Galaxy'] = [galaxy]
     return event
 

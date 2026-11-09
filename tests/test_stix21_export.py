@@ -41,14 +41,14 @@ _STIX2_BASE_SCHEMAS_SUBMODULE = _REPOSITORY / 'data' / 'cti-stix2-json-schemas'
 _STIX2_BASE_SCHEMAS = _STIX2_BASE_SCHEMAS_SUBMODULE / 'schemas' / 'common'
 
 _COUNTRY_META_PROPERTY_NAMES = {
-    'Capital': 'x_misp_capital',
-    'Continent': 'x_misp_continent',
-    'CurrencyCode': 'x_misp_currencycode',
-    'CurrencyName': 'x_misp_currencyname',
-    'ISO': 'x_misp_iso',
-    'ISO3': 'x_misp_iso3',
-    'Languages': 'x_misp_languages',
-    'Population': 'x_misp_population'
+    'Capital': 'capital',
+    'Continent': 'continent',
+    'CurrencyCode': 'currencycode',
+    'CurrencyName': 'currencyname',
+    'ISO': 'iso',
+    'ISO3': 'iso3',
+    'Languages': 'languages',
+    'Population': 'population'
 }
 
 
@@ -8119,14 +8119,16 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         self.assertEqual(location1.labels[0], f'misp:galaxy-name="{country["name"]}"')
         self.assertEqual(location1.labels[1], f'misp:galaxy-type="{country["type"]}"')
         # The country cluster's meta keys are CamelCase (`Capital`, `ISO3`),
-        # which the custom property name rule folds to lowercase. `country`
-        # maps to an SDO in 2.1 only, so this is the one galaxy whose keys the
-        # fold changes here and not in 2.0: the channel carries all 8, and
-        # `tld` - which the fold leaves alone - stays out of it.
+        # which the extension property name rule folds to lowercase.
+        # `country` maps to an SDO in 2.1 only, so this is the one galaxy
+        # whose keys the fold changes here and not in 2.0: the channel carries
+        # all 8, and `tld` - which the fold leaves alone - stays out of it.
+        extension = self._misp_extension(location1)
         for key, name in _COUNTRY_META_PROPERTY_NAMES.items():
-            self.assertEqual(getattr(location1, name), cluster['meta'][key])
-        self.assertFalse(hasattr(location1, 'x_misp_Capital'))
-        self._check_custom_property_names(location1)
+            self.assertEqual(extension[name], cluster['meta'][key])
+        self.assertEqual(extension['tld'], cluster['meta']['tld'])
+        self.assertNotIn('Capital', extension)
+        self._check_extension_property_names(location1)
         self._check_original_names(
             location1,
             {name: key for key, name in _COUNTRY_META_PROPERTY_NAMES.items()}
@@ -8142,8 +8144,10 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         )
         self.assertEqual(location2.labels[0], f'misp:galaxy-name="{region["name"]}"')
         self.assertEqual(location2.labels[1], f'misp:galaxy-type="{region["type"]}"')
+        extension = self._misp_extension(location2)
         for key, values in cluster['meta'].items():
-            self.assertEqual(getattr(location2, f'x_misp_{key}'), values)
+            self.assertEqual(extension[key], values)
+        self._check_original_names(location2, {})
         self.assertEqual(location2.region, region_value.lower().replace(' ', '-'))
 
     def _test_event_with_location_galaxy(self, event):
@@ -8245,46 +8249,45 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         self.parser.parse_misp_event(event)
         threat_actor = self.parser.stix_objects[-1]
         self.assertEqual(threat_actor.type, 'threat-actor')
-        # `TTP` and `ttp` share one property, the last value wins - the same
-        # rule as on observables - and the fold is reported. The channel can
-        # carry one spelling per name: it follows the value the property keeps,
-        # written as MISP spelled it, so `TTP` is not listed.
-        self.assertEqual(threat_actor.x_misp_ttp, cluster['meta']['ttp'])
-        self.assertFalse(hasattr(threat_actor, 'x_misp_TTP'))
-        self._check_custom_property_names(threat_actor)
+        # `TTP` and `ttp` share one name, the last value wins - the same rule
+        # as on observables - and the fold is reported. The channel can carry
+        # one spelling per name: it follows the value the name keeps, written
+        # as MISP spelled it, so `TTP` is not listed.
+        extension = self._misp_extension(threat_actor)
+        self.assertEqual(extension['ttp'], cluster['meta']['ttp'][0])
+        self.assertNotIn('TTP', extension)
+        self._check_extension_property_names(threat_actor)
         self._check_original_names(
-            threat_actor,
-            {'x_misp_cfr_type_of_incident': 'cfr-type-of-incident'}
+            threat_actor, {'cfr_type_of_incident': 'cfr-type-of-incident'}
         )
-        collision_warnings = [
-            warning for warning in self.parser.warnings[event['uuid']]
-            if 'x_misp_ttp' in warning
-        ]
-        self.assertEqual(len(collision_warnings), 1)
-        self.assertIn(f'"{cluster["value"]}"', collision_warnings[0])
-        self.assertIn('"ttp"', collision_warnings[0])
-        self.assertIn('only its spelling is carried', collision_warnings[0])
+        collision_warning, = self.parser.warnings[event['uuid']]
+        for text in (f'"{cluster["value"]}"', 'meta key "ttp"',
+                     'written as "ttp" in the MISP property extension',
+                     'only its spelling is carried'):
+            self.assertIn(text, collision_warning)
 
     def _test_event_with_galaxy_meta_key_folding_to_the_channel(self, event):
         cluster = event['Galaxy'][0]['GalaxyCluster'][0]
         self.parser.parse_misp_event(event)
         threat_actor = self.parser.stix_objects[-1]
         self.assertEqual(threat_actor.type, 'threat-actor')
-        # The channel keeps the name and the spelling record it carries; the
-        # colliding key is dropped, and said so rather than raising.
+        # The escape keeps the key off the channel's own name: the key keeps
+        # its value, and the channel spells it back next to the record it
+        # would have destroyed.
+        self.assertEqual(
+            self._misp_extension(threat_actor)['misp_original_names'],
+            cluster['meta']['Original Names'][0]
+        )
+        self._check_extension_property_names(threat_actor)
         self._check_original_names(
             threat_actor,
-            {'x_misp_cfr_type_of_incident': 'cfr-type-of-incident'}
+            {
+                'cfr_type_of_incident': 'cfr-type-of-incident',
+                'misp_original_names': 'Original Names'
+            }
         )
         self.assertEqual(dict(self.parser.errors), {})
-        reserved_warnings = [
-            warning for warning in self.parser.warnings[event['uuid']]
-            if 'x_misp_original_names' in warning
-        ]
-        self.assertEqual(len(reserved_warnings), 1)
-        self.assertIn(f'"{cluster["value"]}"', reserved_warnings[0])
-        self.assertIn('"Original Names"', reserved_warnings[0])
-        self.assertIn('the key is dropped', reserved_warnings[0])
+        self.assertEqual(dict(self.parser.warnings), {})
 
     def _test_event_with_galaxy_meta_keys_outside_the_charset(self, event):
         galaxy = event['Galaxy'][0]
@@ -8296,25 +8299,89 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         self.assertEqual(threat_actor.type, 'threat-actor')
         self._check_galaxy_features(threat_actor, galaxy, timestamp)
         # Every leftover key lands under its folded name, with the value MISP
-        # had; the channel lists the ones the fold changed, by folded name,
-        # and not the control the fold left alone.
-        self.assertEqual(threat_actor.x_misp_capital, meta['Capital'])
+        # had, one value as a scalar; the channel lists the ones the fold
+        # changed, by folded name, and not the control the fold left alone.
+        extension = self._misp_extension(threat_actor)
+        self.assertEqual(extension['capital'], meta['Capital'])
         self.assertEqual(
-            threat_actor.x_misp_origin_storm_0558, meta['origin:Storm-0558']
+            extension['origin_storm_0558'], meta['origin:Storm-0558'][0]
         )
         self.assertEqual(
-            threat_actor.x_misp_procedure_examples, meta['Procedure Examples']
+            extension['procedure_examples'], meta['Procedure Examples'][0]
         )
         self.assertEqual(
-            threat_actor.x_misp_target_category, meta['target_category']
+            extension['target_category'], meta['target_category'][0]
         )
+        self._check_extension_property_names(threat_actor)
         self._check_original_names(
             threat_actor,
             {
-                'x_misp_capital': 'Capital',
-                'x_misp_cfr_type_of_incident': 'cfr-type-of-incident',
-                'x_misp_origin_storm_0558': 'origin:Storm-0558',
-                'x_misp_procedure_examples': 'Procedure Examples'
+                'capital': 'Capital',
+                'cfr_type_of_incident': 'cfr-type-of-incident',
+                'origin_storm_0558': 'origin:Storm-0558',
+                'procedure_examples': 'Procedure Examples'
+            }
+        )
+        self.assertEqual(self.parser.warnings, {})
+
+    def _test_event_with_galaxies_with_first_and_last_seen(self, event):
+        self.parser.parse_misp_event(event)
+        *stix_objects, intrusion_set = self.parser.stix_objects[2:]
+        self.assertEqual(
+            [stix_object.type for stix_object in stix_objects],
+            ['attack-pattern', 'tool', 'vulnerability', 'location']
+        )
+        # A type with no such property carries them in its MISP property
+        # extension, as MISP had them
+        *galaxies, _ = event['Galaxy']
+        for stix_object, galaxy in zip(stix_objects, galaxies):
+            meta = galaxy['GalaxyCluster'][0]['meta']
+            extension = self._misp_extension(stix_object)
+            for field in ('first_seen', 'last_seen'):
+                self.assertEqual(extension[field], meta[field][0])
+                self.assertNotIn(field, stix_object)
+            self._check_extension_property_names(stix_object)
+        # A type with both keeps them as its own properties
+        self.assertEqual(intrusion_set.type, 'intrusion-set')
+        meta = event['Galaxy'][-1]['GalaxyCluster'][0]['meta']
+        for field in ('first_seen', 'last_seen'):
+            self.assertEqual(
+                intrusion_set[field], self._datetime_from_str(meta[field][0])
+            )
+        self.assertNotIn('extensions', intrusion_set)
+        self.assertEqual(dict(self.parser.warnings), {})
+        self.assertEqual(dict(self.parser.errors), {})
+
+    def _test_event_with_galaxy_meta_key_with_no_value(self, event):
+        self.parser.parse_misp_event(event)
+        threat_actor = self.parser.stix_objects[-1]
+        self.assertEqual(threat_actor.type, 'threat-actor')
+        # Nothing to carry: neither the name nor its spelling is written
+        self.assertNotIn('no_value', self._misp_extension(threat_actor))
+        self._check_original_names(
+            threat_actor, {'cfr_type_of_incident': 'cfr-type-of-incident'}
+        )
+        self.assertEqual(self.parser.warnings, {})
+
+    def _test_event_with_galaxy_meta_key_the_extension_escapes(self, event):
+        meta = event['Galaxy'][0]['GalaxyCluster'][0]['meta']
+        self.parser.parse_misp_event(event)
+        threat_actor = self.parser.stix_objects[-1]
+        self.assertEqual(threat_actor.type, 'threat-actor')
+        # The fold ends with a suffix the base schema of an extension body
+        # types as hex: the trailing `_` escapes it, and the channel spells
+        # the key back
+        extension = self._misp_extension(threat_actor)
+        self.assertEqual(
+            extension['origin_temp_hex_'], meta['origin:Temp.Hex'][0]
+        )
+        self.assertNotIn('origin_temp_hex', extension)
+        self._check_extension_property_names(threat_actor)
+        self._check_original_names(
+            threat_actor,
+            {
+                'cfr_type_of_incident': 'cfr-type-of-incident',
+                'origin_temp_hex_': 'origin:Temp.Hex'
             }
         )
         self.assertEqual(self.parser.warnings, {})
@@ -8356,6 +8423,20 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._test_event_with_galaxy_meta_key_folding_to_the_channel(
             event['Event']
         )
+
+    def test_event_with_galaxy_meta_key_the_extension_escapes(self):
+        event = get_event_with_galaxy_meta_key_the_extension_escapes()
+        self._test_event_with_galaxy_meta_key_the_extension_escapes(
+            event['Event']
+        )
+
+    def test_event_with_galaxies_with_first_and_last_seen(self):
+        event = get_event_with_galaxies_with_first_and_last_seen()
+        self._test_event_with_galaxies_with_first_and_last_seen(event['Event'])
+
+    def test_event_with_galaxy_meta_key_with_no_value(self):
+        event = get_event_with_galaxy_meta_key_with_no_value()
+        self._test_event_with_galaxy_meta_key_with_no_value(event['Event'])
 
     def test_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset(self):
         event = get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset()
@@ -8632,6 +8713,24 @@ class TestSTIX21MISPGalaxiesExport(TestSTIX21GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_galaxy_meta_key_folding_to_the_channel(misp_event)
+
+    def test_event_with_galaxy_meta_key_the_extension_escapes(self):
+        event = get_event_with_galaxy_meta_key_the_extension_escapes()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_galaxy_meta_key_the_extension_escapes(misp_event)
+
+    def test_event_with_galaxies_with_first_and_last_seen(self):
+        event = get_event_with_galaxies_with_first_and_last_seen()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_galaxies_with_first_and_last_seen(misp_event)
+
+    def test_event_with_galaxy_meta_key_with_no_value(self):
+        event = get_event_with_galaxy_meta_key_with_no_value()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_galaxy_meta_key_with_no_value(misp_event)
 
     def test_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset(self):
         event = get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset()

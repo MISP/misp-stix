@@ -1255,11 +1255,8 @@ class TestSTIX2Export(TestSTIX):
             self.assertEqual(external_ref.external_id, meta['external_id'])
             for external_ref, ref in zip(external_refs, meta['refs']):
                 self.assertEqual(external_ref.url, ref)
-        if meta.get('mitre_platform') is not None:
-            self.assertEqual(
-                stix_object.x_misp_mitre_platforms,
-                meta['mitre_platforms']
-            )
+        if meta.get('mitre_platforms') is not None:
+            self._check_malware_misp_values(stix_object, meta)
 
     def _check_object_indicator_features(self, indicator, misp_object, identity_id, object_ref):
         self._check_indicator_features(indicator, identity_id, object_ref, misp_object['uuid'])
@@ -1563,18 +1560,7 @@ class TestSTIX2Export(TestSTIX):
             if field in meta:
                 self.assertEqual(getattr(stix_object, field), meta[field])
         if 'cfr-type-of-incident' in meta:
-            # unmapped meta key with a dash: folded custom property name, its
-            # spelling carried on the channel
-            self.assertEqual(
-                stix_object.x_misp_cfr_type_of_incident,
-                meta['cfr-type-of-incident']
-            )
-            self.assertFalse(hasattr(stix_object, 'x_misp_cfr-type-of-incident'))
-            self._check_custom_property_names(stix_object)
-            self.assertEqual(
-                stix_object.x_misp_original_names['x_misp_cfr_type_of_incident'],
-                'cfr-type-of-incident'
-            )
+            self._check_threat_actor_misp_values(stix_object, meta)
 
     def _check_tool_meta_fields(self, stix_object, meta):
         aliases = [
@@ -1594,12 +1580,7 @@ class TestSTIX2Export(TestSTIX):
         for external_ref, ref in zip(external_refs, meta['refs']):
             self.assertEqual(external_ref.url, ref)
         if meta.get('mitre_platforms') is not None:
-            self.assertEqual(
-                stix_object.x_misp_mitre_platforms, meta['mitre_platforms']
-            )
-            # The fold leaves every leftover key of this cluster as it is, so
-            # there is no spelling to carry and no channel
-            self.assertFalse(hasattr(stix_object, 'x_misp_original_names'))
+            self._check_tool_misp_values(stix_object, meta)
         if meta.get('tool_version') is not None:
             self.assertEqual(stix_object.tool_version, meta['tool_version'])
         if meta.get('kill_chain') is not None:
@@ -1704,36 +1685,6 @@ class TestSTIX2Export(TestSTIX):
         for misp_object in event['Object']:
             for attribute in misp_object['Attribute']:
                 attribute['to_ids'] = False
-
-    def _check_custom_property_names(self, stix_object):
-        # STIX 2.0 §7.1 / STIX 2.1 §11.1.1: custom property names are ASCII,
-        # limited to a-z, 0-9 and `_`, 3 to 250 characters long - the prefix
-        # already guarantees the minimum.
-        custom_properties = [
-            key for key in stix_object if key.startswith('x_misp_')
-        ]
-        self.assertTrue(custom_properties)
-        for key in custom_properties:
-            self.assertRegex(key, r'^x_misp_[a-z0-9_]+$')
-            self.assertLessEqual(len(key), 250)
-
-    def _check_original_names(self, stix_object, expected):
-        # `x_misp_original_names` maps a wire name the fold changed - a custom
-        # property name, or an `x_misp_meta` key - to the MISP spelling, and
-        # lists nothing the fold left alone. Its keys are dictionary keys:
-        # STIX 2.0 / 2.1 §2.3, `A-Z`, `a-z`, `0-9`, `-` and `_`; a custom
-        # property name is always one.
-        if not expected:
-            self.assertFalse(hasattr(stix_object, 'x_misp_original_names'))
-            return
-        original_names = stix_object.x_misp_original_names
-        self.assertEqual(original_names, expected)
-        carried = set(stix_object) | set(getattr(stix_object, 'x_misp_meta', ()))
-        for name, original in original_names.items():
-            self.assertRegex(name, r'^[A-Za-z0-9_-]+$')
-            self.assertIn(name, carried)
-            self.assertNotEqual(name, original)
-            self.assertNotEqual(name, f'x_misp_{original}')
 
     def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
         attribute_type = attribute['type']
@@ -1950,6 +1901,36 @@ class TestSTIX20Export(TestSTIX2Export):
             return
         self._objects_v20[name]['STIX'] = json.loads(stix_objects.serialize())
 
+    def _check_custom_property_names(self, stix_object):
+        # STIX 2.0 §7.1 / STIX 2.1 §11.1.1: custom property names are ASCII,
+        # limited to a-z, 0-9 and `_`, 3 to 250 characters long - the prefix
+        # already guarantees the minimum.
+        custom_properties = [
+            key for key in stix_object if key.startswith('x_misp_')
+        ]
+        self.assertTrue(custom_properties)
+        for key in custom_properties:
+            self.assertRegex(key, r'^x_misp_[a-z0-9_]+$')
+            self.assertLessEqual(len(key), 250)
+
+    def _check_original_names(self, stix_object, expected):
+        # `x_misp_original_names` maps a wire name the fold changed - a custom
+        # property name, or an `x_misp_meta` key - to the MISP spelling, and
+        # lists nothing the fold left alone. Its keys are dictionary keys:
+        # STIX 2.0 / 2.1 §2.3, `A-Z`, `a-z`, `0-9`, `-` and `_`; a custom
+        # property name is always one.
+        if not expected:
+            self.assertFalse(hasattr(stix_object, 'x_misp_original_names'))
+            return
+        original_names = stix_object.x_misp_original_names
+        self.assertEqual(original_names, expected)
+        carried = set(stix_object) | set(getattr(stix_object, 'x_misp_meta', ()))
+        for name, original in original_names.items():
+            self.assertRegex(name, r'^[A-Za-z0-9_-]+$')
+            self.assertIn(name, carried)
+            self.assertNotEqual(name, original)
+            self.assertNotEqual(name, f'x_misp_{original}')
+
     # The MISP values a STIX 2.0 object carries, as custom properties
 
     def _check_attack_pattern_misp_values(
@@ -1985,6 +1966,12 @@ class TestSTIX20Export(TestSTIX2Export):
             data = b64encode(data.getvalue()).decode()
         self.assertEqual(legal_entity.x_misp_logo['data'], data)
 
+    def _check_malware_misp_values(self, stix_object, meta):
+        self.assertEqual(
+            stix_object.x_misp_mitre_platforms,
+            meta['mitre_platforms']
+        )
+
     def _check_person_misp_values(self, identity, nationality, passport):
         self.assertEqual(identity.x_misp_nationality, nationality['value'])
         self.assertEqual(identity.x_misp_passport_number, passport['value'])
@@ -1997,6 +1984,28 @@ class TestSTIX20Export(TestSTIX2Export):
             },
             {'x_misp_version': value for value in further_versions}
         )
+
+    def _check_threat_actor_misp_values(self, stix_object, meta):
+        # unmapped meta key with a dash: folded custom property name, its
+        # spelling carried on the channel
+        self.assertEqual(
+            stix_object.x_misp_cfr_type_of_incident,
+            meta['cfr-type-of-incident']
+        )
+        self.assertFalse(hasattr(stix_object, 'x_misp_cfr-type-of-incident'))
+        self._check_custom_property_names(stix_object)
+        self.assertEqual(
+            stix_object.x_misp_original_names['x_misp_cfr_type_of_incident'],
+            'cfr-type-of-incident'
+        )
+
+    def _check_tool_misp_values(self, stix_object, meta):
+        self.assertEqual(
+            stix_object.x_misp_mitre_platforms, meta['mitre_platforms']
+        )
+        # The fold leaves every leftover key of this cluster as it is, so
+        # there is no spelling to carry and no channel
+        self.assertFalse(hasattr(stix_object, 'x_misp_original_names'))
 
     def _check_vulnerability_misp_values(
             self, vulnerability, created, cvss, published):
@@ -2077,6 +2086,32 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(body['extension_type'], 'property-extension')
         return body
 
+    def _check_original_names(self, stix_object, expected):
+        # The channel maps a wire name the fold or the escape changed to the
+        # MISP spelling, and lists nothing the two left alone. A standard
+        # object carries it in its MISP property extension, keyed by the
+        # names the body holds; a custom galaxy cluster as a custom property,
+        # keyed by `x_misp_meta` key. Its keys are dictionary keys: STIX 2.1
+        # §2.3, `A-Z`, `a-z`, `0-9`, `-` and `_`.
+        if stix_object.type == 'x-misp-galaxy-cluster':
+            holder, channel = stix_object, 'x_misp_original_names'
+            carried = set(stix_object.get('x_misp_meta', ()))
+        else:
+            holder = stix_object.get('extensions', {}).get(
+                MISP_PROPERTY_EXTENSION_ID, {}
+            )
+            channel, carried = 'original_names', set(holder)
+            self.assertNotIn('x_misp_original_names', stix_object)
+        if not expected:
+            self.assertNotIn(channel, holder)
+            return
+        original_names = holder[channel]
+        self.assertEqual(original_names, expected)
+        for name, original in original_names.items():
+            self.assertRegex(name, r'^[A-Za-z0-9_-]+$')
+            self.assertIn(name, carried)
+            self.assertNotEqual(name, original)
+
     def _populate_attributes_documentation(self, attribute, **kwargs):
         feature = attribute['type']
         self._attributes_v21[feature]['MISP'] = dict(
@@ -2156,6 +2191,13 @@ class TestSTIX21Export(TestSTIX2Export):
             data = b64encode(data.getvalue()).decode()
         self.assertEqual(extension['logo']['data'], data)
 
+    def _check_malware_misp_values(self, stix_object, meta):
+        # One value as a scalar
+        self.assertEqual(
+            self._misp_extension(stix_object)['mitre_platforms'],
+            meta['mitre_platforms'][0]
+        )
+
     def _check_person_misp_values(self, identity, nationality, passport):
         extension = self._misp_extension(identity)
         self.assertEqual(extension['nationality'], nationality['value'])
@@ -2173,6 +2215,29 @@ class TestSTIX21Export(TestSTIX2Export):
             }
         )
         self.assertFalse(any(key.startswith('x_misp_') for key in indicator))
+
+    def _check_threat_actor_misp_values(self, stix_object, meta):
+        # unmapped meta key with a dash: folded name in the MISP property
+        # extension, its spelling carried on the channel
+        extension = self._misp_extension(stix_object)
+        self.assertEqual(
+            extension['cfr_type_of_incident'], meta['cfr-type-of-incident'][0]
+        )
+        self.assertNotIn('cfr-type-of-incident', extension)
+        self._check_extension_property_names(stix_object)
+        self.assertEqual(
+            extension['original_names']['cfr_type_of_incident'],
+            'cfr-type-of-incident'
+        )
+
+    def _check_tool_misp_values(self, stix_object, meta):
+        extension = self._misp_extension(stix_object)
+        self.assertEqual(
+            extension['mitre_platforms'], meta['mitre_platforms'][0]
+        )
+        # The fold leaves every leftover key of this cluster as it is, so
+        # there is no spelling to carry and no channel
+        self.assertNotIn('original_names', extension)
 
     def _check_vulnerability_misp_values(
             self, vulnerability, created, cvss, published):

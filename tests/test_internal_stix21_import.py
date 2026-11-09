@@ -4,6 +4,8 @@
 import json
 from datetime import datetime, timezone
 from uuid import uuid5
+from misp_stix_converter.tools.misp_object_templates import (
+    _ORIGINAL_NAMES_PROPERTY, _custom_property_name_from_extension)
 from .test_internal_stix21_bundles import (
     _TESTFILES_PATH, TestInternalSTIX21Bundles, TLP_1_0_EXPECTED_TAGS,
     TLP_2_0_EXPECTED_TAGS)
@@ -405,6 +407,47 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
     def test_stix21_dash_meta_fields_are_frozen(self):
         self._check_dash_meta_fields_are_frozen()
 
+    @classmethod
+    def _rewrite_original_names(cls, bundle, edit_channel):
+        # The channel a round trip edits is the custom property one: the
+        # bundles from before the channel, or with a stale one, are Custom
+        # Syntax bundles, which the export wrote until the MISP property
+        # extension and the import still reads. So the edit runs on the
+        # export rendered as the Custom Syntax wrote it.
+        return super()._rewrite_original_names(
+            cls._in_custom_syntax(bundle), edit_channel
+        )
+
+    @staticmethod
+    def _in_custom_syntax(bundle):
+        # Each value of the MISP property extension as a custom property,
+        # and its channel spelling the custom property names
+        def rewritten(stix_object):
+            extensions = dict(stix_object.get('extensions', {}))
+            body = extensions.pop(MISP_PROPERTY_EXTENSION_ID, None)
+            if body is None:
+                return stix_object
+            fields = {
+                field: value for field, value in stix_object.items()
+                if field != 'extensions'
+            }
+            if extensions:
+                fields['extensions'] = extensions
+            for name, value in body.items():
+                if name == 'original_names':
+                    fields[_ORIGINAL_NAMES_PROPERTY] = {
+                        _custom_property_name_from_extension(key): original
+                        for key, original in value.items()
+                    }
+                elif name != 'extension_type':
+                    fields[_custom_property_name_from_extension(name)] = value
+            return type(stix_object)(**fields, allow_custom=True)
+
+        return type(bundle)(
+            *(rewritten(stix_object) for stix_object in bundle.objects),
+            allow_custom=True
+        )
+
     def test_stix21_galaxy_meta_keys_round_trip(self):
         from misp_stix_converter import MISPtoSTIX21Parser
         self._check_galaxy_meta_keys_round_trip(MISPtoSTIX21Parser())
@@ -433,7 +476,8 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
 
     def test_stix21_country_galaxy_meta_keys_round_trip(self):
         # `country` maps to an SDO in 2.1 only (`location`), so its meta keys
-        # travel as custom properties here and inside the `x_misp_meta`
+        # travel in the MISP property extension here (as custom properties in
+        # the bundles exported before it) and inside the `x_misp_meta`
         # dictionary in 2.0. That divergence is why we recorded `Capital` as
         # never lowercased while counting it as lost, and why the dashed
         # `budapest-convention` was pruned from `dash_meta_fields` as dead
@@ -449,7 +493,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         meta = self._round_trip_galaxy_cluster_meta(
             MISPtoSTIX21Parser(), event
         )
-        self.assertEqual(meta, expected)
+        self.assertEqual(
+            {key: self._meta_elements(value) for key, value in meta.items()},
+            {key: self._meta_elements(value) for key, value in expected.items()}
+        )
         self.assertEqual(dict(self.parser.warnings), {})
         self.assertEqual(dict(self.parser.errors), {})
         # A 2.1 country bundle from before the channel - 2026.9.16 shipped
@@ -459,8 +506,63 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             MISPtoSTIX21Parser(), event, edit_channel=lambda channel: None,
             keep_dash_meta_fields=True
         )
-        self.assertEqual(legacy['budapest-convention'], ['Ratified'])
+        self.assertEqual(
+            self._meta_elements(legacy['budapest-convention']), ['Ratified']
+        )
         self.assertEqual(legacy['capital'], 'Stockholm')
+
+    def test_stix21_escaped_galaxy_meta_keys_round_trip(self):
+        # A key the escape changed comes back as MISP spelled it, the one
+        # folding to the channel's own name included, which the custom
+        # property syntax dropped. Channel only: the list is emptied.
+        from misp_stix_converter import MISPtoSTIX21Parser
+        from .test_events import (
+            get_event_with_galaxy_meta_key_folding_to_the_channel,
+            get_event_with_galaxy_meta_key_the_extension_escapes)
+        for getter in (get_event_with_galaxy_meta_key_folding_to_the_channel,
+                       get_event_with_galaxy_meta_key_the_extension_escapes):
+            with self.subTest(event=getter.__name__):
+                event = getter()
+                expected = event['Event']['Galaxy'][0]['GalaxyCluster'][0]['meta']
+                meta = self._round_trip_galaxy_cluster_meta(
+                    MISPtoSTIX21Parser(), event
+                )
+                self.assertEqual(sorted(meta), sorted(expected))
+                for key, value in expected.items():
+                    if key != 'synonyms':
+                        self.assertEqual(
+                            self._meta_elements(meta[key]), value
+                        )
+                self.assertEqual(dict(self.parser.warnings), {})
+                self.assertEqual(dict(self.parser.errors), {})
+
+    def test_stix21_first_and_last_seen_galaxy_meta_round_trip(self):
+        # On the four types with no such property, which the custom property
+        # syntax lost
+        from misp_stix_converter import MISPtoSTIX21Parser
+        from .test_events import (
+            get_event_with_galaxies_with_first_and_last_seen)
+        event = get_event_with_galaxies_with_first_and_last_seen()
+        export_parser = MISPtoSTIX21Parser()
+        export_parser.parse_misp_event(event['Event'])
+        self.parser.load_stix_bundle(export_parser.bundle)
+        self.parser.parse_stix_bundle()
+        clusters = {
+            cluster.uuid: cluster
+            for galaxy in self.parser.misp_event.galaxies
+            for cluster in galaxy.clusters
+        }
+        *galaxies, _ = event['Event']['Galaxy']
+        self.assertEqual(len(galaxies), 4)
+        for galaxy in galaxies:
+            cluster = galaxy['GalaxyCluster'][0]
+            meta = clusters[cluster['uuid']].meta
+            for field in ('first_seen', 'last_seen'):
+                self.assertEqual(
+                    self._meta_elements(meta[field]), cluster['meta'][field]
+                )
+        self.assertEqual(dict(self.parser.warnings), {})
+        self.assertEqual(dict(self.parser.errors), {})
 
     @staticmethod
     def _with_edited_last_object(bundle, edit):

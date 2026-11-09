@@ -3651,6 +3651,12 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         return dict(self.parser.misp_event.galaxies[0].clusters[0].meta)
 
     @staticmethod
+    def _meta_elements(value) -> list:
+        # MISP holds a meta value as key / value elements: one value and a
+        # list of one are the same content, whichever the export wrote
+        return value if isinstance(value, list) else [value]
+
+    @staticmethod
     def _rewrite_original_names(bundle, edit_channel):
         """The same bundle, with every channel passed through `edit_channel`.
 
@@ -3685,7 +3691,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         for key, value in expected.items():
             self.assertIn(key, meta)
             if key != 'synonyms':
-                self.assertEqual(meta[key], value)
+                self.assertEqual(
+                    self._meta_elements(meta[key]), self._meta_elements(value)
+                )
         self.assertEqual(dict(self.parser.warnings), {})
         self.assertEqual(dict(self.parser.errors), {})
 
@@ -3786,7 +3794,10 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             imported = self._round_trip_galaxy_cluster_meta(
                 export_parser, event
             )
-            self.assertEqual(imported[survivor], [f'value of {survivor}'])
+            self.assertEqual(
+                self._meta_elements(imported[survivor]),
+                [f'value of {survivor}']
+            )
             self.assertEqual(
                 [key for key in imported if key.lower() == 'ttp'], [survivor]
             )
