@@ -440,6 +440,15 @@ class MISPtoSTIXParser(AbstractParser):
             'value of the same object, the last value wins.'
         )
 
+    def _galaxy_meta_extension_collision_warning(
+            self, value: str, key: str, name: str):
+        self._add_warning(
+            f'Galaxy cluster "{value}": meta key "{key}" is written as '
+            f'"{name}" in the MISP property extension, already set by another '
+            'meta key of the same cluster, the last value wins and only its '
+            'spelling is carried.'
+        )
+
     def _galaxy_meta_key_reserved_warning(
             self, value: str, key: str, feature: str):
         self._add_warning(

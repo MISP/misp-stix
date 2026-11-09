@@ -55,7 +55,7 @@ _label_fields = ('type', 'category')
 _labelled_object_types = ('malware', 'threat-actor', 'tool')
 _misp_time_fields = ('first_seen', 'last_seen')
 _observed_data_time_fields = ('first_observed', 'last_observed')
-_sdo_time_fields = ('created', 'modified', *_misp_time_fields)
+_sdo_time_fields = ('created', 'modified')
 # STIX 2.0 / 2.1 §2.3: dictionary keys also allow A-Z and `-`
 _DICTIONARY_KEY_FORBIDDEN_RE = re.compile(r'[^A-Za-z0-9_-]')
 _KEYWORD_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
@@ -4203,6 +4203,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         meta_args = defaultdict(list)
         mapping = f"{object_type.replace('-', '_')}_meta_mapping"
         for key, values in cluster_meta.items():
+            if key in _misp_time_fields:
+                self._set_meta_seen_value(
+                    meta_args, object_type, key, values, value
+                )
+                continue
             if key in _sdo_time_fields:
                 meta_args[key] = self._parse_datetime_meta_field(values)
                 continue
@@ -5546,6 +5551,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         """
 
     @abstractmethod
+    def _set_meta_seen_value(
+            self, meta_args: dict, object_type: str, key: str, values: Any,
+            cluster_value: str):
+        """Write a galaxy cluster meta `first_seen` or `last_seen`.
+
+        :param meta_args: the arguments the cluster meta gives the STIX object
+        :param object_type: the type of the STIX object the cluster becomes
+        :param key: `first_seen` or `last_seen`
+        :param values: the meta value
+        :param cluster_value: the cluster value, which the warnings name
+        """
+
+    @abstractmethod
     def _set_meta_value(
             self, meta_args: dict, key: str, values: Any, cluster_value: str):
         """Write a galaxy cluster meta value no STIX property maps.
@@ -5966,7 +5984,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     @staticmethod
     def _record_original_name(
             args: dict, name: str, original: str,
-            prefix: str = _CUSTOM_PROPERTY_PREFIX):
+            prefix: str = _CUSTOM_PROPERTY_PREFIX,
+            channel: str = _ORIGINAL_NAMES_PROPERTY):
         """Carry the MISP spelling of a name the fold changed.
 
         The channel lists the names the fold changed and nothing else: a
@@ -5974,20 +5993,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         folding to one name resolve last-value-wins, so the entry follows
         the key whose value the name ends up carrying.
 
-        :param args: the STIX object arguments the name was set in
+        :param args: the STIX object arguments the name was set in, or the
+            MISP property extension body
         :param name: the name as written on the wire
         :param original: the key as MISP spelled it
         :param prefix: what the wire name adds to the key - the custom
-            property prefix, or nothing for a dictionary key
+            property prefix, or nothing for a dictionary key or a name in the
+            MISP property extension
+        :param channel: the name of the channel in `args`
         """
         if name != f'{prefix}{original}':
-            args.setdefault(_ORIGINAL_NAMES_PROPERTY, {})[name] = original
+            args.setdefault(channel, {})[name] = original
             return
-        original_names = args.get(_ORIGINAL_NAMES_PROPERTY)
+        original_names = args.get(channel)
         if original_names is not None:
             original_names.pop(name, None)
             if not original_names:
-                del args[_ORIGINAL_NAMES_PROPERTY]
+                del args[channel]
 
     @staticmethod
     def _restore_non_canonical_numbers(attributes: dict, non_canonical: dict):

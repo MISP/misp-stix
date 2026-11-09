@@ -1780,6 +1780,11 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         for relation, value in leftovers.items():
             args[self._custom_property_name(relation)] = value
 
+    def _set_meta_seen_value(
+            self, meta_args: dict, object_type: str, key: str, values: Any,
+            cluster_value: str):
+        meta_args[key] = self._parse_datetime_meta_field(values)
+
     def _set_meta_value(
             self, meta_args: dict, key: str, values: Any, cluster_value: str):
         feature = self._custom_property_name(key)

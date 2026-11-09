@@ -5,8 +5,7 @@ from .exceptions import InvalidHashValueError, _UnbuildableRecordError
 from .misp_to_stix2 import MISPtoSTIX2Parser, _PatternLocation
 from .stix21_mapping import MISPtoSTIX21Mapping
 from ..tools.misp_object_templates import (
-    _MISP_PROPERTY_EXTENSION_ID, _ORIGINAL_NAMES_PROPERTY,
-    _extension_property_name)
+    _MISP_PROPERTY_EXTENSION_ID, _extension_property_name)
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
@@ -2303,23 +2302,34 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 )
             body[name] = self._extension_property_value(value)
 
+    def _set_meta_seen_value(
+            self, meta_args: dict, object_type: str, key: str, values: Any,
+            cluster_value: str):
+        if object_type in self._mapping.types_without_seen_properties():
+            # A MISP value like any other meta the type has no property for
+            self._set_meta_value(meta_args, key, values, cluster_value)
+            return
+        meta_args[key] = self._parse_datetime_meta_field(values)
+
     def _set_meta_value(
             self, meta_args: dict, key: str, values: Any, cluster_value: str):
-        feature = self._custom_property_name(key)
-        if feature == _ORIGINAL_NAMES_PROPERTY:
-            # The channel owns this name: handing it a meta value would
-            # destroy the spelling record of every other key on the cluster.
-            # Reported rather than dropped in silence, as for a collision.
-            self._galaxy_meta_key_reserved_warning(
-                cluster_value, key, feature
-            )
+        if values is None or values == []:
+            # A key with no value has nothing to carry, nor any spelling
             return
-        if feature in meta_args:
-            self._galaxy_meta_key_collision_warning(
-                cluster_value, key, feature
+        body = self._property_extension_body(meta_args)
+        # The escape keeps a key off the names the body uses for itself, the
+        # channel's included, so every key keeps its value
+        name = _extension_property_name(key)
+        if name in body:
+            self._galaxy_meta_extension_collision_warning(
+                cluster_value, key, name
             )
-        meta_args.update({'allow_custom': True, feature: values})
-        self._record_original_name(meta_args, feature, key)
+        if isinstance(values, list) and len(values) == 1:
+            values = values[0]
+        body[name] = values
+        self._record_original_name(
+            body, name, key, prefix='', channel='original_names'
+        )
 
     ############################################################################
     #                            UTILITY FUNCTIONS.                            #
