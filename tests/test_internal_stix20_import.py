@@ -397,6 +397,34 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         from misp_stix_converter import MISPtoSTIX20Parser
         self._check_colliding_galaxy_meta_keys_round_trip(MISPtoSTIX20Parser())
 
+    def test_stix20_first_and_last_seen_galaxy_meta_round_trip(self):
+        # On the five types with no such property, whose top-level property
+        # raised at export or, with other custom properties, was dropped
+        from misp_stix_converter import MISPtoSTIX20Parser
+        from .test_events import (
+            get_event_with_galaxies_with_first_and_last_seen_as_only_leftovers)
+        event = get_event_with_galaxies_with_first_and_last_seen_as_only_leftovers()
+        export_parser = MISPtoSTIX20Parser()
+        export_parser.parse_misp_event(event['Event'])
+        self.parser.load_stix_bundle(export_parser.bundle)
+        self.parser.parse_stix_bundle()
+        clusters = {
+            cluster.uuid: cluster
+            for galaxy in self.parser.misp_event.galaxies
+            for cluster in galaxy.clusters
+        }
+        *galaxies, _ = event['Event']['Galaxy']
+        self.assertEqual(len(galaxies), 5)
+        for galaxy in galaxies:
+            cluster = galaxy['GalaxyCluster'][0]
+            meta = clusters[cluster['uuid']].meta
+            for field in ('first_seen', 'last_seen'):
+                self.assertEqual(
+                    self._meta_elements(meta[field]), cluster['meta'][field]
+                )
+        self.assertEqual(dict(self.parser.warnings), {})
+        self.assertEqual(dict(self.parser.errors), {})
+
     def test_stix20_every_template_relation_folds_back(self):
         self._check_every_template_relation_folds_back()
 

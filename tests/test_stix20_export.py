@@ -6300,6 +6300,43 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
         )
         self.assertEqual(self.parser.warnings, {})
 
+    def _test_event_with_galaxies_with_first_and_last_seen_as_only_leftovers(
+            self, event):
+        self.parser.parse_misp_event(event)
+        *stix_objects, intrusion_set = self.parser.stix_objects[2:]
+        self.assertEqual(
+            [stix_object.type for stix_object in stix_objects],
+            [
+                'attack-pattern', 'malware', 'threat-actor', 'tool',
+                'vulnerability'
+            ]
+        )
+        # A type with no such property carries them as MISP values, as MISP
+        # had them, and as its only ones: nothing else turns custom
+        # properties on for them
+        *galaxies, _ = event['Galaxy']
+        for stix_object, galaxy in zip(stix_objects, galaxies):
+            meta = galaxy['GalaxyCluster'][0]['meta']
+            self.assertEqual(
+                sorted(
+                    key for key in stix_object if key.startswith('x_misp_')
+                ),
+                ['x_misp_first_seen', 'x_misp_last_seen']
+            )
+            for field in ('first_seen', 'last_seen'):
+                self.assertEqual(stix_object[f'x_misp_{field}'], meta[field])
+                self.assertNotIn(field, stix_object)
+        # A type with both keeps them as its own properties
+        self.assertEqual(intrusion_set.type, 'intrusion-set')
+        meta = event['Galaxy'][-1]['GalaxyCluster'][0]['meta']
+        for field in ('first_seen', 'last_seen'):
+            self.assertEqual(
+                intrusion_set[field], self._datetime_from_str(meta[field][0])
+            )
+            self.assertNotIn(f'x_misp_{field}', intrusion_set)
+        self.assertEqual(dict(self.parser.warnings), {})
+        self.assertEqual(dict(self.parser.errors), {})
+
 
 class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
     _mapping_types = MISPtoSTIX20Mapping
@@ -6335,6 +6372,12 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
     def test_event_with_galaxy_meta_key_folding_to_the_channel(self):
         event = get_event_with_galaxy_meta_key_folding_to_the_channel()
         self._test_event_with_galaxy_meta_key_folding_to_the_channel(
+            event['Event']
+        )
+
+    def test_event_with_galaxies_with_first_and_last_seen_as_only_leftovers(self):
+        event = get_event_with_galaxies_with_first_and_last_seen_as_only_leftovers()
+        self._test_event_with_galaxies_with_first_and_last_seen_as_only_leftovers(
             event['Event']
         )
 
@@ -6576,6 +6619,14 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_galaxy_meta_key_folding_to_the_channel(misp_event)
+
+    def test_event_with_galaxies_with_first_and_last_seen_as_only_leftovers(self):
+        event = get_event_with_galaxies_with_first_and_last_seen_as_only_leftovers()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_galaxies_with_first_and_last_seen_as_only_leftovers(
+            misp_event
+        )
 
     def test_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset(self):
         event = get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset()

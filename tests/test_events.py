@@ -4916,6 +4916,35 @@ def get_event_with_galaxies_with_first_and_last_seen():
     return event
 
 
+def get_event_with_galaxies_with_first_and_last_seen_as_only_leftovers():
+    # `first_seen` / `last_seen` as the only meta no STIX 2.0 property maps,
+    # on the five galaxy types whose STIX 2.0 object has no such property,
+    # and on an Intrusion Set, which has both
+    event = deepcopy(_BASE_EVENT)
+    galaxies = []
+    for galaxy, leftovers, first_seen in (
+            (_TEST_ATTACK_PATTERN_GALAXY, ('mitre_platforms',),
+             '2017-05-31T21:30:00Z'),
+            (_TEST_MALWARE_GALAXY, ('mitre_platforms',),
+             '2007-01-01T00:00:00Z'),
+            (_TEST_THREAT_ACTOR_GALAXY, ('cfr-type-of-incident',),
+             '2013-01-01T00:00:00Z'),
+            (_TEST_TOOL_GALAXY, ('mitre_platforms', 'synonyms'),
+             '2017-05-31T21:32:00Z'),
+            (_TEST_VULNERABILITY_GALAXY, (), '2015-01-27T00:00:00Z'),
+            (_TEST_INTRUSION_SET_GALAXY, (), '2015-12-01T00:00:00Z')):
+        galaxy = deepcopy(galaxy)
+        meta = galaxy['GalaxyCluster'][0]['meta']
+        for key in leftovers:
+            del meta[key]
+        meta.update(
+            {'first_seen': [first_seen], 'last_seen': ['2020-10-25T16:22:00Z']}
+        )
+        galaxies.append(galaxy)
+    event['Event']['Galaxy'] = galaxies
+    return event
+
+
 def get_event_with_intrusion_set_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
