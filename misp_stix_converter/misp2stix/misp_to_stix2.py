@@ -13,6 +13,7 @@ from ..tools.misp_object_templates import (
 from abc import ABCMeta, abstractmethod
 from base64 import b64encode
 from collections import defaultdict
+from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime
 from dateutil import parser
@@ -3013,7 +3014,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self, pe_object: dict, uuids: Optional[list] = None) -> tuple:
         # The room of the PE holds the rooms of its sections, by index: the
         # file builder attaches them to the file
-        custom = False
         room = {}
         attributes, repeated = self._split_single_field_values(
             self._extract_multiple_object_attributes(pe_object['Attribute']),
@@ -3035,10 +3035,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._restore_non_canonical_numbers(attributes, non_canonical)
         self._restore_repeated_values(attributes, repeated)
         if attributes:
-            custom = True
-            self._handle_observable_multiple_properties(
-                extension, attributes, room=room
-            )
+            with self._converting_nested_object(pe_object):
+                self._handle_observable_multiple_properties(
+                    extension, attributes, room=room
+                )
         if uuids is not None:
             room['sections'] = []
             for section_uuid in uuids:
@@ -3080,15 +3080,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 self._restore_non_canonical_numbers(attributes, non_canonical)
                 self._restore_repeated_values(attributes, repeated)
                 if attributes:
-                    custom = True
-                    self._handle_observable_multiple_properties(
-                        section, attributes, room=section_room
-                    )
+                    with self._converting_nested_object(
+                            pe_section['misp_object']):
+                        self._handle_observable_multiple_properties(
+                            section, attributes, room=section_room
+                        )
                 extension['sections'].append(
                     self._create_windowsPESection(section)
                 )
                 room['sections'].append(section_room)
-        return self._create_PE_extension(extension), custom, room
+        pe_extension = self._create_PE_extension(extension)
+        # The file holding an extension with custom content must allow it
+        return pe_extension, pe_extension.has_custom, room
 
     def _parse_pe_extensions_pattern(
             self, pe_object: dict, uuids: Optional[list] = None) -> list:
@@ -5165,11 +5168,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._extract_multiple_object_attributes(registry_key['Attribute'])
         )
         registry_key_args = self._parse_regkey_key_values_observable(attributes)
+        values_with_rooms = []
+        for value_object in value_objects:
+            with self._converting_nested_object(value_object):
+                values_with_rooms.append(
+                    self._parse_registry_key_value_args(
+                        value_object['Attribute']
+                    )
+                )
         values_args, rooms = self._handle_registry_key_values_args(
-            [
-                self._parse_registry_key_value_args(value_object['Attribute'])
-                for value_object in value_objects
-            ]
+            values_with_rooms
         )
         registry_key_args.update(values_args)
         self._restore_repeated_values(attributes, repeated)
@@ -5606,6 +5614,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             raise _UnbuildableRecordError(
                 'Record with no native property left'
             )
+
+    @contextmanager
+    def _converting_nested_object(self, misp_object: MISPObject | dict):
+        # The values of a MISP object nested in the STIX object of another
+        # are its own: the messages about them name it, and then the MISP
+        # object holding it again
+        holder = self._current_misp_object
+        self._current_misp_object = misp_object
+        try:
+            yield
+        finally:
+            self._current_misp_object = holder
 
     @staticmethod
     def _define_address_type(address):

@@ -2146,10 +2146,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     #                      MISP VALUES WRITING FUNCTIONS                       #
     ############################################################################
 
-    # STIX 2.1 writes the MISP values a standard object leaves over, and its
-    # fixed MISP fields, in the MISP property extension. Its nested parts and
-    # the galaxy meta still go as custom properties, and the MISP records no
-    # STIX object maps as `x-misp-*` objects, as STIX 2.0 does
+    # STIX 2.1 writes the MISP values a standard object leaves over, its
+    # galaxy meta and its fixed MISP fields in the MISP property extension,
+    # and those of its nested parts in their Nested Rooms there. The MISP
+    # records no STIX object maps still go as `x-misp-*` objects, as STIX 2.0
+    # does
 
     @staticmethod
     def _allow_custom_references(args: dict, reference_ids: tuple):
@@ -2157,8 +2158,21 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             args['allow_custom'] = True
 
     def _attach_nested_rooms(self, args: dict, name: str, rooms: dict | list):
-        # The nested parts hold their custom properties: no room is filled
-        pass
+        # A list room lines up with its STIX list by index, at full length,
+        # `{}` standing for an item holding nothing. A list room holding
+        # nothing but `{}` is left out, and so is a PE room left with nothing
+        if isinstance(rooms, dict):
+            # The PE room: the rooms of its sections are its one list room,
+            # the rest the values of the PE
+            rooms = {
+                key: room for key, room in rooms.items()
+                if key != 'sections' or any(room)
+            }
+            filled = bool(rooms)
+        else:
+            filled = any(rooms)
+        if filled:
+            self._property_extension_body(args)[name] = rooms
 
     @staticmethod
     def _create_custom_attribute_args(attribute: MISPAttribute | dict) -> dict:
@@ -2284,14 +2298,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _set_leftovers(
             self, args: dict, leftovers: dict, room: Optional[dict] = None):
-        if room is not None:
-            # A part nested in a STIX object holds its leftovers itself
-            args['allow_custom'] = True
-            for relation, value in leftovers.items():
-                args[self._custom_property_name(relation)] = value
-            return
+        # A part nested in a STIX object is left as STIX has it: its values
+        # go in its room, which the object's builder attaches
         for relation, value in leftovers.items():
-            body = self._property_extension_body(args)
+            body = (
+                self._property_extension_body(args) if room is None else room
+            )
             name = _extension_property_name(relation)
             if name in body:
                 # Two values on one name, from relations folding or escaped
