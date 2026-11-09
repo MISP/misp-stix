@@ -53,6 +53,12 @@ MISP_PROPERTY_EXTENSION_ID = (
     'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'
 )
 MISP_PROJECT_IDENTITY_ID = 'identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f'
+MISP_EXTENSION_IDS = (
+    MISP_ATTRIBUTE_EXTENSION_ID, MISP_OBJECT_EXTENSION_ID,
+    MISP_GALAXY_CLUSTER_EXTENSION_ID, MISP_PROPERTY_EXTENSION_ID
+)
+# What a STIX 2.1 bundle carries for the MISP content it holds
+MISP_EXTENSION_OBJECT_IDS = (MISP_PROJECT_IDENTITY_ID, *MISP_EXTENSION_IDS)
 # What the Export loads and embeds, and what an Extension Syntax import fixture
 # carries: packaged, unlike the schemas
 PACKAGED_MISP_EXTENSIONS = (

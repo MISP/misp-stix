@@ -24,8 +24,10 @@ from misp_stix_converter.tools.misp_object_templates import (
     _custom_property_name, _extension_property_name)
 from ._test_stix import (
     MISP_ATTRIBUTE_EXTENSION_ID, MISP_GALAXY_CLUSTER_EXTENSION_ID,
-    MISP_OBJECT_EXTENSION_ID, MISP_PROPERTY_EXTENSION_ID, PLANTED_TEMPLATE,
-    TestSTIX, append_further_values, spell_non_pattern_value)
+    MISP_EXTENSION_IDS, MISP_EXTENSION_OBJECT_IDS, MISP_OBJECT_EXTENSION_ID,
+    MISP_PROJECT_IDENTITY_ID, MISP_PROPERTY_EXTENSION_ID, PLANTED_TEMPLATE,
+    TestSTIX,
+    append_further_values, packaged_misp_extension, spell_non_pattern_value)
 
 _DEFAULT_ORGNAME = 'MISP'
 _ATTRIBUTE_EXCLUSION_LIST = ('disable_correlation', 'to_ids')
@@ -2145,6 +2147,50 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(body['extension_type'], 'property-extension')
         return body
 
+    def _check_misp_extension_object(self, stix_object, identifier):
+        # As the package holds it
+        self.assertEqual(stix_object.id, identifier)
+        self.assertEqual(
+            json.loads(stix_object.serialize()),
+            packaged_misp_extension(identifier)
+        )
+
+    def _strip_misp_extensions(self) -> list:
+        # The MISP Extensions the bundle carries, and the MISP Project
+        # identity authoring them, checked then taken out of the parser's
+        # objects, which the tests read as the MISP content gave them. The
+        # bundle carries each definition one of its objects names, once: the
+        # identity first, then the definitions in the order of their first
+        # use, each ahead of it
+        stix_objects = self.parser.stix_objects
+        carried = {
+            index: stix_object.id
+            for index, stix_object in enumerate(stix_objects)
+            if stix_object.id in MISP_EXTENSION_OBJECT_IDS
+        }
+        first_uses = {}
+        for index, stix_object in enumerate(stix_objects):
+            if index in carried:
+                continue
+            content = stix_object.serialize()
+            for identifier in MISP_EXTENSION_IDS:
+                if identifier in content:
+                    first_uses.setdefault(identifier, index)
+        used = sorted(first_uses, key=first_uses.get)
+        self.assertEqual(
+            list(carried.values()),
+            [MISP_PROJECT_IDENTITY_ID, *used] if used else []
+        )
+        for index, identifier in carried.items():
+            self._check_misp_extension_object(stix_objects[index], identifier)
+            if identifier in first_uses:
+                self.assertLess(index, first_uses[identifier])
+        stix_objects[:] = [
+            stix_object for index, stix_object in enumerate(stix_objects)
+            if index not in carried
+        ]
+        return stix_objects
+
     def _check_original_names(self, stix_object, expected):
         # The channel maps a wire name the fold or the escape changed to the
         # MISP spelling, and lists nothing the two left alone. A standard
@@ -2675,7 +2721,7 @@ class TestSTIX21Export(TestSTIX2Export):
     def _without_misp_values(stix_objects):
         # The STIX objects as written, without their MISP values nor their
         # pattern: no MISP property extension, nor the extensions it was the
-        # only one of
+        # only one of, nor the MISP Extensions the bundle carries for them
         def strip(content):
             if isinstance(content, dict):
                 stripped = {
@@ -2690,6 +2736,8 @@ class TestSTIX21Export(TestSTIX2Export):
             return content
         stripped = []
         for stix_object in stix_objects:
+            if stix_object.id in MISP_EXTENSION_OBJECT_IDS:
+                continue
             content = strip(json.loads(stix_object.serialize()))
             content.pop('pattern', None)
             stripped.append(content)

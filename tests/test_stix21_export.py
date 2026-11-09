@@ -14,6 +14,8 @@ from pymisp import MISPAttribute, MISPEvent
 from referencing import Registry, Resource
 from stix2.parsing import parse as stix2_parse
 from stix2.v21.bundle import Bundle
+from stix2.v21.sdo import Indicator
+from tempfile import TemporaryDirectory
 from . import test_events
 from .test_events import *
 from .test_internal_stix21_bundles import TestInternalSTIX21Bundles
@@ -21,10 +23,10 @@ from .update_documentation import (
     AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
     ObjectsDocumentationUpdater)
 from ._test_stix import (
-    MISP_ATTRIBUTE_EXTENSION_ID, MISP_GALAXY_CLUSTER_EXTENSION_ID,
-    MISP_OBJECT_EXTENSION_ID, MISP_PROJECT_IDENTITY_ID,
-    MISP_PROPERTY_EXTENSION_ID, PACKAGED_MISP_EXTENSIONS, TestSTIX21,
-    spell_non_pattern_value)
+    MISP_ATTRIBUTE_EXTENSION_ID, MISP_EXTENSION_OBJECT_IDS,
+    MISP_GALAXY_CLUSTER_EXTENSION_ID, MISP_OBJECT_EXTENSION_ID,
+    MISP_PROJECT_IDENTITY_ID, MISP_PROPERTY_EXTENSION_ID,
+    PACKAGED_MISP_EXTENSIONS, TestSTIX21, spell_non_pattern_value)
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export, TestSTIX21Export
 
 
@@ -59,6 +61,7 @@ class TestSTIX21GenericExport(TestSTIX21Export, TestSTIX21):
         self.parser = MISPtoSTIX21Parser()
 
     def _check_bundle_features(self, length):
+        self._strip_misp_extensions()
         bundle = self.parser.bundle
         self.assertEqual(bundle.type, 'bundle')
         self.assertEqual(len(bundle.objects), length)
@@ -857,6 +860,216 @@ class TestSTIX21MISPExtensions(TestSTIX21):
                         for error in self._misp_extension_errors(stix_object)
                     ],
                     []
+                )
+
+
+class TestSTIX21BundleMISPExtensions(TestSTIX21GenericExport):
+    # Where a bundle carries the MISP Extensions its objects use, and the MISP
+    # Project identity authoring them: each once, ahead of the event, or in a
+    # collection the object, first using it
+    _OTHER_EVENT_UUID = '3f8a6c1e-2b4d-4e9a-8c7f-5d1e0a9b6c24'
+
+    def _carried_ids(self, stix_objects) -> list:
+        return [
+            stix_object['id'] for stix_object in stix_objects
+            if stix_object['id'] in MISP_EXTENSION_OBJECT_IDS
+        ]
+
+    @staticmethod
+    def _custom_attribute() -> dict:
+        return get_event_with_stix2_custom_attributes()['Event']['Attribute'][0]
+
+    def _two_events(self) -> tuple:
+        # The first event uses the property extension; the second uses it
+        # again, after a custom attribute it uses first
+        second = get_event_with_mutex_object()
+        second['Event'].update(
+            {
+                'uuid': self._OTHER_EVENT_UUID,
+                'Attribute': [self._custom_attribute()]
+            }
+        )
+        return get_event_with_vulnerability_object(), second
+
+    def test_event_carries_them_ahead_of_its_grouping(self):
+        event = get_event_with_vulnerability_object()
+        event['Event']['Attribute'] = [self._custom_attribute()]
+        self.parser.parse_misp_event(event)
+        (identity, misp_identity, attribute_extension, property_extension,
+         grouping, custom_attribute, vulnerability) = self.parser.stix_objects
+        self.assertEqual(identity.id, grouping.created_by_ref)
+        self._check_misp_extension_object(misp_identity, MISP_PROJECT_IDENTITY_ID)
+        self._check_misp_extension_object(attribute_extension, MISP_ATTRIBUTE_EXTENSION_ID)
+        self._check_misp_extension_object(property_extension, MISP_PROPERTY_EXTENSION_ID)
+        self.assertEqual(custom_attribute.type, 'misp-attribute')
+        self.assertIn(MISP_PROPERTY_EXTENSION_ID, vulnerability.extensions)
+        self.assertEqual(
+            grouping.object_refs, [custom_attribute.id, vulnerability.id]
+        )
+
+    def test_later_event_carries_its_first_uses_ahead_of_its_grouping(self):
+        self.parser.parse_json_content(list(self._two_events()))
+        (identity, misp_identity, property_extension, first_grouping,
+         vulnerability, attribute_extension, second_grouping, custom_attribute,
+         observed_data, mutex) = self.parser.stix_objects
+        self.assertEqual(identity.type, 'identity')
+        self._check_misp_extension_object(misp_identity, MISP_PROJECT_IDENTITY_ID)
+        self._check_misp_extension_object(property_extension, MISP_PROPERTY_EXTENSION_ID)
+        self._check_misp_extension_object(attribute_extension, MISP_ATTRIBUTE_EXTENSION_ID)
+        self.assertEqual(first_grouping.object_refs, [vulnerability.id])
+        self.assertEqual(
+            second_grouping.object_refs,
+            [custom_attribute.id, observed_data.id, mutex.id]
+        )
+        # Used again, and carried once
+        self.assertIn(MISP_PROPERTY_EXTENSION_ID, mutex.extensions)
+
+    def test_collection_carries_them_ahead_of_their_first_use(self):
+        misp_objects = (
+            *get_event_with_employee_object()['Event']['Object'],
+            *get_event_with_custom_objects()['Event']['Object'][:1],
+            *get_event_with_vulnerability_object()['Event']['Object']
+        )
+        self.parser.parse_misp_objects(
+            [{'Object': misp_object} for misp_object in misp_objects]
+        )
+        (employee, misp_identity, object_extension, custom_object,
+         property_extension, vulnerability) = self.parser.stix_objects
+        self.assertEqual(employee.type, 'identity')
+        self._check_misp_extension_object(misp_identity, MISP_PROJECT_IDENTITY_ID)
+        self._check_misp_extension_object(object_extension, MISP_OBJECT_EXTENSION_ID)
+        self.assertEqual(custom_object.type, 'misp-object')
+        self._check_misp_extension_object(property_extension, MISP_PROPERTY_EXTENSION_ID)
+        self.assertIn(MISP_PROPERTY_EXTENSION_ID, vulnerability.extensions)
+
+    def test_each_goes_once_per_streamed_or_in_memory_collection(self):
+        expected = [
+            MISP_PROJECT_IDENTITY_ID, MISP_PROPERTY_EXTENSION_ID,
+            MISP_ATTRIBUTE_EXTENSION_ID
+        ]
+        with TemporaryDirectory() as tmp_dir:
+            input_files = []
+            for index, event in enumerate(self._two_events()):
+                input_file = Path(tmp_dir) / f'event_{index}.json'
+                input_file.write_text(json.dumps(event), encoding='utf-8')
+                input_files.append(input_file)
+            for in_memory in (False, True):
+                with self.subTest(in_memory=in_memory):
+                    output_file = Path(tmp_dir) / f'bundle_{in_memory}.json'
+                    misp_collection_to_stix2(
+                        *input_files, version='2.1', in_memory=in_memory,
+                        single_output=True, output_name=output_file
+                    )
+                    stix_objects = json.loads(
+                        output_file.read_text(encoding='utf-8')
+                    )['objects']
+                    self.assertEqual(self._carried_ids(stix_objects), expected)
+
+    def test_each_goes_once_with_one_parser_over_several_inputs(self):
+        # Each input's objects fetched apart, as MISP core assembles its
+        # export from one parser over all its inputs
+        first, second = self._two_events()
+        self.parser.parse_json_content(first)
+        first_objects = self.parser.fetch_stix_objects
+        self.parser.parse_json_content(second)
+        second_objects = self.parser.fetch_stix_objects
+        self.assertEqual(
+            self._carried_ids(first_objects),
+            [MISP_PROJECT_IDENTITY_ID, MISP_PROPERTY_EXTENSION_ID]
+        )
+        self.assertEqual(
+            [stix_object.type for stix_object in second_objects],
+            [
+                'extension-definition', 'grouping', 'misp-attribute',
+                'observed-data', 'mutex'
+            ]
+        )
+        self._check_misp_extension_object(second_objects[0], MISP_ATTRIBUTE_EXTENSION_ID)
+
+    def test_bundle_with_no_misp_content_carries_none(self):
+        event = get_event_with_campaign_name_attribute()
+        with self.subTest('event'):
+            self.parser.parse_misp_event(event)
+            self.assertEqual(
+                [stix_object.type for stix_object in self.parser.bundle.objects],
+                ['identity', 'grouping', 'campaign']
+            )
+        with self.subTest('collection'):
+            self.parser.parse_misp_attributes(event['Event']['Attribute'])
+            self.assertEqual(
+                [stix_object.type for stix_object in self.parser.bundle.objects],
+                ['campaign']
+            )
+
+    def test_organisation_with_the_misp_project_uuid_keeps_its_identity(self):
+        # The bundle keeps one identity per id: the first one written wins
+        event = get_event_with_vulnerability_object()
+        event['Event']['Orgc'] = {
+            'name': 'CIRCL', 'uuid': MISP_PROJECT_IDENTITY_ID.split('--')[1]
+        }
+        with self.subTest('organisation first'):
+            self.parser.parse_misp_event(event)
+            identity, property_extension, grouping, _ = self.parser.stix_objects
+            self.assertEqual(
+                (identity.id, identity.name), (MISP_PROJECT_IDENTITY_ID, 'CIRCL')
+            )
+            self._check_misp_extension_object(property_extension, MISP_PROPERTY_EXTENSION_ID)
+            self.assertEqual(grouping.created_by_ref, MISP_PROJECT_IDENTITY_ID)
+        with self.subTest('MISP Project identity first'):
+            earlier = get_event_with_custom_objects()
+            earlier['Event']['uuid'] = self._OTHER_EVENT_UUID
+            parser = MISPtoSTIX21Parser()
+            parser.parse_json_content([earlier, event])
+            misp_identity, = (
+                stix_object for stix_object in parser.stix_objects
+                if stix_object.id == MISP_PROJECT_IDENTITY_ID
+            )
+            self._check_misp_extension_object(misp_identity, MISP_PROJECT_IDENTITY_ID)
+
+    def test_object_refused_for_the_custom_record_uses_none_of_its_extensions(self):
+        # A process whose pid is not canonical holds its name and its pid in
+        # the property extension, and having nothing else, goes out whole as
+        # the custom object
+        event = get_event_with_process_object()
+        misp_object = event['Event']['Object'][0]
+        misp_object['Attribute'] = [
+            attribute for attribute in misp_object['Attribute']
+            if attribute['object_relation'] in ('pid', 'name')
+        ]
+        misp_object['Attribute'][0]['value'] = '0x1f'
+        self.parser.parse_misp_event(event)
+        self.assertEqual(
+            [stix_object.type for stix_object in self.parser.stix_objects],
+            [
+                'identity', 'identity', 'extension-definition', 'grouping',
+                'misp-object'
+            ]
+        )
+        self.assertEqual(
+            self._carried_ids(self.parser.stix_objects),
+            [MISP_PROJECT_IDENTITY_ID, MISP_OBJECT_EXTENSION_ID]
+        )
+
+    def test_indicator_uses_the_property_extension_its_pattern_compares(self):
+        # A comparison at an extension path uses the extension, a value
+        # holding the same text does not
+        extension = f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'"
+        escaped = extension.replace("'", "\\'")
+        for pattern, carried in (
+                (f"[file:{extension}.text = 'oui']",
+                 [MISP_PROJECT_IDENTITY_ID, MISP_PROPERTY_EXTENSION_ID]),
+                (f"[file:name = '{escaped}']", [])):
+            with self.subTest(pattern=pattern):
+                parser = MISPtoSTIX21Parser()
+                parser.parse_misp_attributes([])
+                indicator = Indicator(
+                    pattern=pattern, pattern_type='stix',
+                    valid_from='2020-10-25T16:22:00.000Z'
+                )
+                parser._append_SDO_without_refs(indicator)
+                self.assertEqual(
+                    [stix_object.id for stix_object in parser.stix_objects],
+                    [*carried, indicator.id]
                 )
 
 
@@ -1842,7 +2055,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         attribute = self.parser._misp_event.attributes[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
@@ -1875,7 +2088,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         attributes = self.parser._misp_event.attributes
         n_attributes = len(attributes)
         self.assertTrue(n_attributes > 0)
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, *SDOs = stix_objects
         timestamp = event['timestamp']
@@ -1915,7 +2128,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         attribute = self.parser._misp_event.attributes[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, *observable = stix_objects
         timestamp = event['timestamp']
@@ -1936,7 +2149,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         attributes = self.parser._misp_event.attributes
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, *observables = stix_objects
         observed_datas = observables[::index]
@@ -2142,7 +2355,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         attribute = event['Attribute'][0]
         self.parser.parse_misp_event(event)
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, campaign = stix_objects
         timestamp = event['timestamp']
@@ -2162,7 +2375,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         attributes = event['Attribute']
         self.parser.parse_misp_event(event)
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, *custom_objects = stix_objects
         timestamp = event['timestamp']
@@ -2177,7 +2390,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         attribute = self.parser._misp_event.attributes[0]
-        identity, grouping, custom_object = self.parser.stix_objects
+        identity, grouping, custom_object = self._strip_misp_extensions()
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
@@ -2459,7 +2672,7 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         attribute = event['Attribute'][0]
         self.parser.parse_misp_event(event)
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, vulnerability = stix_objects
         timestamp = event['timestamp']
@@ -2876,7 +3089,7 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
         self.parser.parse_misp_event(event)
         attributes = self.parser._misp_event.attributes
         timestamp = self.parser._misp_event.timestamp
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, *indicators = stix_objects
         identity_id = self._check_identity_features(identity, orgc, timestamp)
@@ -3359,7 +3572,7 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self.parser.parse_misp_event(misp_event)
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, *indicators = stix_objects
         identity_id = self._check_identity_features(identity, misp_event.orgc, misp_event.timestamp)
@@ -4332,7 +4545,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         misp_objects = self.parser._misp_event.objects
         n_objects = len(misp_objects)
         self.assertTrue(n_objects > 1)
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, *SDOs = stix_objects
         timestamp = event['timestamp']
@@ -4366,7 +4579,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_objects = self.parser._misp_event.objects
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, observable, indicator, relationship = stix_objects
         timestamp = event['timestamp']
@@ -4398,7 +4611,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, *observables, indicator, relationship = stix_objects
         timestamp = event['timestamp']
@@ -4426,7 +4639,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_objects = self.parser._misp_event.objects
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, *observables = stix_objects
         timestamp = event['timestamp']
@@ -4449,7 +4662,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_objects = self.parser._misp_event.objects
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, observable = stix_objects
         timestamp = event['timestamp']
@@ -4474,7 +4687,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, *observables = stix_objects
         timestamp = event['timestamp']
@@ -4701,7 +4914,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         annotation, domain_ip = self.parser._misp_event.objects
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, _, _, indicator, note, _ = stix_objects
         timestamp = event['timestamp']
@@ -4763,7 +4976,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, attack_pattern = stix_objects
         timestamp = event['timestamp']
@@ -4781,7 +4994,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, course_of_action = stix_objects
         timestamp = event['timestamp']
@@ -4828,7 +5041,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_objects = self.parser._misp_event.objects
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, *custom_objects = stix_objects
         timestamp = event['timestamp']
@@ -4856,7 +5069,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self._remove_object_ids_flags(event)
         self.parser.parse_misp_event(event)
         sigma_object, suricata_object, url_object = self.parser._misp_event.objects
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         _, _, sigma_indicator, suricata_indicator, _, url = stix_objects
         for indicator, misp_object in zip(
@@ -5503,7 +5716,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, employee = stix_objects
         timestamp = event['timestamp']
@@ -5586,7 +5799,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, location = stix_objects
         timestamp = event['timestamp']
@@ -5646,7 +5859,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         created_by_ref_identity, grouping, identity = stix_objects
         timestamp = event['timestamp']
@@ -5696,7 +5909,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, intrusion_set = stix_objects
         timestamp = event['timestamp']
@@ -5729,7 +5942,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, legal_entity = stix_objects
         timestamp = misp_object['timestamp']
@@ -5840,7 +6053,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, news_agency = stix_objects
         timestamp = event['timestamp']
@@ -5876,7 +6089,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, organization = stix_objects
         timestamp = event['timestamp']
@@ -5908,7 +6121,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         crs, nova, sigma, suricata, wazuh, yara = self.parser._misp_event.objects
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         (identity, grouping, crs_indicator, nova_indicator, sigma_indicator,
          suricata_indicator, wazuh_indicator, yara_indicator) = stix_objects
@@ -5968,7 +6181,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, person = stix_objects
         timestamp = event['timestamp']
@@ -6016,7 +6229,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         registry_key, value1, value2 = self.parser._misp_event.objects
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         (identity, grouping, observed_data, observable,
          indicator, relationship) = stix_objects
@@ -6069,7 +6282,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         registry_key, value1, value2 = self.parser._misp_event.objects
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, observable = stix_objects
         timestamp = event['timestamp']
@@ -6112,7 +6325,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         registry_key, value1, value2 = self.parser._misp_event.objects
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, observable = stix_objects
         timestamp = event['timestamp']
@@ -6160,7 +6373,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         malware_script, tool_script = self.parser._misp_event.objects
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, malware, tool = stix_objects
         timestamp = event['timestamp']
@@ -6239,7 +6452,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, vulnerability = stix_objects
         timestamp = event['timestamp']
@@ -6373,6 +6586,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.parser = MISPtoSTIX21Parser()
         self.parser.parse_misp_event(self._parser_input(event))
         self.assertEqual(self.parser.errors, {})
+        self._strip_misp_extensions()
         return self.parser.warnings.get(event['Event']['uuid'], [])
 
     def _record_observables(self):
@@ -8665,7 +8879,7 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
     def _run_galaxy_tests(self, event, timestamp):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, stix_object = stix_objects
         identity_id = self._check_identity_features(identity, orgc, timestamp)
@@ -8724,7 +8938,7 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         identity, grouping, location1, location2 = stix_objects
         identity_id = self._check_identity_features(identity, orgc, timestamp)
@@ -8957,7 +9171,7 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
 
     def _test_event_with_galaxies_with_first_and_last_seen(self, event):
         self.parser.parse_misp_event(event)
-        *stix_objects, intrusion_set = self.parser.stix_objects[2:]
+        *stix_objects, intrusion_set = self._strip_misp_extensions()[2:]
         self.assertEqual(
             [stix_object.type for stix_object in stix_objects],
             ['attack-pattern', 'tool', 'vulnerability', 'location']
