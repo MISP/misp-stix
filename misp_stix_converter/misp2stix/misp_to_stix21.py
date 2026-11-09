@@ -49,6 +49,16 @@ _STIX_OBJECT_TYPING = Union[
     Indicator, IntrusionSet, Location, Malware, Note, ObservedData, Tool,
     Vulnerability, dict
 ]
+_MISP_EXTENSION_IDS = (
+    _MISP_ATTRIBUTE_EXTENSION_ID, _MISP_GALAXY_CLUSTER_EXTENSION_ID,
+    _MISP_OBJECT_EXTENSION_ID, _MISP_PROPERTY_EXTENSION_ID
+)
+# The extension step of a pattern path to a MISP value, its id quoted as
+# `_misp_value_pattern_path` quotes it: a MISP value holding the same text
+# escapes its quotes
+_PROPERTY_EXTENSION_PATH = 'extensions.' + MISPtoSTIX2Parser._quote_segment(
+    _MISP_PROPERTY_EXTENSION_ID
+)
 _object_attributes_additional_fields = ('category', 'comment', 'uuid')
 _object_attributes_fields = ('type', 'object_relation', 'value')
 
@@ -2358,6 +2368,23 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             for observable in observables
             if _MISP_PROPERTY_EXTENSION_ID in observable.get('extensions', {})
         }
+
+    @staticmethod
+    def _misp_extension_ids(stix_object: _STIX_OBJECT_TYPING) -> list:
+        # A `misp-*` object names the MISP Extension of its type as a key of
+        # its extensions, and a standard object the property extension; an
+        # Indicator also names the property extension in the paths its
+        # pattern compares, as `_misp_value_pattern_path` writes them
+        extension_ids = [
+            identifier for identifier in stix_object.get('extensions', {})
+            if identifier in _MISP_EXTENSION_IDS
+        ]
+        if (stix_object['type'] == 'indicator'
+                and stix_object.get('pattern_type') == 'stix'
+                and _MISP_PROPERTY_EXTENSION_ID not in extension_ids
+                and _PROPERTY_EXTENSION_PATH in stix_object['pattern']):
+            extension_ids.append(_MISP_PROPERTY_EXTENSION_ID)
+        return extension_ids
 
     def _misp_value_in_list(
             self, location: _PatternLocation, name: str) -> bool:

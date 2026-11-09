@@ -1733,6 +1733,11 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _is_misp_value_property(name: str, value: Any) -> bool:
         return name.startswith(_CUSTOM_PROPERTY_PREFIX)
 
+    @staticmethod
+    def _misp_extension_ids(stix_object: _STIX_OBJECT_TYPING) -> list:
+        # STIX 2.0 has no extension definitions
+        return []
+
     def _misp_value_pattern_path(
             self, location: _PatternLocation, name: str) -> str:
         steps = [location.reference_step] if location.reference_step else []

@@ -9,7 +9,7 @@ from .exceptions import (
 from .exportparser import MISPtoSTIXParser
 from ..tools.misp_object_templates import (
     _custom_property_name, _fold_relation, _CUSTOM_PROPERTY_PREFIX,
-    _ORIGINAL_NAMES_PROPERTY)
+    _MISP_PROJECT_IDENTITY_ID, _ORIGINAL_NAMES_PROPERTY)
 from abc import ABCMeta, abstractmethod
 from base64 import b64encode
 from collections import defaultdict
@@ -17,6 +17,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime
 from dateutil import parser
+from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
 from pymisp import (
@@ -26,6 +27,7 @@ from pymisp.exceptions import PyMISPError
 from pymisp.tools import (
     validate_attribute, validate_attributes, validate_event, validate_objects)
 from stix2.hashes import check_hash, Hash
+from stix2.parsing import parse as stix2_parse
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
@@ -92,6 +94,20 @@ class _PatternLocation(NamedTuple):
     room_path: tuple = ()
 
 
+_MISP_EXTENSIONS_PATH = (
+    Path(__file__).resolve().parent.parent / 'data' / 'misp_extensions'
+)
+
+
+@lru_cache(maxsize=None)
+def _packaged_misp_extension_object(identifier: str):
+    # A MISP Extension definition, or the MISP Project identity authoring
+    # them, as the package holds it, loaded on its first use only
+    with open(_MISP_EXTENSIONS_PATH / f'{identifier}.json', 'rt',
+              encoding='utf-8') as f:
+        return stix2_parse(f.read(), version='2.1')
+
+
 class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def __init__(self, use_cti_uuids: bool):
         super().__init__()
@@ -99,6 +115,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self.__index = 0
         self.__initiated = False
         self.__use_cti_uuids = use_cti_uuids
+        # Whether the bundle is assembled from events, each with its Report,
+        # or from a collection, which has none: an event's galaxies go
+        # through the collections' appending method too
+        self.__assembling_event = False
         self._id_parsing_function = {
             'attribute': '_define_stix_object_id',
             'object': '_define_stix_object_id'
@@ -110,6 +130,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def parse_misp_attribute(self, attribute: MISPAttribute | dict):
         self._results_handling_method = '_append_SDO_without_refs'
+        self.__assembling_event = False
         self._set_identifier('attribute feed')
         if not self.__initiated:
             self._initiate_feed_parsing()
@@ -130,6 +151,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def parse_misp_attributes(self, attributes: list):
         self._results_handling_method = '_append_SDO_without_refs'
+        self.__assembling_event = False
         self._set_identifier('attributes collection')
         if not self.__initiated:
             self._initiate_attributes_parsing()
@@ -166,12 +188,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def parse_misp_event(self, misp_event: MISPEvent | dict):
         self._results_handling_method = '_append_SDO'
+        self.__assembling_event = True
         if not self.__initiated:
             self._initiate_events_parsing()
         self._parse_misp_event(misp_event)
 
     def parse_misp_object(self, misp_object: MISPObject | dict):
         self._results_handling_method = '_append_SDO_without_refs'
+        self.__assembling_event = False
         self._set_identifier('objects collection')
         if not self.__initiated:
             self._initiate_objects_parsing()
@@ -205,6 +229,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def parse_misp_objects(self, misp_objects: list):
         self._results_handling_method = '_append_SDO_without_refs'
+        self.__assembling_event = False
         self._set_identifier('objects collection')
         if not self.__initiated:
             self._initiate_objects_parsing()
@@ -286,6 +311,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             raise InvalidMISPInputError('Input does not look like MISP data.')
 
     def _parse_misp_events(self, events: list):
+        self.__assembling_event = True
         if not self.__initiated:
             self._initiate_events_parsing()
         for event in events:
@@ -563,11 +589,38 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     #                          MAIN PARSING FUNCTIONS                          #
     ############################################################################
 
+    def _add_misp_extension_object(self, identifier: str):
+        misp_extension_object = _packaged_misp_extension_object(identifier)
+        self.unique_ids[identifier] = identifier
+        if self.__assembling_event:
+            # With the organisation identity, ahead of the event's Report
+            self.stix_objects.insert(self.__index, misp_extension_object)
+            self.__index += 1
+            return
+        # A collection has no Report: directly ahead of the object using it
+        self.stix_objects.append(misp_extension_object)
+
+    def _add_misp_extensions(self, stix_object: _STIX_OBJECT_TYPING):
+        # The bundle carries each MISP Extension an object entering it uses,
+        # once, and the MISP Project identity authoring them ahead of the
+        # first one. Only what enters the bundle counts: an object refused
+        # and replaced by the custom record uses nothing
+        for extension_id in self._misp_extension_ids(stix_object):
+            if extension_id in self.unique_ids:
+                continue
+            if _MISP_PROJECT_IDENTITY_ID not in self.unique_ids:
+                # An organisation with the MISP Project's uuid keeps its own
+                # identity: the first one written wins
+                self._add_misp_extension_object(_MISP_PROJECT_IDENTITY_ID)
+            self._add_misp_extension_object(extension_id)
+
     def _append_SDO(self, stix_object):
+        self._add_misp_extensions(stix_object)
         self.stix_objects.append(stix_object)
         self.object_refs.append(stix_object.id)
 
     def _append_SDO_without_refs(self, stix_object):
+        self._add_misp_extensions(stix_object)
         self.stix_objects.append(stix_object)
 
     def _generate_report_from_event(self):
@@ -5522,6 +5575,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         :param name: the argument name
         :param value: the argument value
         :return: whether the argument carries nothing a STIX property maps
+        """
+
+    @abstractmethod
+    def _misp_extension_ids(self, stix_object: _STIX_OBJECT_TYPING) -> list:
+        """Name the MISP Extensions a STIX object entering the bundle uses.
+
+        :param stix_object: the STIX object
+        :return: the ids of the MISP Extension definitions it names, in the
+            order it names them
         """
 
     @abstractmethod
