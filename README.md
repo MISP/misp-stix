@@ -19,7 +19,7 @@ The package is available as [misp-stix](https://pypi.org/project/misp-stix/) in 
 - **Broad object type coverage** — [MISP Objects](https://github.com/MISP/misp-objects) and [MISP Galaxies](https://github.com/misp/misp-galaxy) are mapped to [semantically similar STIX objects](https://github.com/MISP/misp-stix/tree/main/documentation), including artifact, malware, malware-analysis, http-request, network traffic, and more.
 - **ACS Marking support** — Round-trip conversion of ACS (Access Control System) marking definitions between STIX 2.1 Marking Definitions and MISP Galaxy Clusters.
 - **Comprehensive pattern parsing** — Parses STIX 2.x indicator patterns covering x509 certificates, processes, Windows registry keys, email messages, domain-IP pairs, AS numbers, network traffic, PE extensions, and other object types.
-- **Internal vs External import** — Higher fidelity reconstruction for MISP-generated STIX content (recognises `x-misp-*` custom objects), with heuristic matching for third-party STIX data.
+- **Internal vs External import** — Higher fidelity reconstruction for MISP-generated STIX content (recognises the [MISP Extensions](./data/misp-extensions/extension-definition-specifications/misp-5ec/README.md) of STIX 2.1, and the `x-misp-*` custom objects and `x_misp_*` custom properties of STIX 2.0 and of the STIX 2.1 bundles written up to version 2026.10.12), with heuristic matching for third-party STIX data.
 - **Extendable mapping library** — Provides a modular mapping architecture to facilitate extension and customisation.
 
 This library is used by the [MISP core software](https://github.com/MISP/MISP) to perform STIX conversion and serving as a useful tool for anyone looking for a clean way of converting between the MISP standard format and various STIX versions (1.1.1, 1.2, 2.0, 2.1).
@@ -251,10 +251,11 @@ A MISP object names the template that describes it, and that name is resolved ag
 template directories on disk. A name a document supplied that is not a plain template name -
 one holding a path separator, a `..`, or any character a template directory does not use - is
 never resolved: the object is converted under the name **`unknown-template`**, keeping the
-name the document sent in the object's `comment`. This applies on import, to an
-`x-misp-object`'s `x_misp_name`, and on export to the events and objects handed in as JSON,
-where a name stored earlier would otherwise be resolved when the event is exported. Names
-that do resolve - the templates pymisp ships and custom ones alike - are unaffected.
+name the document sent in the object's `comment`. This applies on import, to a
+`misp-object`'s `name` and an `x-misp-object`'s `x_misp_name`, and on export to the events and
+objects handed in as JSON, where a name stored earlier would otherwise be resolved when the
+event is exported. Names that do resolve - the templates pymisp ships and custom ones alike -
+are unaffected.
 
 ### In Python scripts
 
