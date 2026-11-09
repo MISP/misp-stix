@@ -507,6 +507,13 @@ class MISPtoSTIXParser(AbstractParser):
     def _attribute_record(attribute: Union[MISPAttribute, dict]) -> str:
         return f"{attribute['type']} attribute (uuid: {attribute['uuid']})"
 
+    def _object_without_attributes_error(
+            self, misp_object: Union[MISPObject, dict]):
+        self._add_error(
+            f'The {self._object_record(misp_object)} holds no attribute: a '
+            'misp-object needs one, so the object is not exported.'
+        )
+
     @staticmethod
     def _object_record(misp_object: Union[MISPObject, dict]) -> str:
         return f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
