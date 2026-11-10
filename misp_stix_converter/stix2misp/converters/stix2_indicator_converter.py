@@ -59,13 +59,15 @@ _PATTERN_ESCAPE_RE = re.compile(r"\\(['\\])")
 # The object path of a comparison on a MISP value in the MISP property
 # extension: behind any reference step, at the top level of the extension or
 # in one of its Nested Rooms - the pe extension, a section of it, or a
-# registry value - the value name, `[*]` when the observable holds a list,
-# and the key of a value with its data
+# registry value, by the quoted room key of its position - the value name,
+# `[*]` when the observable holds a list, and the key of a value with its
+# data
 _MISP_EXTENSION_PATTERN_PATH_RE = re.compile(
     r"(?P<reference>(?:\w+_ref\.)*)"
     rf"extensions\.'{re.escape(_MISP_PROPERTY_EXTENSION_ID)}'\."
-    r"(?:(?P<pe>windows_pebinary_ext\.)(?P<section>sections\[\d+\]\.)?"
-    r"|(?P<registry_value>values\[\d+\]\.))?"
+    r"(?:(?P<pe>windows_pebinary_ext\.)"
+    r"(?:sections\.'(?P<section>0|[1-9][0-9]*)'\.)?"
+    r"|values\.'(?P<registry_value>0|[1-9][0-9]*)'\.)?"
     r"(?P<name>\w+)(?:\[\*\])?(?P<key>\.(?:data|value))?"
 )
 
@@ -3028,12 +3030,15 @@ class InternalSTIX2IndicatorConverter(
         match = _MISP_EXTENSION_PATTERN_PATH_RE.fullmatch(path)
         if match is None or match['name'] in _EXTENSION_RESERVED_NAMES:
             return path
-        prefix = match['registry_value'] or ''
-        if match['pe'] is not None:
-            prefix = (
-                "extensions.'windows-pebinary-ext'."
-                f"{match['section'] or ''}"
-            )
+        # A room key is the position of its item in the STIX list, which
+        # the custom property syntax reaches by index
+        prefix = ''
+        if match['registry_value'] is not None:
+            prefix = f"values[{match['registry_value']}]."
+        elif match['pe'] is not None:
+            prefix = "extensions.'windows-pebinary-ext'."
+            if match['section'] is not None:
+                prefix += f"sections[{match['section']}]."
         feature = (
             f"{match['reference']}{prefix}"
             f"{_custom_property_name_from_extension(match['name'])}"

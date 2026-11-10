@@ -160,11 +160,11 @@ def _as_custom_syntax(
     Nested Room standing for it, in the object's extension: the view
     presents the part with them wherever the object holds it, so a reader
     reaching the part through the view reads them. Whatever the part's own
-    `extensions` hold is no MISP value. A list room lines up with its STIX
-    list item by item, so one that does not cannot say which item a value
-    belongs to, and costs the object as an unreadable value does. A STIX
-    2.0 observable, which no producer writes the extension on, is presented
-    with no MISP value.
+    `extensions` hold is no MISP value. A list room is keyed by the
+    positions of its STIX list's items, so a key naming no item cannot say
+    which item a value belongs to, and costs the object as an unreadable
+    value does. A STIX 2.0 observable, which no producer writes the
+    extension on, is presented with no MISP value.
 
     The object is read through the Mapping interface only, as a typed object
     and a Dict-Form Object both offer it. An object already presented is
@@ -273,16 +273,19 @@ def _nested_parts(stix_object, extension: Mapping, path: str,
 def _list_room_parts(
         object_id: str, items: list, room: Any, path: str, items_path: str,
         main_parser: _MAIN_PARSER_TYPING) -> list:
-    # Room item n holds the MISP values of STIX item n, `{}` standing for an
-    # item with none: a room of another length would put values on the
-    # wrong item, so it is unreadable, not paired up to the shorter length
-    if not isinstance(room, list) or len(room) != len(items):
+    # Room key "n", the decimal position with no leading zero, holds the
+    # MISP values of STIX item n, an item with no key holding none: a key
+    # naming no item would put values on none, so the room is unreadable
+    keys = [str(index) for index in range(len(items))]
+    if not isinstance(room, Mapping) or not set(room).issubset(keys):
         _unreadable_misp_value(
-            path, f'a list holding one item per item of {items_path}'
+            path,
+            f'a dictionary keyed by the positions of the items of {items_path}'
         )
     parts = []
-    for index, (item, room_item) in enumerate(zip(items, room)):
-        item_path = f'{path}[{index}]'
+    for key, item in zip(keys, items):
+        item_path = f"{path}.'{key}'"
+        room_item = room.get(key, {})
         if not isinstance(room_item, Mapping):
             _unreadable_misp_value(item_path, 'a dictionary')
         parts.append(
