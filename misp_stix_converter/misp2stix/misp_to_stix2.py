@@ -88,9 +88,10 @@ class _PatternLocation(NamedTuple):
     # The reference the comparison steps through: `parent_ref` or
     # `content_ref`
     reference_step: Optional[str] = None
-    # The Nested Room holding the value, as the keys and list indexes that
-    # reach it: `('windows_pebinary_ext',)`,
-    # `('windows_pebinary_ext', 'sections', n)` or `('values', n)`
+    # The Nested Room holding the value, as the keys and the positions in a
+    # STIX list that reach it: `('windows_pebinary_ext',)`,
+    # `('windows_pebinary_ext', 'sections', n)` or `('values', n)`. 2.0
+    # renders a position as the list index, 2.1 as the room key
     room_path: tuple = ()
 
 

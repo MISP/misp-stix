@@ -2241,20 +2241,19 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         pass
 
     def _attach_nested_rooms(self, args: dict, name: str, rooms: dict | list):
-        # A list room lines up with its STIX list by index, at full length,
-        # `{}` standing for an item holding nothing. A list room holding
-        # nothing but `{}` is left out, and so is a PE room left with nothing
+        # A list room is keyed by the position of the STIX item, in decimal,
+        # and holds only the items with values. A list room with no item is
+        # left out, and so is a PE room left with nothing
         if isinstance(rooms, dict):
             # The PE room: the rooms of its sections are its one list room,
             # the rest the values of the PE
-            rooms = {
-                key: room for key, room in rooms.items()
-                if key != 'sections' or any(room)
-            }
-            filled = bool(rooms)
+            rooms = dict(rooms)
+            sections = self._keyed_room(rooms.pop('sections', []))
+            if sections:
+                rooms['sections'] = sections
         else:
-            filled = any(rooms)
-        if filled:
+            rooms = self._keyed_room(rooms)
+        if rooms:
             self._property_extension_body(args)[name] = rooms
 
     def _create_custom_attribute_args(
@@ -2370,6 +2369,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         }
 
     @staticmethod
+    def _keyed_room(rooms: list) -> dict:
+        # The rooms of a STIX list's items, by position, in ascending order
+        return {str(index): room for index, room in enumerate(rooms) if room}
+
+    @staticmethod
     def _misp_extension_ids(stix_object: _STIX_OBJECT_TYPING) -> list:
         # A `misp-*` object names the MISP Extension of its type as a key of
         # its extensions, and a standard object the property extension; an
@@ -2392,9 +2396,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             (location.stix_type, location.reference_step), {}
         )
         try:
-            for step in location.room_path:
-                room = room[step]
-        except (IndexError, KeyError):
+            for key in self._room_keys(location.room_path):
+                room = room[key]
+        except KeyError:
             return False
         return isinstance(room.get(name), list)
 
@@ -2408,7 +2412,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         name = _extension_property_name(name)
         path = (
             '.'.join(self._quote_segment(segment) for segment in segments)
-            + self._render_room_path(location.room_path)
+            + self._render_room_path(self._room_keys(location.room_path))
             + f'.{self._quote_segment(name)}'
         )
         if self._misp_value_in_list(location, name):
@@ -2454,6 +2458,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             _MISP_PROPERTY_EXTENSION_ID,
             {'extension_type': 'property-extension'}
         )
+
+    @staticmethod
+    def _room_keys(room_path: tuple) -> tuple:
+        # A position in a STIX list reaches its item's room by the room key,
+        # which a pattern quotes, since it starts with a digit
+        return tuple(str(step) for step in room_path)
 
     def _set_fixed_value(self, args: dict, name: str, value: Any):
         # A fixed MISP field keeps its own name, with no fold and no escape
