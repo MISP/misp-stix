@@ -123,7 +123,7 @@ holding at least one MISP value, next to the object's predefined extensions
         "entropy": "1.234",
         "windows_pebinary_ext": {
             "lang_id": "080904B0",
-            "sections": [{}, {"text": "Code section"}]
+            "sections": {"1": {"text": "Code section"}}
         }
     }
 }
@@ -142,7 +142,7 @@ holding at least one MISP value, next to the object's predefined extensions
 | **malware_sample** (optional) | *value* | The value of a MISP `malware-sample` attribute, `<file name>\|<MD5>`, kept whole where no standard property holds it. The MISP-STIX converter writes one `string`. |
 | **original_names** (optional) | `dictionary` | The spellings of the galaxy cluster meta keys the naming changed ([section 2.4](#24-original-names)). |
 | **windows_pebinary_ext** (optional) | `dictionary` | The Nested Room of the `windows-pebinary-ext` extension ([section 2.5](#25-nested-rooms)). |
-| **values** (optional) | `list` of `dictionary` | The Nested Room of the **values** of a `windows-registry-key` ([section 2.5](#25-nested-rooms)). |
+| **values** (optional) | `dictionary` | The Nested Room of the **values** of a `windows-registry-key` ([section 2.5](#25-nested-rooms)). |
 | any other name | *value* | The values of one MISP object relation or galaxy cluster meta key, under its Extension Property Name ([section 2.2](#22-extension-property-names)). |
 
 The names in this table are the fixed names of the extension. Any other name **MUST** match
@@ -229,14 +229,28 @@ that mirrors that structure:
 
 - A room holds Extension Property Names and *values*, as the top level does.
   **windows_pebinary_ext** holds **sections**; nothing else holds a room.
-- A list room lines up with its STIX list by index, at full length: its item `n` holds the values
-  of the MISP object that the STIX list's item `n` stands for, and `{}` stands for an item
-  holding none.
-- A list room whose items would all be `{}` is left out: a list room **MUST** hold at least one
-  item that is not empty. **windows_pebinary_ext** is left out when nothing is left in it: it
-  **MUST NOT** be empty.
+- A room standing for a STIX list (**sections**, **values**) is a `dictionary` keyed by the
+  zero-based position of the STIX list's items, in decimal: its key `"n"` holds the values of the
+  MISP object that the STIX list's item `n` stands for. Each key **MUST** match
+  `^(0|[1-9][0-9]*)$`, so that a position has one spelling, and name an item of the STIX list.
+- A list room holds only the items with values, its keys in ascending order: an item holding none
+  has no key, and **MUST NOT** be written as `{}`. A list room with no item is left out: it
+  **MUST** hold at least one key. **windows_pebinary_ext** is left out when nothing is left in it:
+  it **MUST NOT** be empty.
 - A MISP `registry-key-value` holding only values STIX has no property for keeps its item in the
-  key's **values**, as `{}`, so that the index holds ([section 7.4](#74-an-empty-registry-value)).
+  key's **values**, as `{}`, so that its position holds
+  ([section 7.4](#74-an-empty-registry-value)):
+
+  ```json
+  "values": [{"name": "Foo", "data": "qwerty", "data_type": "REG_SZ"}, {}],
+  "extensions": {
+      "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+          "extension_type": "property-extension",
+          "values": {"1": {"benign": "Known to be legitimate"}}
+      }
+  }
+  ```
+
 - The values of the MISP `registry-key` object itself stay at the top level of the extension. So
   does a second **data** value of that object.
 
@@ -251,10 +265,13 @@ through the object path of the property extension (STIX 2.1, section 9.7):
 | In the property extension | `url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.misp_ip` |
 | Behind a reference | `file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename` |
 | In **windows_pebinary_ext** | `file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.lang_id` |
-| In **sections** | `file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.sections[1].text` |
-| In **values** | `windows-registry-key:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.values[0].benign` |
+| In **sections** | `file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.sections.'1'.text` |
+| In **values** | `windows-registry-key:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.values.'0'.benign` |
 
-- The extension definition id is quoted; the names are not.
+- The extension definition id and the room keys are quoted, a room key since it starts with a
+  digit; the names are not.
+- A value the room item holds in a list keeps its `[*]` behind the key:
+  `….sections.'1'.text[*] = 'a'`.
 - A value the observable holds in a list is compared through `[*]`: a relation holding `a`, `b`
   and `c`, of which `a` and `c` are flagged, gives `….text[*] = 'a' AND ….text[*] = 'c'`.
 - A value with data is compared twice, on its **data**, then on its **value**:
@@ -414,8 +431,8 @@ check the rest of each object.
 
 The body schema accepts **windows_pebinary_ext** and **values** on any object type. The MISP-STIX
 converter writes **windows_pebinary_ext** on a `file` only, and **values** on a
-`windows-registry-key` only. The MISP-STIX import refuses an object whose room has no STIX list or
-extension to line up with.
+`windows-registry-key` only. The MISP-STIX import refuses an object whose room has a key naming no
+item of its STIX list, or no extension to stand for.
 
 ### 7.3 No External References
 
@@ -426,9 +443,9 @@ carry none: the **schema** URL already points into this directory, which holds b
 ### 7.4 An Empty Registry Value
 
 A MISP `registry-key-value` holding only values STIX has no property for is written as `{}` in
-the **values** of its `windows-registry-key`, so that its room keeps its index
-([section 2.5](#25-nested-rooms)). STIX 2.1 (section 6.17.2) requires a registry value to hold at
-least one property, so such an item breaks the STIX 2.1 base schema.
+the **values** of its `windows-registry-key`, so that its position, the key of its room in the
+property extension, holds ([section 2.5](#25-nested-rooms)). STIX 2.1 (section 6.17.2) requires a
+registry value to hold at least one property, so such an item breaks the STIX 2.1 base schema.
 
 ## 8. Examples
 
@@ -444,7 +461,7 @@ event holds as it is: a section with no MISP value, and values with data held in
 | [`misp-galaxy-cluster.json`](examples/misp-galaxy-cluster.json) | A `misp-galaxy-cluster`, with a **meta** key whose spelling **original_names** keeps. |
 | [`location-with-galaxy-meta.json`](examples/location-with-galaxy-meta.json) | The property extension on two `location` SDOs from galaxy clusters: meta values as a `string` and as a `list`, and **original_names**. |
 | [`url-with-misp-values.json`](examples/url-with-misp-values.json) | The property extension on a `url` SCO: object relation values, among which the escaped `misp_ip`, and the Indicator comparing them. |
-| [`file-with-pe-rooms.json`](examples/file-with-pe-rooms.json) | A `file` with the **windows_pebinary_ext** and **sections** rooms, `{}` standing for a section with no MISP value. |
+| [`file-with-pe-rooms.json`](examples/file-with-pe-rooms.json) | A `file` with the **windows_pebinary_ext** and **sections** rooms: the first section holds no MISP value and has no key. |
 | [`windows-registry-key-with-values-room.json`](examples/windows-registry-key-with-values-room.json) | A `windows-registry-key` with the **values** room. |
 | [`indicator-comparing-values-with-data.json`](examples/indicator-comparing-values-with-data.json) | An Indicator comparing values with data held in a list: `[*]`, with **data** then **value**. |
 

@@ -116,6 +116,7 @@
         },
         "room_item": {
             "type": "object",
+            "minProperties": 1,
             "patternProperties": {
                 "^[a-z][a-z0-9_]{2,249}$": {
                     "$ref": "#/$defs/value"
@@ -124,14 +125,14 @@
             "additionalProperties": false
         },
         "list_room": {
-            "type": "array",
-            "items": {
-                "$ref": "#/$defs/room_item"
+            "type": "object",
+            "minProperties": 1,
+            "patternProperties": {
+                "^(0|[1-9][0-9]*)$": {
+                    "$ref": "#/$defs/room_item"
+                }
             },
-            "minItems": 1,
-            "contains": {
-                "minProperties": 1
-            }
+            "additionalProperties": false
         },
         "windows_pebinary_ext": {
             "type": "object",

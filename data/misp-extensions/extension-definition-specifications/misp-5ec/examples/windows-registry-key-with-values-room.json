@@ -95,14 +95,14 @@
                 "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
                     "extension_type": "property-extension",
                     "hive": "hklm",
-                    "values": [
-                        {
+                    "values": {
+                        "0": {
                             "benign": "registry key value known to be legitimate"
                         },
-                        {
+                        "1": {
                             "benign": "registry key value known to be legitimate"
                         }
-                    ]
+                    }
                 }
             }
         },

@@ -100,12 +100,11 @@
                         "company_name": "Simoe Tatham",
                         "legal_copyright": "Copyright © 1997-2019 Simon Tatham.",
                         "impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
-                        "sections": [
-                            {},
-                            {
+                        "sections": {
+                            "1": {
                                 "text": "Code section"
                             }
-                        ]
+                        }
                     }
                 },
                 "windows-pebinary-ext": {
