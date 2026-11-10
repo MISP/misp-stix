@@ -688,21 +688,23 @@ class TestSTIX21MISPExtensions(TestSTIX21):
                      origin_temp_hex_='Chai',
                      original_names={'origin_temp_hex_': 'origin:Temp.Hex'}
                  )),
-                ('sections room with placeholders',
+                ('sections room',
                  self._standard_object(
                      windows_pebinary_ext={
                          'text': 'PE leftover',
-                         'sections': [{'text': 'Section 0 leftover'}, {}, {}]
+                         'sections': {'0': {'text': 'Section 0 leftover'}}
                      }
                  )),
-                ('sections room alone',
+                ('sparse sections room alone',
                  self._standard_object(
-                     windows_pebinary_ext={'sections': [{}, {'text': 'oui'}]}
+                     windows_pebinary_ext={
+                         'sections': {'1': {'text': 'oui'}, '10': {'text': 'non'}}
+                     }
                  )),
                 ('values room',
                  self._standard_object(
                      'windows-registry-key', text='Key leftover',
-                     values=[{}, {'text': ['Value 1', 'leftovers']}]
+                     values={'1': {'text': ['Value 1', 'leftovers']}}
                  ))):
             with self.subTest(case=case):
                 self._assert_accepted(stix_object)
@@ -713,13 +715,32 @@ class TestSTIX21MISPExtensions(TestSTIX21):
                 ('empty list', self._standard_object(text=[])),
                 ('value with no data',
                  self._standard_object(attachment={'value': 'oui.txt'})),
-                ('all-empty values room',
+                ('empty values room',
+                 self._standard_object('windows-registry-key', values={})),
+                ('empty sections room',
                  self._standard_object(
-                     'windows-registry-key', values=[{}, {}]
+                     windows_pebinary_ext={'text': 'oui', 'sections': {}}
                  )),
-                ('all-empty sections room',
+                ('empty room item',
                  self._standard_object(
-                     windows_pebinary_ext={'text': 'oui', 'sections': [{}]}
+                     'windows-registry-key',
+                     values={'0': {}, '1': {'text': 'oui'}}
+                 )),
+                ('room key with a leading zero',
+                 self._standard_object(
+                     'windows-registry-key', values={'01': {'text': 'oui'}}
+                 )),
+                ('room key that is no position',
+                 self._standard_object(
+                     windows_pebinary_ext={'sections': {'x': {'text': 'oui'}}}
+                 )),
+                ('values room as a list',
+                 self._standard_object(
+                     'windows-registry-key', values=[{'text': 'oui'}]
+                 )),
+                ('sections room as a list',
+                 self._standard_object(
+                     windows_pebinary_ext={'sections': [{'text': 'oui'}]}
                  )),
                 ('empty windows_pebinary_ext',
                  self._standard_object(windows_pebinary_ext={})),
@@ -727,7 +748,7 @@ class TestSTIX21MISPExtensions(TestSTIX21):
                 ('two-character name', self._standard_object(ip='1.2.3.4')),
                 ('two-character name in a room',
                  self._standard_object(
-                     'windows-registry-key', values=[{'ip': '1.2.3.4'}]
+                     'windows-registry-key', values={'0': {'ip': '1.2.3.4'}}
                  )),
                 ('opinion over 100',
                  self._standard_object('opinion', opinion=101)),
@@ -837,8 +858,8 @@ class TestSTIX21MISPExtensions(TestSTIX21):
     @staticmethod
     def _extension_syntax_import_fixtures():
         # The malformed Extension Syntax fixtures are named otherwise: the
-        # schema could not see all their defects anyway, such as a room whose
-        # length differs from its STIX list
+        # schema could not see all their defects anyway, such as a room key
+        # past the end of its STIX list
         for name in dir(TestInternalSTIX21Bundles):
             if name.startswith('get_extension_syntax_bundle'):
                 bundle = getattr(TestInternalSTIX21Bundles, name)()
@@ -5179,10 +5200,10 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         ]
         return event
 
-    def _test_event_with_nested_room_placeholders(self):
-        # A list room runs at full length, `{}` standing for an item holding
-        # nothing, so each room keeps the index of its item, before an item
-        # holding values as after one
+    def _test_event_with_sparse_nested_rooms(self):
+        # A list room is keyed by the position of the STIX item, and holds
+        # only the items with values: the section holding none has no key,
+        # before an item holding values as after one
         event = get_event_with_file_and_pe_objects()
         pe_object = self._spell_object_relations(event, 'pe', {})
         section_uuid = 'b7f0f5a2-3d1e-4c6b-9a8f-2e4d6c8a0b13'
@@ -5228,7 +5249,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         self.assertEqual(
             self._misp_extension(_file)['windows_pebinary_ext']['sections'],
-            [{}, {'text': 'Code section'}]
+            {'1': {'text': 'Code section'}}
         )
         event = get_event_with_registry_key_and_values_objects()
         self._spell_object_relations(
@@ -5239,11 +5260,11 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(len(registry_key['values']), 2)
         self.assertEqual(
             self._misp_extension(registry_key)['values'],
-            [{'benign': 'Known to be legitimate'}, {}]
+            {'0': {'benign': 'Known to be legitimate'}}
         )
 
     def _test_event_with_nested_room_lists_holding_nothing(self):
-        # A list room whose items would all be `{}` is left out
+        # A list room with no item holding values is left out
         event = get_event_with_file_and_pe_objects()
         _file = self._exported_object(event, 'file')
         self.assertEqual(
@@ -5303,12 +5324,12 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         self.assertEqual(
             self._misp_extension(_file)['windows_pebinary_ext'],
-            {'sections': [{'text': 'Resources'}]}
+            {'sections': {'0': {'text': 'Resources'}}}
         )
 
     def _test_event_with_registry_value_holding_misp_values_only(self):
         # The registry value keeps its STIX item, empty, so its room keeps
-        # its index
+        # its position
         event = get_event_with_registry_key_and_values_objects()
         event['Event']['Object'][2]['Attribute'] = [
             {
@@ -5323,7 +5344,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         self.assertEqual(
             self._misp_extension(registry_key)['values'],
-            [{}, {'benign': 'Known to be legitimate'}]
+            {'1': {'benign': 'Known to be legitimate'}}
         )
 
     def _test_event_with_registry_key_object_second_data(self):
@@ -5362,11 +5383,11 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                  ('windows_pebinary_ext',)),
                 (get_event_with_file_and_pe_objects, 'pe-section', 'file',
                  [('text', 'text', 'Code'), ('text', 'Text', 'Other')],
-                 ('windows_pebinary_ext', 'sections', 0)),
+                 ('windows_pebinary_ext', 'sections', '0')),
                 (get_event_with_registry_key_and_values_objects,
                  'registry-key-value', 'windows-registry-key',
                  [('text', 'benign', 'Known'), ('text', 'Benign', 'Other')],
-                 ('values', 0))):
+                 ('values', '0'))):
             with self.subTest(name=name):
                 event = fixture()
                 misp_object = self._spell_object_relations(
@@ -5527,8 +5548,24 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 self._object_indicator_pattern(
                     event, event['Event']['Object'][0]
                 ),
-                f"[file:{extension}.windows_pebinary_ext.sections[0].text = "
+                f"[file:{extension}.windows_pebinary_ext.sections.'0'.text = "
                 "'Resources']"
+            )
+        with self.subTest(location='section list value'):
+            # A value the room item holds in a list is compared through
+            # `[*]`, behind the item's key
+            event = get_event_with_file_and_pe_objects()
+            section = self._spell_object_relations(
+                event, 'pe-section', {}, ('text', 'text', 'Resources'),
+                ('text', 'text', 'Icons')
+            )
+            flag(event, section, 'text')
+            path = f"file:{extension}.windows_pebinary_ext.sections.'0'.text"
+            self.assertEqual(
+                self._object_indicator_pattern(
+                    event, event['Event']['Object'][0]
+                ),
+                f"[{path}[*] = 'Resources' AND {path}[*] = 'Icons']"
             )
         with self.subTest(location='registry value'):
             event = get_event_with_registry_key_and_values_objects()
@@ -5541,7 +5578,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 self._object_indicator_pattern(
                     event, event['Event']['Object'][0]
                 ),
-                f"[windows-registry-key:{extension}.values[1].benign = "
+                f"[windows-registry-key:{extension}.values.'1'.benign = "
                 "'Known']"
             )
         with self.subTest(location='data'):
@@ -5629,7 +5666,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             self._misp_extension(observables[0]),
             {
                 'extension_type': 'property-extension',
-                'values': [{'benign': custom['value']}]
+                'values': {'0': {'benign': custom['value']}}
             }
         )
         self.assertNotIn('x_misp_benign', observables[0]['values'][0])
@@ -6357,9 +6394,9 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         values = observable['values']
         self.assertEqual(len(values), 2)
         rooms = self._misp_extension(observable)['values']
-        self.assertEqual(len(rooms), 2)
+        self.assertEqual(list(rooms), ['0', '1'])
         for registry_value, room, misp_value in zip(
-                values, rooms, (value1, value2)):
+                values, rooms.values(), (value1, value2)):
             name, data, data_type, custom = (
                 attribute['value'] for attribute in misp_value['Attribute']
             )
@@ -6900,7 +6937,9 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                 self.assertNotIn('number_of_sections', extension)
                 self.assertEqual(room['number_sections'], value)
                 self.assertNotIn('size', section)
-                self.assertEqual(room['sections'], [{'size_in_bytes': value}])
+                self.assertEqual(
+                    room['sections'], {'0': {'size_in_bytes': value}}
+                )
         event = get_event_with_file_and_pe_objects()
         file_object = self._spell_object_relations(event, 'file', {})
         self._spell_object_relations(
@@ -6946,7 +6985,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
                     self._misp_extension(_file)['windows_pebinary_ext'][
                         'sections'
                     ],
-                    [{'entropy': value}]
+                    {'0': {'entropy': value}}
                 )
                 self.parser.bundle.serialize()
         for value, number in (('7.5', 7.5), ('-1.5e3', -1500.0), ('7', 7.0)):
@@ -8140,8 +8179,8 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_fixed_field_name_collision(self):
         self._test_event_with_fixed_field_name_collision()
 
-    def test_event_with_nested_room_placeholders(self):
-        self._test_event_with_nested_room_placeholders()
+    def test_event_with_sparse_nested_rooms(self):
+        self._test_event_with_sparse_nested_rooms()
 
     def test_event_with_nested_room_lists_holding_nothing(self):
         self._test_event_with_nested_room_lists_holding_nothing()
@@ -8792,8 +8831,8 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
     def test_event_with_fixed_field_name_collision(self):
         self._test_event_with_fixed_field_name_collision()
 
-    def test_event_with_nested_room_placeholders(self):
-        self._test_event_with_nested_room_placeholders()
+    def test_event_with_sparse_nested_rooms(self):
+        self._test_event_with_sparse_nested_rooms()
 
     def test_event_with_nested_room_lists_holding_nothing(self):
         self._test_event_with_nested_room_lists_holding_nothing()

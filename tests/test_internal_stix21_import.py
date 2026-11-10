@@ -960,23 +960,27 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.sightings, [])
 
     def test_stix21_malformed_nested_rooms_cost_the_object(self):
-        # A room that is not a list, one whose length differs from its STIX
-        # list, an item that is no dictionary, a PE room the object has no
-        # PE extension for: each loses its Observed Data whole, with the
-        # per-object error naming the room, and is not paired up to the
-        # shorter length. The well-formed rooms convert.
+        # A room that is not a dictionary, a list included, a key that is no
+        # decimal position, or one with a leading zero, a key past the end of
+        # the STIX list, an item that is no dictionary, a PE room the object
+        # has no PE extension for: each loses its Observed Data whole, with
+        # the per-object error naming the room. The well-formed rooms convert.
         bundle = TestInternalSTIX21Bundles.get_bundle_with_malformed_nested_rooms()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         errors = self._reported_messages(self.parser.errors)
-        self.assertEqual(len(errors), 6)
+        self.assertEqual(len(errors), 9)
         path = f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'"
         for object_uuid, room in (
-                ('1aed5f00-aa8a-402f-9dd2-e13bf7863c17', 'values'),
+                ('5d0e7c51-3a52-4b8e-9f4c-6b1e2a7d9c30', 'values'),
                 ('e55f2fbc-a26d-4006-9e2c-05f7ac9eeb27', 'values'),
-                ('2b4006b4-fb2c-4710-91c7-dedb41defde5', 'values[0]'),
+                ('1aed5f00-aa8a-402f-9dd2-e13bf7863c17', 'values'),
+                ('9c3b1f7e-2d4a-4e6b-8a5c-0f1e2d3c4b5a', 'values'),
+                ('2b4006b4-fb2c-4710-91c7-dedb41defde5', "values.'0'"),
                 ('77e97057-c642-4d4b-a4d7-1032676f79da', 'windows_pebinary_ext'),
                 ('71607fce-0c2c-4424-b6c1-a8a82b3e9efd',
+                 'windows_pebinary_ext.sections'),
+                ('c8f1e2d3-4b5a-4c6d-9e7f-1a2b3c4d5e6f',
                  'windows_pebinary_ext.sections'),
                 ('41bc3219-36ea-43d8-9f88-fb84e65b954c', 'windows_pebinary_ext')):
             with self.subTest(room=room, object_uuid=object_uuid):
@@ -3377,7 +3381,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self._check_unknown_custom_property_warning(
             'registry-key',
-            f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values[0].misp_xy",
+            f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values.'0'.misp_xy",
             'xy', self.parser.warnings
         )
 
@@ -3436,7 +3440,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(len(warnings), 4)
         for nested_room in ('', 'windows_pebinary_ext.',
-                            'windows_pebinary_ext.sections[0].', 'values[1].'):
+                            "windows_pebinary_ext.sections.'0'.", "values.'1'."):
             path = (
                 f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.{nested_room}misp_xy"
             )
@@ -5522,8 +5526,8 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_registry_values_nested_room(self):
-        # Each registry value takes the values of the room item lining up
-        # with it, the key those of the extension's top level
+        # Each registry value takes the values of the room item under its
+        # position, the key those of the extension's top level
         self.assertEqual(
             self._import_nested_room_objects(
                 TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_registry_values_nested_room()

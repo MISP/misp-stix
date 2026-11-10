@@ -7889,14 +7889,13 @@ _EXTENSION_SYNTAX_PE_NESTED_ROOMS = [
                 "windows_pebinary_ext": {
                     "machine_type_hex_": "014c",
                     "pdb": "oui.pdb",
-                    "sections": [
-                        {"text": "Section text", "virtual_address": "00001000"},
-                        {},
-                        {
+                    "sections": {
+                        "0": {"text": "Section text", "virtual_address": "00001000"},
+                        "2": {
                             "characteristic": "read", "offset": "00000400",
                             "values": "No relation"
                         }
-                    ]
+                    }
                 }
             }
         }
@@ -7908,7 +7907,7 @@ _EXTENSION_SYNTAX_PE_NESTED_ROOMS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": f"[file:name = 'oui.dll' AND file:extensions.'windows-pebinary-ext'.pe_type = 'dll' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.text' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.pdb = 'oui.pdb' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.sections[2].characteristic = 'read']",
+        "pattern": f"[file:name = 'oui.dll' AND file:extensions.'windows-pebinary-ext'.pe_type = 'dll' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.text' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.pdb = 'oui.pdb' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.sections.'2'.characteristic = 'read']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -16543,7 +16542,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_bundle_with_malformed_nested_rooms(cls):
         # Nested Rooms the readers cannot read, each on an Observed Data of
         # its own, next to well-formed ones. Named outside the schema sweep,
-        # which could not see a room misaligned with its STIX list anyway
+        # which could not see a key past the end of its STIX list anyway
         registry_key = _EXTENSION_SYNTAX_REGISTRY_KEY_WITH_VALUES_OBSERVABLE_OBJECT[:2]
         pe_file = _EXTENSION_SYNTAX_PE_NESTED_ROOMS[:2]
         no_pe_extension = cls.__with_nested_rooms(
@@ -16554,16 +16553,24 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_PE_NESTED_ROOMS,
             *cls.__with_nested_rooms(
+                *registry_key, '5d0e7c51-3a52-4b8e-9f4c-6b1e2a7d9c30',
+                values="Other data"
+            ),
+            *cls.__with_nested_rooms(
+                *registry_key, 'e55f2fbc-a26d-4006-9e2c-05f7ac9eeb27',
+                values=[{"data": "Other data"}, {}]
+            ),
+            *cls.__with_nested_rooms(
                 *registry_key, '1aed5f00-aa8a-402f-9dd2-e13bf7863c17',
                 values={"data": "Other data"}
             ),
             *cls.__with_nested_rooms(
-                *registry_key, 'e55f2fbc-a26d-4006-9e2c-05f7ac9eeb27',
-                values=[{"data": "Other data"}]
+                *registry_key, '9c3b1f7e-2d4a-4e6b-8a5c-0f1e2d3c4b5a',
+                values={"01": {"data": "Other data"}}
             ),
             *cls.__with_nested_rooms(
                 *registry_key, '2b4006b4-fb2c-4710-91c7-dedb41defde5',
-                values=["Other data", {}]
+                values={"0": "Other data"}
             ),
             *cls.__with_nested_rooms(
                 *pe_file, '77e97057-c642-4d4b-a4d7-1032676f79da',
@@ -16571,8 +16578,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
             ),
             *cls.__with_nested_rooms(
                 *pe_file, '71607fce-0c2c-4424-b6c1-a8a82b3e9efd',
+                windows_pebinary_ext={"sections": {"3": {"text": "Section text"}}}
+            ),
+            *cls.__with_nested_rooms(
+                *pe_file, 'c8f1e2d3-4b5a-4c6d-9e7f-1a2b3c4d5e6f',
                 windows_pebinary_ext={
-                    "sections": [{}, {}, {}, {"text": "Section text"}]
+                    "sections": [{"text": "Section text"}, {}, {}]
                 }
             ),
             *no_pe_extension
@@ -16968,7 +16979,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_extension_syntax_bundle(
             cls.__with_more_comparisons(
                 _EXTENSION_SYNTAX_FILE_AND_PE_INDICATOR_OBJECT,
-                f"file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.sections[0].text = 'Section text'"
+                f"file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.sections.'0'.text = 'Section text'"
             )
         )
 
@@ -16978,7 +16989,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_extension_syntax_bundle(
             cls.__with_more_comparisons(
                 _EXTENSION_SYNTAX_REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT,
-                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values[1].data = 'Other data'"
+                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values.'1'.data = 'Other data'"
             )
         )
 
@@ -16989,7 +17000,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_extension_syntax_bundle(
             cls.__with_more_comparisons(
                 _EXTENSION_SYNTAX_REGISTRY_KEY_INDICATOR_OBJECT,
-                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values[0].misp_xy = 'Other data'"
+                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values.'0'.misp_xy = 'Other data'"
             )
         )
 
@@ -16999,7 +17010,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_extension_syntax_bundle(
             cls.__with_more_comparisons(
                 _REGISTRY_KEY_VALUE_INDICATOR_OBJECT,
-                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values[0].data = 'Other data'"
+                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values.'0'.data = 'Other data'"
             )
         )
 
@@ -17015,11 +17026,11 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
             cls.__with_more_comparisons(
                 _EXTENSION_SYNTAX_FILE_AND_PE_INDICATOR_OBJECT,
                 f"file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.misp_xy = 'pe value'",
-                f"file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.sections[0].misp_xy = 'section value'"
+                f"file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.sections.'0'.misp_xy = 'section value'"
             ),
             cls.__with_more_comparisons(
                 _EXTENSION_SYNTAX_REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT,
-                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values[1].misp_xy = 'registry value'"
+                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values.'1'.misp_xy = 'registry value'"
             )
         )
 
@@ -17294,7 +17305,7 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         registry_key['extensions'] = {
             MISP_PROPERTY_EXTENSION_ID: {
                 "extension_type": "property-extension",
-                "values": [{"data": "Other data"}]
+                "values": {"0": {"data": "Other data"}}
             }
         }
         return cls.__assemble_extension_syntax_bundle(
@@ -17304,18 +17315,19 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_extension_syntax_bundle_with_registry_values_nested_room(cls):
         # The MISP value of the second value of a key, in its room, which
-        # the Merged Indicator compares: the room of the first one is empty
+        # the Merged Indicator compares: the first one, holding none, has no
+        # key
         observed_data, registry_key, indicator, relationship = deepcopy(
             _EXTENSION_SYNTAX_REGISTRY_KEY_WITH_VALUES_OBSERVABLE_OBJECT
         )
-        registry_key['extensions'][MISP_PROPERTY_EXTENSION_ID]['values'] = [
-            {}, {"data": "Other data"}
-        ]
+        registry_key['extensions'][MISP_PROPERTY_EXTENSION_ID]['values'] = {
+            "1": {"data": "Other data"}
+        }
         return cls.__assemble_extension_syntax_bundle(
             observed_data, registry_key,
             cls.__with_more_comparisons(
                 indicator,
-                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values[1].data = 'Other data'"
+                f"windows-registry-key:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.values.'1'.data = 'Other data'"
             ),
             relationship
         )

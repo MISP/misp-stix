@@ -2691,7 +2691,7 @@ class TestSTIX21Export(TestSTIX2Export):
                 elif key == 'windows_pebinary_ext':
                     collect_body(value)
                 elif key in ('sections', 'values'):
-                    for room in value:
+                    for room in value.values():
                         collect_body(room)
         def collect(content):
             if isinstance(content, dict):

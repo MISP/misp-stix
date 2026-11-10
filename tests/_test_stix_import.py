@@ -306,8 +306,8 @@ class TestSTIX2Import(TestSTIX):
         """Read a Nested Room of a fixture object's MISP property extension.
 
         :param stix_object: the fixture object carrying the extension
-        :param steps: the keys and indexes leading to the room inside the
-            extension, such as `'values', 1`
+        :param steps: the keys leading to the room inside the extension,
+            such as `'values', '1'`
         :return: the room, or an empty one when the object carries none
         """
         room = stix_object.get('extensions', {}).get(
@@ -316,7 +316,7 @@ class TestSTIX2Import(TestSTIX):
         for step in steps:
             try:
                 room = room[step]
-            except (IndexError, KeyError):
+            except KeyError:
                 return {}
         return room
 
@@ -7380,10 +7380,11 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         section_pattern = []
         for pattern in full_pattern[1:-1].split(' AND '):
             # The pe values, on the predefined extension or in the room of
-            # the MISP property extension standing for it
+            # the MISP property extension standing for it, a section's by its
+            # index or its room key
             if (":extensions.'windows-pebinary-ext'." in pattern
                     or '.windows_pebinary_ext.' in pattern):
-                if '.sections[' in pattern:
+                if '.sections[' in pattern or ".sections.'" in pattern:
                     section_pattern.append(pattern)
                 else:
                     pe_pattern.append(pattern)
