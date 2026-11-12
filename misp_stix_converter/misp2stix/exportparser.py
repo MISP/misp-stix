@@ -165,15 +165,14 @@ class MISPtoSTIXParser(AbstractParser):
             for galaxy in self._misp_event['Galaxy']:
                 galaxy_type = galaxy['type']
                 to_call = self._mapping.galaxy_types_mapping(galaxy_type)
-                if to_call is not None:
-                    try:
+                try:
+                    if to_call is not None:
                         getattr(self, to_call.format('event'))(galaxy)
-                    except Exception as exception:
-                        self._event_galaxy_error(galaxy, exception)
-                        continue
-                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
-                else:
-                    self._handle_undefined_event_galaxy(galaxy)
+                        tag_names.extend(self._quick_fetch_tag_names(galaxy))
+                    else:
+                        self._handle_undefined_event_galaxy(galaxy)
+                except Exception as exception:
+                    self._event_galaxy_error(galaxy, exception)
             return tuple(
                 tag['name'] for tag in self._misp_event.get('Tag', [])
                 if tag['name'] not in tag_names
