@@ -104,7 +104,7 @@ class ExternalSTIX2IdentityConverter(
         self._mapping = ExternalSTIX2IdentityMapping
 
     def parse(self, identity_ref: str):
-        if identity_ref not in self.main_parser._creators:
+        if not self.main_parser._is_author(identity_ref):
             identity = self.main_parser._get_stix_object(identity_ref)
             if getattr(identity, 'identity_class', None) == 'class':
                 self._parse_galaxy(identity, 'sector')
@@ -310,7 +310,7 @@ class InternalSTIX2IdentityConverter(
         self._mapping = InternalSTIX2IdentityMapping
 
     def parse(self, identity_ref: str):
-        if identity_ref not in self.main_parser._creators:
+        if not self.main_parser._is_author(identity_ref):
             identity = self.main_parser._get_stix_object(identity_ref)
             feature = self._handle_mapping_from_labels(identity)
             try:

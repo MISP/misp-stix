@@ -1248,6 +1248,22 @@ _TEST_REGION_GALAXY = {
     ]
 }
 
+_TEST_MALFORMED_REGION_GALAXY = {
+    "uuid": "d151a79a-e029-11e9-9409-f3e0cf3d93bb",
+    "name": "Regions UN M49",
+    "type": "region",
+    "description": "Regions based on UN M49",
+    "GalaxyCluster": [
+        {
+            "uuid": "f93cb275-0366-4ecc-abf0-a17928d1e188",
+            "type": "region",
+            "value": "Antarctica",
+            "description": "Antarctica",
+            "meta": {}
+        }
+    ]
+}
+
 _TEST_SECTOR_GALAXY = {
     "uuid": "e1bb134c-ae4d-11e7-8aa9-f78a37325439",
     "name": "Sector",
@@ -4896,6 +4912,55 @@ def get_event_with_custom_vulnerability_galaxy(version: str):
     return event
 
 
+def get_event_with_galaxies_with_first_and_last_seen():
+    # `first_seen` / `last_seen` meta on the four galaxy types whose STIX 2.1
+    # object has no such property, and on an Intrusion Set, which has both
+    event = deepcopy(_BASE_EVENT)
+    galaxies = []
+    for galaxy, first_seen in (
+            (_TEST_ATTACK_PATTERN_GALAXY, '2017-05-31T21:30:00Z'),
+            (_TEST_TOOL_GALAXY, '2017-05-31T21:32:00Z'),
+            (_TEST_VULNERABILITY_GALAXY, '2015-01-27T00:00:00Z'),
+            (_TEST_CUSTOM_LOCATION_GALAXY, '1995-01-01T00:00:00Z'),
+            (_TEST_INTRUSION_SET_GALAXY, '2015-12-01T00:00:00Z')):
+        galaxy = deepcopy(galaxy)
+        galaxy['GalaxyCluster'][0]['meta'].update(
+            {'first_seen': [first_seen], 'last_seen': ['2020-10-25T16:22:00Z']}
+        )
+        galaxies.append(galaxy)
+    event['Event']['Galaxy'] = galaxies
+    return event
+
+
+def get_event_with_galaxies_with_first_and_last_seen_as_only_leftovers():
+    # `first_seen` / `last_seen` as the only meta no STIX 2.0 property maps,
+    # on the five galaxy types whose STIX 2.0 object has no such property,
+    # and on an Intrusion Set, which has both
+    event = deepcopy(_BASE_EVENT)
+    galaxies = []
+    for galaxy, leftovers, first_seen in (
+            (_TEST_ATTACK_PATTERN_GALAXY, ('mitre_platforms',),
+             '2017-05-31T21:30:00Z'),
+            (_TEST_MALWARE_GALAXY, ('mitre_platforms',),
+             '2007-01-01T00:00:00Z'),
+            (_TEST_THREAT_ACTOR_GALAXY, ('cfr-type-of-incident',),
+             '2013-01-01T00:00:00Z'),
+            (_TEST_TOOL_GALAXY, ('mitre_platforms', 'synonyms'),
+             '2017-05-31T21:32:00Z'),
+            (_TEST_VULNERABILITY_GALAXY, (), '2015-01-27T00:00:00Z'),
+            (_TEST_INTRUSION_SET_GALAXY, (), '2015-12-01T00:00:00Z')):
+        galaxy = deepcopy(galaxy)
+        meta = galaxy['GalaxyCluster'][0]['meta']
+        for key in leftovers:
+            del meta[key]
+        meta.update(
+            {'first_seen': [first_seen], 'last_seen': ['2020-10-25T16:22:00Z']}
+        )
+        galaxies.append(galaxy)
+    event['Event']['Galaxy'] = galaxies
+    return event
+
+
 def get_event_with_intrusion_set_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
@@ -4913,10 +4978,30 @@ def get_event_with_location_galaxies():
     return event
 
 
+def get_event_with_malformed_region_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_MALFORMED_REGION_GALAXY)
+    ]
+    return event
+
+
 def get_event_with_malware_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_MALWARE_GALAXY)
+    ]
+    return event
+
+
+def get_event_with_region_galaxy_without_description():
+    event = deepcopy(_BASE_EVENT)
+    galaxy = deepcopy(_TEST_REGION_GALAXY)
+    cluster = galaxy['GalaxyCluster'][0]
+    del cluster['description']
+    event['Event']['Galaxy'] = [galaxy]
+    event['Event']['Tag'] = [
+        {'name': f'misp-galaxy:region="{cluster["value"]}"'}
     ]
     return event
 
@@ -4933,6 +5018,14 @@ def get_attributes_collection_with_sector_galaxy():
     return {
         'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)],
         'Galaxy': [deepcopy(_TEST_SECTOR_GALAXY)]
+    }
+
+
+def get_attributes_collection_with_custom_galaxy():
+    # The event-level galaxy of an attributes collection has no timestamp
+    return {
+        'Attribute': [deepcopy(_INDICATOR_ATTRIBUTE)],
+        'Galaxy': [deepcopy(_TEST_TEA_MATRIX_GALAXY)]
     }
 
 
@@ -5009,6 +5102,25 @@ def get_event_with_galaxy_meta_key_folding_to_the_channel():
     event = deepcopy(_BASE_EVENT)
     galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
     galaxy['GalaxyCluster'][0]['meta']['Original Names'] = ['not a spelling']
+    event['Event']['Galaxy'] = [galaxy]
+    return event
+
+
+def get_event_with_galaxy_meta_key_with_no_value():
+    # A meta key MISP holds no value for, which the fold would change
+    event = deepcopy(_BASE_EVENT)
+    galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
+    galaxy['GalaxyCluster'][0]['meta']['No Value'] = []
+    event['Event']['Galaxy'] = [galaxy]
+    return event
+
+
+def get_event_with_galaxy_meta_key_the_extension_escapes():
+    # A meta key whose fold ends with a suffix the base schema of a STIX 2.1
+    # extension body types as hex: the only one the galaxy corpus has
+    event = deepcopy(_BASE_EVENT)
+    galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
+    galaxy['GalaxyCluster'][0]['meta']['origin:Temp.Hex'] = ['China']
     event['Event']['Galaxy'] = [galaxy]
     return event
 
@@ -5644,6 +5756,21 @@ def get_event_with_malware_sample_attribute():
     return event
 
 
+def get_event_with_malware_sample_attribute_with_invalid_md5():
+    # A malware sample with no valid MD5 to split goes out as the custom
+    # attribute, with its payload, its first and last seen times, and its
+    # `to_ids` false
+    event = get_event_with_malware_sample_attribute()
+    event['Event']['Attribute'][0].update(
+        {
+            'value': 'oui|not an md5', 'to_ids': False,
+            'first_seen': '2020-10-25T16:22:00Z',
+            'last_seen': '2020-10-26T16:22:00.123456Z'
+        }
+    )
+    return event
+
+
 def get_event_with_mutex_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -6185,6 +6312,26 @@ def get_event_with_annotation_object():
     return event
 
 
+def get_event_with_annotation_object_without_text():
+    event = deepcopy(_BASE_EVENT)
+    domain_ip = dict(_populate_object(_TEST_DOMAIN_IP_OBJECT))
+    annotation = dict(_populate_object(_TEST_ANNOTATION_OBJECT))
+    annotation['Attribute'] = [
+        attribute for attribute in annotation['Attribute']
+        if attribute['object_relation'] != 'text'
+    ]
+    annotation['ObjectReference'] = [
+        {
+            "uuid": uuid5(_TEST_UUID, domain_ip['uuid']).__str__(),
+            "object_uuid": annotation['uuid'],
+            "referenced_uuid": domain_ip['uuid'],
+            "relationship_type": "annotates"
+        }
+    ]
+    event['Event']['Object'] = [annotation, domain_ip]
+    return event
+
+
 def get_event_with_asn_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
@@ -6240,6 +6387,21 @@ def get_event_with_custom_objects():
         dict(_populate_object(_TEST_BTC_WALLET_OBJECT)),
         dict(_populate_object(_TEST_REPORT_OBJECT))
     ]
+    return event
+
+
+def get_event_with_custom_objects_with_first_and_last_seen():
+    # On an object no STIX object maps, and on some of its attributes
+    event = get_event_with_custom_objects()
+    bank_account, btc_wallet, _ = event['Event']['Object']
+    bank_account.update(
+        {
+            'first_seen': '2020-10-25T16:22:00Z',
+            'last_seen': '2020-10-26T16:22:00.123456Z'
+        }
+    )
+    bank_account['Attribute'][0]['first_seen'] = '2020-10-25T16:22:00Z'
+    btc_wallet['Attribute'][1]['last_seen'] = '2020-10-26T16:22:00Z'
     return event
 
 

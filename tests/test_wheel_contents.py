@@ -29,6 +29,22 @@ _GENERATED_DATA = 'misp_stix_converter/data/STIX_2'
 # excluded it would import and then fail on the first galaxy cluster.
 _CATALOG = 'misp_stix_converter/data/cti_uuid_catalog.json'
 
+# The MISP Extension objects the STIX 2.1 export embeds ship with the library,
+# named by their fixed ids. Their schemas, under the repository's top-level
+# `data/`, do not: the published `schema` URLs point at the repository, and
+# nothing at run time reads them.
+_MISP_EXTENSIONS = tuple(
+    f'misp_stix_converter/data/misp_extensions/{identifier}.json'
+    for identifier in (
+        'extension-definition--c1f2c0fa-3786-4f27-bf57-cf050ecfc104',
+        'extension-definition--a093107b-933f-4d72-a9a6-6d7318adadda',
+        'extension-definition--573a76d8-f8a0-4f53-bc93-f2777576b7b9',
+        'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b',
+        'identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f'
+    )
+)
+_MISP_EXTENSION_SCHEMA_DIRECTORY = 'extension-definition-specifications/'
+
 # A cluster the catalog knows, and the STIX id it answers with. Converting an
 # event that carries it is what proves the catalog shipped: the id below is
 # read out of `cti_uuid_catalog.json` at conversion time, never computed.
@@ -214,6 +230,23 @@ class TestWheelContents(unittest.TestCase):
         shows it is there at all, without paying for an install to find out.
         """
         self.assertIn(_CATALOG, self._shipped())
+
+    def test_the_wheel_contains_the_misp_extensions_and_not_their_schemas(self):
+        shipped = self._shipped()
+        self.assertEqual(
+            sorted(
+                name for name in shipped
+                if name.startswith('misp_stix_converter/data/misp_extensions/')
+            ),
+            sorted(_MISP_EXTENSIONS)
+        )
+        self.assertEqual(
+            [
+                name for name in shipped
+                if _MISP_EXTENSION_SCHEMA_DIRECTORY in name
+            ],
+            []
+        )
 
     def test_the_wheel_installs_and_converts_an_event(self):
         outcome = self._run_in_the_installed_package()

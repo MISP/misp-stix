@@ -2,13 +2,15 @@
 # -*- coding: utf-8 -*-
 
 from ._galaxy_definitions import GALAXY_DEFINITIONS
-from ..exceptions import UndefinedSTIXObjectError
+from ..exceptions import InvalidMISPExtensionError, UndefinedSTIXObjectError
 from ...tools.misp_object_templates import (
-    _custom_property_name, _custom_property_relation,
-    _CUSTOM_PROPERTY_PREFIX, _ORIGINAL_NAMES_PROPERTY,
-    _template_custom_properties)
+    _custom_property_name, _custom_property_name_from_extension,
+    _custom_property_relation, _CUSTOM_PROPERTY_PREFIX,
+    _EXTENSION_RESERVED_NAMES, _MISP_PROPERTY_EXTENSION_ID,
+    _ORIGINAL_NAMES_PROPERTY, _template_custom_properties)
 from abc import ABCMeta
 from collections import defaultdict
+from collections.abc import Mapping
 from datetime import datetime
 from pymisp import AbstractMISP, MISPGalaxyCluster, MISPObject
 from stix2.v20.sdo import (
@@ -51,6 +53,308 @@ _SDO_TYPING = Union[
     Malware_v20, Malware_v21,
     ObservedData_v20, ObservedData_v21, dict
 ]
+
+
+class _CustomSyntaxView(Mapping):
+    """A standard STIX object as the custom property syntax spells its MISP
+    values.
+
+    The object's own properties come first, its MISP property extension
+    values next, each under the custom property name it stands for. A part
+    of the object whose values sit in a Nested Room - the PE extension, a
+    section, a registry value - is presented the same way, where the object
+    holds it.
+    """
+
+    def __init__(self, stix_object, values: dict, paths: dict,
+                 original_names: Optional[dict] = None,
+                 parts: Optional[dict] = None):
+        self.__stix_object = stix_object
+        self.__values = values
+        self.__paths = paths
+        self.__original_names = original_names or {}
+        self.__parts = parts or {}
+
+    def __contains__(self, key: object) -> bool:
+        return key in self.__values or key in self.__stix_object
+
+    def __getitem__(self, key: str) -> Any:
+        if key in self.__values:
+            return self.__values[key]
+        if key in self.__parts:
+            return self.__parts[key]
+        return self.__stix_object[key]
+
+    def __iter__(self) -> Iterator[str]:
+        yield from self.__stix_object
+        for key in self.__values:
+            if key not in self.__stix_object:
+                yield key
+
+    def __len__(self) -> int:
+        return sum(1 for _ in self)
+
+    def in_extension(self, field: str) -> bool:
+        """Tell whether a value comes from the MISP property extension.
+
+        :param field: a property name, as the readers read it
+        :return: whether the value is read from the extension, rather than
+            from a property of the object
+        """
+        return field in self.__paths
+
+    @property
+    def original_names(self) -> dict:
+        """The MISP spelling of the galaxy meta keys the MISP property
+        extension carries under a changed name, read in meta mode.
+
+        :return: the meta key per custom property name, for the extension
+            values only
+        """
+        return self.__original_names
+
+    def path(self, field: str) -> str:
+        """Spell a property as the bundle does, for the messages naming it.
+
+        :param field: a property name, as the readers read it
+        :return: the path of a MISP property extension value, the name
+            itself for a property of the object
+        """
+        return self.__paths.get(field, field)
+
+
+def _as_custom_syntax(
+        stix_object, main_parser: _MAIN_PARSER_TYPING,
+        meta: bool = False) -> _CustomSyntaxView:
+    """Present a standard STIX object's MISP values as the readers name them.
+
+    The Internal import reads the MISP values of a standard object under
+    their custom property names, the `x_misp_` properties of the custom
+    property syntax. A STIX 2.1 bundle may carry them in the MISP property
+    extension instead, which is recognised by its fixed id as a key of
+    `extensions`, and by nothing else: neither the extension definition
+    objects, nor `extension_type`, nor the STIX version are read. Each
+    extension property name is translated into the custom property name it
+    stands for, so every reader keeps its names. The names the extension body
+    uses for itself are no MISP value.
+
+    The values of a galaxy cluster are its meta keys, read in meta mode. A
+    meta key is free-form: no rule strips its escape, and no name is a fixed
+    MISP field with a type of its own. The extension's `original_names`
+    lists every name the fold or the escape changed, so each name is read as
+    written, under the custom property prefix, and the channel is translated
+    to the same names. It spells the extension's own values only, as the
+    custom property channel spells the custom properties: an entry naming
+    no extension value is reported and left out.
+
+    An object may carry both syntaxes, and each value is read. The export
+    never writes a value in both, so when both give the same custom property
+    name, the extension's value is read and the other one reported.
+
+    Every value is checked as the view is built, before any reader runs: a
+    value the readers cannot read costs the whole object, as a malformed
+    custom property does, and nothing is salvaged from it.
+
+    Only an object with an id carries the extension. A part of one - a PE
+    extension, a section, a registry value - takes its MISP values from the
+    Nested Room standing for it, in the object's extension: the view
+    presents the part with them wherever the object holds it, so a reader
+    reaching the part through the view reads them. Whatever the part's own
+    `extensions` hold is no MISP value. A list room is keyed by the
+    positions of its STIX list's items, so a key naming no item cannot say
+    which item a value belongs to, and costs the object as an unreadable
+    value does. A STIX 2.0 observable, which no producer writes the
+    extension on, is presented with no MISP value.
+
+    The object is read through the Mapping interface only, as a typed object
+    and a Dict-Form Object both offer it. An object already presented is
+    returned as it is, so what its values meet is reported once.
+
+    :param stix_object: the standard STIX object whose MISP values are read
+    :param main_parser: the parser reporting what the reading meets
+    :param meta: whether the values are the meta keys of a galaxy cluster
+    :return: the object, with its MISP property extension values next to its
+        own properties
+    :raise InvalidMISPExtensionError: the MISP property extension holds
+        content the readers cannot read
+    """
+    if isinstance(stix_object, _CustomSyntaxView):
+        return stix_object
+    if 'id' not in stix_object:
+        return _CustomSyntaxView(stix_object, {}, {})
+    path = f"extensions.'{_MISP_PROPERTY_EXTENSION_ID}'"
+    extension = stix_object.get('extensions', {}).get(
+        _MISP_PROPERTY_EXTENSION_ID, {}
+    )
+    if not isinstance(extension, Mapping):
+        _unreadable_misp_value(path, 'a dictionary')
+    if not isinstance(extension.get('original_names', {}), Mapping):
+        _unreadable_misp_value(f'{path}.original_names', 'a dictionary')
+    values, paths = _extension_values(
+        stix_object['id'], stix_object, extension, path, main_parser,
+        meta=meta, fixed_names=not meta
+    )
+    parts = _nested_parts(stix_object, extension, path, main_parser)
+    if not meta:
+        return _CustomSyntaxView(stix_object, values, paths, parts=parts)
+    return _CustomSyntaxView(
+        stix_object, values, paths, _extension_original_names(
+            stix_object['id'], extension.get('original_names', {}), values,
+            f'{path}.original_names', main_parser
+        ),
+        parts
+    )
+
+
+def _extension_values(
+        object_id: str, stix_part, body: Mapping, path: str,
+        main_parser: _MAIN_PARSER_TYPING, meta: bool = False,
+        fixed_names: bool = False) -> Tuple[dict, dict]:
+    # The MISP values one body of the extension holds for a part of the
+    # object, or the object itself, under the custom property names they
+    # stand for: the names the extension uses for itself are none of them
+    values, paths = {}, {}
+    for name, value in body.items():
+        if name in _EXTENSION_RESERVED_NAMES:
+            continue
+        field = (
+            f'{_CUSTOM_PROPERTY_PREFIX}{name}' if meta
+            else _custom_property_name_from_extension(name)
+        )
+        paths[field] = f'{path}.{name}'
+        _check_misp_value(name, value, paths[field], fixed_names)
+        if field in stix_part:
+            main_parser._custom_syntax_collision_warning(
+                object_id, field, paths[field]
+            )
+        values[field] = value
+    return values, paths
+
+
+def _nested_parts(stix_object, extension: Mapping, path: str,
+                  main_parser: _MAIN_PARSER_TYPING) -> dict:
+    # The parts of the object a Nested Room holds the values of, each
+    # presented with them, under the property of the object holding it
+    object_id = stix_object['id']
+    parts = {}
+    if 'windows_pebinary_ext' in extension:
+        room_path = f'{path}.windows_pebinary_ext'
+        room = extension['windows_pebinary_ext']
+        pe_extension = stix_object.get('extensions', {}).get(
+            'windows-pebinary-ext'
+        )
+        if pe_extension is None or not isinstance(room, Mapping):
+            _unreadable_misp_value(
+                room_path, "a dictionary standing for the object's "
+                "windows-pebinary-ext extension"
+            )
+        pe_parts = {}
+        if 'sections' in room:
+            pe_parts['sections'] = _list_room_parts(
+                object_id, pe_extension.get('sections', []),
+                room['sections'], f'{room_path}.sections',
+                "extensions.'windows-pebinary-ext'.sections", main_parser
+            )
+        parts['extensions'] = {
+            **stix_object['extensions'],
+            'windows-pebinary-ext': _part_view(
+                object_id, pe_extension, room, room_path, main_parser,
+                pe_parts
+            )
+        }
+    if 'values' in extension:
+        parts['values'] = _list_room_parts(
+            object_id, stix_object.get('values', []), extension['values'],
+            f'{path}.values', 'values', main_parser
+        )
+    return parts
+
+
+def _list_room_parts(
+        object_id: str, items: list, room: Any, path: str, items_path: str,
+        main_parser: _MAIN_PARSER_TYPING) -> list:
+    # Room key "n", the decimal position with no leading zero, holds the
+    # MISP values of STIX item n, an item with no key holding none: a key
+    # naming no item would put values on none, so the room is unreadable
+    keys = [str(index) for index in range(len(items))]
+    if not isinstance(room, Mapping) or not set(room).issubset(keys):
+        _unreadable_misp_value(
+            path,
+            f'a dictionary keyed by the positions of the items of {items_path}'
+        )
+    parts = []
+    for key, item in zip(keys, items):
+        item_path = f"{path}.'{key}'"
+        room_item = room.get(key, {})
+        if not isinstance(room_item, Mapping):
+            _unreadable_misp_value(item_path, 'a dictionary')
+        parts.append(
+            _part_view(object_id, item, room_item, item_path, main_parser)
+        )
+    return parts
+
+
+def _part_view(
+        object_id: str, part, room: Mapping, path: str,
+        main_parser: _MAIN_PARSER_TYPING,
+        parts: Optional[dict] = None) -> _CustomSyntaxView:
+    # A part of the object, with the MISP values of the room standing for it
+    return _CustomSyntaxView(
+        part, *_extension_values(object_id, part, room, path, main_parser),
+        parts=parts
+    )
+
+
+def _extension_original_names(
+        object_id: str, original_names: Mapping, values: dict, path: str,
+        main_parser: _MAIN_PARSER_TYPING) -> dict:
+    # The extension's channel, under the names its meta keys are read with:
+    # an entry naming none of them is reported as the bundle spells it
+    known, unknown = {}, []
+    for name, key in original_names.items():
+        field = f'{_CUSTOM_PROPERTY_PREFIX}{name}'
+        if field in values:
+            known[field] = key
+        else:
+            unknown.append(name)
+    if unknown:
+        main_parser._unknown_original_names_warning(object_id, unknown, path)
+    return known
+
+
+def _check_misp_value(name: str, value: Any, path: str, fixed_names: bool):
+    # The two fixed MISP fields with a type of their own, which only the top
+    # level of a standard object's extension holds - no meta key and no
+    # Nested Room value is one - then the values of every other name: an
+    # item, or a list of items
+    fixed_field = name if fixed_names else None
+    if fixed_field == 'opinion':
+        if not isinstance(value, int) or isinstance(value, bool):
+            _unreadable_misp_value(path, 'an integer')
+    elif fixed_field == 'author_ref':
+        if not isinstance(value, str):
+            _unreadable_misp_value(path, 'an identifier')
+    elif not all(
+            _is_misp_value_item(item)
+            for item in (value if isinstance(value, list) else (value,))):
+        _unreadable_misp_value(
+            path, 'a string, a boolean, a value and its data, or a list of them'
+        )
+
+
+def _is_misp_value_item(item: Any) -> bool:
+    if isinstance(item, (bool, str)):
+        return True
+    return (
+        isinstance(item, Mapping) and set(item) == {'value', 'data'}
+        and all(isinstance(item[key], str) for key in item)
+    )
+
+
+def _unreadable_misp_value(path: str, expected: str):
+    raise InvalidMISPExtensionError(
+        f'Unreadable MISP Extension content {path}: {expected} is expected.'
+    )
 
 
 class STIX2Converter(metaclass=ABCMeta):
@@ -406,6 +710,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         # The walk the base converter does, with every custom property
         # resolved against the object template first, and the ones the static
         # table does not list read after them instead of being dropped.
+        stix_object = _as_custom_syntax(stix_object, self.main_parser)
         if feature is None:
             feature = stix_object['type'].replace('-', '_')
         if name is None:
@@ -422,7 +727,10 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
                 )
         for field in self._unlisted_custom_properties(stix_object, mapping):
             yield from self._populate_object_attributes_with_data(
-                self._object_relation_mapping(name, field, None, object_id),
+                self._object_relation_mapping(
+                    name, field, None, object_id,
+                    path=stix_object.path(field)
+                ),
                 stix_object[field], object_id
             )
 
@@ -440,7 +748,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     def _object_relation_mapping(
             self, name: str, field: str, mapping: Optional[dict],
-            object_id: str) -> Optional[dict]:
+            object_id: str, path: Optional[str] = None) -> Optional[dict]:
         """Pick the MISP attribute a property of an object's STIX form maps to.
 
         A custom property carries a MISP object relation folded to the STIX
@@ -455,6 +763,8 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         :param field: the STIX property, or pattern segment, being read
         :param mapping: the static table entry for that property, if any
         :param object_id: the STIX object the property comes from
+        :param path: the property as the bundle spells it, when it is not
+            `field` - a MISP property extension value - for the warning
         :return: the `type` and `object_relation` the attribute takes
         """
         if not field.startswith(_CUSTOM_PROPERTY_PREFIX):
@@ -469,7 +779,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             return mapping
         relation = _custom_property_relation(folded)
         self.main_parser._unknown_custom_property_warning(
-            name, object_id, field, relation
+            name, object_id, path or field, relation
         )
         return {'type': 'text', 'object_relation': relation}
 
@@ -478,7 +788,8 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             stix_object, mapping: dict) -> Iterator[str]:
         """Walk the custom properties a static mapping table does not list.
 
-        :param stix_object: the STIX object, or observable, being read
+        :param stix_object: the STIX object being read, with its MISP property
+            extension values under their custom property names
         :param mapping: the static table the reader iterates
         :return: the `x_misp_` properties the table would skip
         """
@@ -509,19 +820,34 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         cluster_args['description'] = value.capitalize()
         return cluster_args
 
-    def _create_galaxy_args(self, galaxy_type: str, galaxy_name: str):
-        self.main_parser._galaxies[galaxy_type] = (
-            GALAXY_DEFINITIONS[galaxy_type]
-            if galaxy_type in GALAXY_DEFINITIONS
-            else {'type': galaxy_type, 'name': galaxy_name}
-        )
+    def _create_galaxy_args(self, galaxy_type: str, galaxy_name: str,
+                            galaxy_description: Optional[str] = None):
+        # A galaxy MISP ships is read from its definition, any other from
+        # what the bundle says of it
+        if galaxy_type in GALAXY_DEFINITIONS:
+            galaxy_args = GALAXY_DEFINITIONS[galaxy_type]
+        else:
+            galaxy_args = {'type': galaxy_type, 'name': galaxy_name}
+            if galaxy_description is not None:
+                galaxy_args['description'] = galaxy_description
+        self.main_parser._galaxies[galaxy_type] = galaxy_args
 
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
+        # Each syntax's channel spells the meta keys of its own syntax. The
+        # MISP property extension came with the channel, so a name it does
+        # not list is verbatim, with no list to fall back on.
         original_names = self._read_original_names(stix_object)
+        stix_object = _as_custom_syntax(
+            stix_object, self.main_parser, meta=True
+        )
         for key, value in stix_object.items():
             if key == _ORIGINAL_NAMES_PROPERTY:
                 continue
-            if key.startswith(_CUSTOM_PROPERTY_PREFIX):
+            if stix_object.in_extension(key):
+                yield stix_object.original_names.get(
+                    key, _custom_property_relation(key)
+                ), value
+            elif key.startswith(_CUSTOM_PROPERTY_PREFIX):
                 yield self._restore_meta_key(key, original_names), value
 
     @staticmethod
@@ -562,19 +888,21 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             clusters[object_id] = getattr(self, feature)(stix_object)
 
     def _read_original_names(
-            self, stix_object,
-            names: Optional[Iterable[str]] = None) -> Optional[dict]:
+            self, stix_object, names: Optional[Iterable[str]] = None,
+            channel: str = _ORIGINAL_NAMES_PROPERTY) -> Optional[dict]:
         """Read the spellings the export carried for the names it folded.
 
         :param stix_object: the STIX object carrying the channel, if any
         :param names: the names the object writes, as the channel keys them -
-            its own properties by default, or the keys of its `x_misp_meta`
-            dictionary when the channel spells those instead
+            its own properties by default, or the keys of its meta dictionary
+            when the channel spells those instead
+        :param channel: the property carrying the channel -
+            `original_names` on a `misp-galaxy-cluster`
         :return: the MISP spelling per wire name, or `None` when the object
             carries no channel - it is then older than the channel, or the
             fold changed none of its names
         """
-        original_names = stix_object.get(_ORIGINAL_NAMES_PROPERTY)
+        original_names = stix_object.get(channel)
         if original_names is None:
             return None
         if names is None:
@@ -582,7 +910,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         unknown = [name for name in original_names if name not in names]
         if unknown:
             self.main_parser._unknown_original_names_warning(
-                stix_object['id'], unknown
+                stix_object['id'], unknown, channel
             )
         return original_names
 

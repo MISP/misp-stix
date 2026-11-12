@@ -6764,6 +6764,17 @@ _ORGANIZATION_OBJECT = {
     "x_misp_alias": "CIRCL",
     "x_misp_role": "national CERT"
 }
+_PE_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--2183705f-e8d6-4c08-a820-5b56a1303bb1",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="pe"', 'misp:meta-category="file"']
+}
 _PERSON_OBJECT = {
     "type": "identity",
     "id": "identity--868037d5-d804-4f1d-8016-f296361f9c68",
@@ -7175,6 +7186,17 @@ _REGISTRY_KEY_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f"
     }
 ]
+_REGISTRY_KEY_VALUE_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="registry-key-value"', 'misp:meta-category="file"']
+}
 _REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
@@ -8098,6 +8120,13 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_ATTACHMENT_INDICATOR_ATTRIBUTE)
 
     @classmethod
+    def get_bundle_with_attachment_indicator_attribute_without_data(cls):
+        # An attachment with no data, whose pattern compares its name alone
+        indicator = deepcopy(_ATTACHMENT_INDICATOR_ATTRIBUTE)
+        indicator['pattern'] = "[file:name = 'attachment.test']"
+        return cls.__assemble_bundle(indicator)
+
+    @classmethod
     def get_bundle_with_attachment_observable_attribute(cls):
         return cls.__assemble_bundle(deepcopy(_ATTACHMENT_OBSERVABLE_ATTRIBUTE[0]))
 
@@ -8668,6 +8697,39 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return dict_to_stix2(bundle, allow_custom = True)
 
     @classmethod
+    def get_bundle_with_sightings_missing_identities(cls):
+        # Without the identity of Oscorp Industries, the author of the first
+        # Opinion and where the last Sighting was seen. The first Sighting
+        # has no where_sighted_refs, as MISP writes a sighting with no
+        # Organisation, and the last Opinion names the absent identity with
+        # no author name.
+        objects = {
+            stix_object['id']: deepcopy(stix_object)
+            for stix_object in _BUNDLE_WITH_SIGHTINGS
+            if stix_object['id'] != 'identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90'
+        }
+        del objects['sighting--5125aa81-ab95-4cdf-83f9-3c467207307d']['where_sighted_refs']
+        opinion = objects['x-misp-opinion--3ab7497e-39f5-4a0a-b797-dc08bf80631d']
+        del opinion['x_misp_author']
+        opinion['x_misp_author_ref'] = 'identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90'
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [cls.__identity, *objects.values()]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_bundle_with_sighting_opinion_author_ref_missing(cls):
+        # An Opinion naming its author with no reference to the identity
+        objects = deepcopy(_BUNDLE_WITH_SIGHTINGS)
+        opinion = next(
+            stix_object for stix_object in objects
+            if stix_object['id'] == 'x-misp-opinion--7ea813e5-6dd5-4241-83a7-37fb56da2d78'
+        )
+        del opinion['x_misp_author_ref']
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [cls.__identity, *objects]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
     def get_bundle_with_single_report(cls):
         return cls.__assemble_bundle(*_BUNDLE_WITH_NO_REPORT)
 
@@ -8942,6 +9004,16 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_FILE_AND_PE_OBSERVABLE_OBJECT)
 
     @classmethod
+    def get_bundle_with_file_and_pe_observable_object_with_unmapped_hashes(cls):
+        # A hash name outside the vocabulary, on the file and on a PE section
+        stix_objects = deepcopy(_FILE_AND_PE_OBSERVABLE_OBJECT)
+        observable = stix_objects[0]['objects']['0']
+        observable['hashes']['CRC32'] = '4c2b1a7e'
+        extension = observable['extensions']['windows-pebinary-ext']
+        extension['sections'][0]['hashes']['CRC32'] = 'e3b0c442'
+        return cls.__assemble_bundle(*stix_objects)
+
+    @classmethod
     def get_bundle_with_file_indicator_object(cls):
         indicator = deepcopy(_FILE_INDICATOR_OBJECT)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
@@ -9121,6 +9193,10 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_ORGANIZATION_OBJECT)
 
     @classmethod
+    def get_bundle_with_pe_indicator_object(cls):
+        return cls.__assemble_bundle(_PE_INDICATOR_OBJECT)
+
+    @classmethod
     def get_bundle_with_person_object(cls):
         return cls.__assemble_bundle(_PERSON_OBJECT)
 
@@ -9188,6 +9264,10 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_registry_key_observable_object(cls):
         return cls.__assemble_bundle(*_REGISTRY_KEY_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_registry_key_value_indicator_object(cls):
+        return cls.__assemble_bundle(_REGISTRY_KEY_VALUE_INDICATOR_OBJECT)
 
     @classmethod
     def get_bundle_with_registry_key_with_values_indicator_object(cls):

@@ -3663,14 +3663,15 @@
                     },
                     {
                         "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
-                        "uuid": "e668d25a-e269-5c1f-b3f4-2ca7cd08c106",
+                        "uuid": "c017d1fb-8cbd-5ef7-93ea-8cad07705538",
                         "object_relation": "malware-sample",
                         "value": "oui|8764605c6f388c89096b534d33565802",
                         "type": "malware-sample",
                         "disable_correlation": false,
                         "to_ids": true,
                         "category": "Payload delivery",
-                        "malware_filename": "oui"
+                        "malware_filename": "oui",
+                        "comment": "Indicator ID: indicator--5e384ae7-672c-4250-9cda-3b4da964451a"
                     }
                 ],
                 "distribution": "5",
@@ -4978,13 +4979,14 @@
                         "comment": "Indicator ID: indicator--939b2f03-c487-4f62-a90e-cab7acfee294"
                     },
                     {
-                        "uuid": "958e2620-a436-505b-acb3-76cdf6cb1745",
+                        "uuid": "510dcb5c-b6b0-5354-b906-1a135be93fe2",
                         "object_relation": "url",
                         "value": "https://oasis-open.github.io/cti-documentation/img/STIX.png",
                         "type": "url",
                         "disable_correlation": false,
                         "to_ids": true,
-                        "category": "Network activity"
+                        "category": "Network activity",
+                        "comment": "Indicator ID: indicator--939b2f03-c487-4f62-a90e-cab7acfee294"
                     }
                 ],
                 "distribution": "5",
@@ -5563,14 +5565,15 @@
                     },
                     {
                         "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
-                        "uuid": "529a0000-d017-530b-adf0-0cbced67e315",
+                        "uuid": "b99c4b87-c1c7-5fe4-a90b-5b0c1d79ca23",
                         "object_relation": "malware-sample",
                         "value": "oui|8764605c6f388c89096b534d33565802",
                         "type": "malware-sample",
                         "disable_correlation": false,
                         "to_ids": true,
                         "category": "Payload delivery",
-                        "malware_filename": "oui"
+                        "malware_filename": "oui",
+                        "comment": "Indicator ID: indicator--153ef8d5-9182-45ec-bf1c-5819932b9ab7"
                     }
                 ],
                 "distribution": "5",
