@@ -4968,12 +4968,12 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _test_event_with_annotation_object_without_text(self, event):
         self.parser.parse_misp_event(event)
         annotation, domain_ip = self.parser._misp_event.objects
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._strip_misp_extensions()
         self._check_spec_versions(stix_objects)
         (identity, grouping, observed_data, _, _, indicator,
          custom, *relationships) = stix_objects
         self.assertEqual(
-            custom.id, f"x-misp-object--{annotation.uuid}"
+            custom.id, f"misp-object--{annotation.uuid}"
         )
         self.assertFalse(any(o.type == 'note' for o in stix_objects))
 
