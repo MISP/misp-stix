@@ -16,6 +16,7 @@ from stix2.parsing import parse as stix2_parse
 from stix2.v21.bundle import Bundle
 from stix2.v21.sdo import Indicator
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from . import test_events
 from .test_events import *
 from .test_internal_stix21_bundles import TestInternalSTIX21Bundles
@@ -4977,6 +4978,24 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         self.assertFalse(any(o.type == 'note' for o in stix_objects))
 
+    def _test_event_with_annotation_object_falling_back(self, event):
+        # An annotation the export fails to build goes out as the custom
+        # object, with an Error, and the rest of the event goes out with it
+        with patch.object(
+                self.parser, '_parse_annotation_object',
+                side_effect=RuntimeError('annotation')):
+            self.parser.parse_misp_event(event)
+        annotation, _ = self.parser._misp_event.objects
+        self.assertEqual(len(self._object_errors(annotation)), 1)
+        stix_objects = self._strip_misp_extensions()
+        self._check_spec_versions(stix_objects)
+        _, _, _, _, _, indicator, custom, *_ = stix_objects
+        self.assertEqual(indicator.type, 'indicator')
+        self.assertEqual(custom.id, f"misp-object--{annotation.uuid}")
+        self.assertFalse(
+            any(stix_object.type == 'note' for stix_object in stix_objects)
+        )
+
     def _test_event_with_android_app_indicator_object(self, event):
         misp_object, observables, object_refs, pattern = self._run_indicator_from_object_tests(event)
         self._assert_multiple_equal(len(observables), len(object_refs), 1)
@@ -7545,6 +7564,10 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
         event = get_event_with_annotation_object_without_text()
         self._test_event_with_annotation_object_without_text(event['Event'])
 
+    def test_event_with_annotation_object_falling_back_keeps_the_event(self):
+        event = get_event_with_annotation_object()
+        self._test_event_with_annotation_object_falling_back(event['Event'])
+
     def test_event_with_android_app_indicator_object(self):
         event = get_event_with_android_app_object()
         self._test_event_with_android_app_indicator_object(event['Event'])
@@ -8295,6 +8318,12 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_annotation_object(misp_event)
+
+    def test_event_with_annotation_object_falling_back_keeps_the_event(self):
+        event = get_event_with_annotation_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_annotation_object_falling_back(misp_event)
 
     def test_event_with_android_app_indicator_object(self):
         event = get_event_with_android_app_object()
