@@ -1,10 +1,13 @@
 import unittest
+from misp_stix_converter import InternalSTIX2toMISPParser
 from misp_stix_converter.stix2misp.converters.stix2_indicator_converter import (
     InternalSTIX2IndicatorConverter
 )
 
 _evp = InternalSTIX2IndicatorConverter._extract_value_from_pattern
-_efp = InternalSTIX2IndicatorConverter._extract_features_from_pattern
+_efp = InternalSTIX2IndicatorConverter(
+    InternalSTIX2toMISPParser()
+)._extract_features_from_pattern
 _split = InternalSTIX2IndicatorConverter._split_pattern_on_and
 
 
