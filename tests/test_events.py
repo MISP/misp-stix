@@ -4994,6 +4994,18 @@ def get_event_with_malware_galaxy():
     return event
 
 
+def get_event_with_region_galaxy_without_description():
+    event = deepcopy(_BASE_EVENT)
+    galaxy = deepcopy(_TEST_REGION_GALAXY)
+    cluster = galaxy['GalaxyCluster'][0]
+    del cluster['description']
+    event['Event']['Galaxy'] = [galaxy]
+    event['Event']['Tag'] = [
+        {'name': f'misp-galaxy:region="{cluster["value"]}"'}
+    ]
+    return event
+
+
 def get_event_with_sector_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [

@@ -9097,6 +9097,27 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         self.assertEqual(malware.type, 'malware')
         self._check_galaxy_features(malware, galaxy, timestamp)
 
+    def _test_event_with_region_galaxy_without_description(self, event):
+        # A region cluster goes out as a Location, which reads the cluster
+        # description. Without one, that galaxy alone is lost, with an Error,
+        # and its tag goes out as a label
+        cluster = event['Galaxy'][0]['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event)
+        errors = self.parser.errors[event['uuid']]
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(
+            errors[0].startswith('Error with the region galaxy in event:')
+        )
+        _, grouping, *stix_objects = self.parser.stix_objects
+        self.assertEqual(grouping.type, 'grouping')
+        self.assertIn(
+            f'misp-galaxy:region="{cluster["value"]}"', grouping.labels
+        )
+        self.assertFalse(
+            any(cluster['uuid'] in stix_object.id
+                for stix_object in stix_objects)
+        )
+
     def _test_event_with_sector_galaxy(self, event):
         galaxy = event['Galaxy'][0]
         timestamp = event['timestamp']
@@ -9556,6 +9577,10 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
             summary=', '.join(sorted(self._mapping_types.malware_types()))
         )
 
+    def test_event_with_region_galaxy_without_description(self):
+        event = get_event_with_region_galaxy_without_description()
+        self._test_event_with_region_galaxy_without_description(event['Event'])
+
     def test_event_with_sector_galaxy(self):
         event = get_event_with_sector_galaxy()
         self._test_event_with_sector_galaxy(event['Event'])
@@ -9830,6 +9855,12 @@ class TestSTIX21MISPGalaxiesExport(TestSTIX21GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_malware_galaxy(misp_event)
+
+    def test_event_with_region_galaxy_without_description(self):
+        event = get_event_with_region_galaxy_without_description()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_region_galaxy_without_description(misp_event)
 
     def test_event_with_sector_galaxy(self):
         event = get_event_with_sector_galaxy()
