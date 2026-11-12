@@ -3960,6 +3960,51 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self.assertEqual(self.parser.warnings, {})
             self.assertEqual(self.parser.errors, {})
 
+    def _check_and_in_a_pattern_value(self, bundle, value: str):
+        # An ` AND ` inside a compared value splits nothing: the Indicator
+        # comparing `value` with ` AND more` after it imports as it does
+        # without, that one value aside, which is kept whole
+        content = json.loads(bundle.serialize())
+        indicator, = (
+            stix_object for stix_object in content['objects']
+            if f"'{value}'" in stix_object.get('pattern', '')
+        )
+        self.assertEqual(indicator['pattern'].count(f"'{value}'"), 1)
+        indicator['pattern'] = indicator['pattern'].replace(
+            f"'{value}'", f"'{value} AND more'"
+        )
+        expected = self._imported_attributes(type(self.parser)(), bundle)
+        imported = self._imported_attributes(
+            self.parser, dict_to_stix2(content, allow_custom=True)
+        )
+        self.assertEqual(
+            len([text for *_, text in imported if ' AND more' in text]), 1
+        )
+        self.assertEqual(
+            [
+                (*feature, text.replace(' AND more', ''))
+                for *feature, text in imported
+            ],
+            expected
+        )
+
+    def _imported_attributes(self, parser, bundle) -> list:
+        # Each attribute the bundle imports as, on its own or in its MISP
+        # object, with no error
+        parser.load_stix_bundle(bundle)
+        parser.parse_stix_bundle()
+        self.assertEqual(parser.errors, {})
+        event = parser.misp_event
+        return [
+            ('', attribute.type, '', str(attribute.value))
+            for attribute in event.attributes
+        ] + [
+            (misp_object.name, attribute.type, attribute.object_relation,
+             str(attribute.value))
+            for misp_object in event.objects
+            for attribute in misp_object.attributes
+        ]
+
     def _round_trip_non_pattern_values(self, export_parser_class):
         # A value holding a quote or a backslash comes back as MISP gave it
         # from every property that is no pattern, native or custom. Only the

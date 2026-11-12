@@ -7858,6 +7858,20 @@ _EXTENSION_SYNTAX_PATTERNING_LANGUAGE_OBJECTS = [
         "labels": ['misp:name="yara"', 'misp:meta-category="misc"']
     }
 ]
+_EXTENSION_SYNTAX_PE_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--2183705f-e8d6-4c08-a820-5b56a1303bb1",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": f"[file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.original_filename = 'PuTTy' AND file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'.windows_pebinary_ext.product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="pe"', 'misp:meta-category="file"']
+}
 _EXTENSION_SYNTAX_PE_NESTED_ROOMS = [
     {
         "type": "observed-data",
@@ -15104,6 +15118,13 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_ATTACHMENT_INDICATOR_ATTRIBUTE)
 
     @classmethod
+    def get_bundle_with_attachment_indicator_attribute_without_data(cls):
+        # An attachment with no data, whose pattern compares its name alone
+        indicator = deepcopy(_ATTACHMENT_INDICATOR_ATTRIBUTE)
+        indicator['pattern'] = "[file:name = 'attachment.test']"
+        return cls.__assemble_bundle(indicator)
+
+    @classmethod
     def get_bundle_with_attachment_observable_attribute(cls):
         return cls.__assemble_bundle(*_ATTACHMENT_OBSERVABLE_ATTRIBUTE[:-2])
 
@@ -17241,6 +17262,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_patterning_language_objects(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_PATTERNING_LANGUAGE_OBJECTS
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_pe_indicator_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_PE_INDICATOR_OBJECT
         )
 
     @classmethod

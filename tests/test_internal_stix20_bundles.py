@@ -6764,6 +6764,17 @@ _ORGANIZATION_OBJECT = {
     "x_misp_alias": "CIRCL",
     "x_misp_role": "national CERT"
 }
+_PE_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--2183705f-e8d6-4c08-a820-5b56a1303bb1",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="pe"', 'misp:meta-category="file"']
+}
 _PERSON_OBJECT = {
     "type": "identity",
     "id": "identity--868037d5-d804-4f1d-8016-f296361f9c68",
@@ -7175,6 +7186,17 @@ _REGISTRY_KEY_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f"
     }
 ]
+_REGISTRY_KEY_VALUE_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--8b5e3f2a-1c4d-4e6f-9a7b-2c3d4e5f6a7b",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [{"kill_chain_name": "misp-category", "phase_name": "file"}],
+    "labels": ['misp:name="registry-key-value"', 'misp:meta-category="file"']
+}
 _REGISTRY_KEY_WITH_VALUES_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
@@ -8096,6 +8118,13 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_attachment_indicator_attribute(cls):
         return cls.__assemble_bundle(_ATTACHMENT_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_attachment_indicator_attribute_without_data(cls):
+        # An attachment with no data, whose pattern compares its name alone
+        indicator = deepcopy(_ATTACHMENT_INDICATOR_ATTRIBUTE)
+        indicator['pattern'] = "[file:name = 'attachment.test']"
+        return cls.__assemble_bundle(indicator)
 
     @classmethod
     def get_bundle_with_attachment_observable_attribute(cls):
@@ -9154,6 +9183,10 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_ORGANIZATION_OBJECT)
 
     @classmethod
+    def get_bundle_with_pe_indicator_object(cls):
+        return cls.__assemble_bundle(_PE_INDICATOR_OBJECT)
+
+    @classmethod
     def get_bundle_with_person_object(cls):
         return cls.__assemble_bundle(_PERSON_OBJECT)
 
@@ -9221,6 +9254,10 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_registry_key_observable_object(cls):
         return cls.__assemble_bundle(*_REGISTRY_KEY_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_registry_key_value_indicator_object(cls):
+        return cls.__assemble_bundle(_REGISTRY_KEY_VALUE_INDICATOR_OBJECT)
 
     @classmethod
     def get_bundle_with_registry_key_with_values_indicator_object(cls):

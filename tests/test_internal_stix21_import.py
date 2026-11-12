@@ -1279,6 +1279,44 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data=[observed_data, autonomous_system]
         )
 
+    def test_stix21_bundle_with_and_in_attachment_indicator_attribute_value(self):
+        # An attachment with no data, its name compared alone
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_bundle_with_attachment_indicator_attribute_without_data(),
+            'attachment.test'
+        )
+
+    def test_stix21_bundle_with_and_in_github_username_indicator_attribute_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_bundle_with_github_username_indicator_attribute(),
+            'chrisr3d'
+        )
+
+    def test_stix21_bundle_with_and_in_hash_composite_indicator_attribute_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_bundle_with_hash_composite_indicator_attributes(),
+            'filename1'
+        )
+
+    def test_stix21_bundle_with_and_in_ip_port_indicator_attribute_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_bundle_with_ip_port_indicator_attributes(),
+            '1.2.3.4'
+        )
+
+    def test_stix21_bundle_with_and_in_malware_sample_indicator_attribute_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_bundle_with_malware_sample_indicator_attribute(),
+            'oui'
+        )
+
+    def test_stix21_bundle_with_and_in_regkey_value_indicator_attribute_value(self):
+        # The key, as the pattern escapes it
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_bundle_with_regkey_value_indicator_attribute(),
+            r'HKLM\\Software\\mthjk'
+        )
+
     def test_stix21_bundle_with_attachment_attribute(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_attachment_attribute()
         self.parser.load_stix_bundle(bundle)
@@ -4766,6 +4804,125 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
                 misp_object = json.loads(misp_object.to_json()),
                 indicator = indicator
             )
+
+    def test_stix21_bundle_with_and_in_account_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_account_indicator_objects(),
+            'John Doe'
+        )
+
+    def test_stix21_bundle_with_and_in_account_with_attachment_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_account_with_attachment_indicator_objects(),
+            'Reddit account of the OctoCat'
+        )
+
+    def test_stix21_bundle_with_and_in_asn_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_asn_indicator_object(),
+            'AS name'
+        )
+
+    def test_stix21_bundle_with_and_in_domain_ip_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_domain_ip_indicator_object(),
+            '149.13.33.14'
+        )
+
+    def test_stix21_bundle_with_and_in_email_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_email_indicator_object(),
+            'Email test subject'
+        )
+
+    def test_stix21_bundle_with_and_in_file_indicator_object_value(self):
+        # The name of an attachment, closing the group comparing it
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_file_indicator_object(),
+            'non'
+        )
+
+    def test_stix21_bundle_with_and_in_http_request_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_bundle_with_http_request_indicator_object(),
+            'Mozilla Firefox'
+        )
+
+    def test_stix21_bundle_with_and_in_image_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_image_indicator_object(),
+            'STIX'
+        )
+
+    def test_stix21_bundle_with_and_in_ip_port_indicator_object_value(self):
+        # The domain, closing the group comparing it
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_bundle_with_ip_port_indicator_object(),
+            'circl.lu'
+        )
+
+    def test_stix21_bundle_with_and_in_lnk_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_lnk_indicator_object(),
+            '/var/www/MISP/app/files/scripts/tmp'
+        )
+
+    def test_stix21_bundle_with_and_in_mutex_indicator_object_value(self):
+        # The reader the objects with no reader of their own share
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_mutex_indicator_object(),
+            'Test mutex on unix'
+        )
+
+    def test_stix21_bundle_with_and_in_netflow_indicator_object_value(self):
+        # The source address, inside the group comparing it
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_bundle_with_netflow_indicator_object(),
+            '1.2.3.4'
+        )
+
+    def test_stix21_bundle_with_and_in_network_connection_indicator_object_value(self):
+        # The domain, closing the group comparing it
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_bundle_with_network_connection_indicator_object(),
+            'circl.lu'
+        )
+
+    def test_stix21_bundle_with_and_in_pe_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_pe_indicator_object(),
+            'PuTTy suite'
+        )
+
+    def test_stix21_bundle_with_and_in_process_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_process_indicator_object(),
+            'TestProcess'
+        )
+
+    def test_stix21_bundle_with_and_in_registry_key_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_registry_key_indicator_object(),
+            'RegistryName'
+        )
+
+    def test_stix21_bundle_with_and_in_registry_key_value_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_bundle_with_registry_key_value_indicator_object(),
+            'RegistryName'
+        )
+
+    def test_stix21_bundle_with_and_in_user_account_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_account_with_attachment_indicator_objects(),
+            'Code Monkey'
+        )
+
+    def test_stix21_bundle_with_and_in_x509_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_x509_indicator_object(),
+            'Issuer Name'
+        )
 
     def test_stix21_bundle_with_android_app_indicator_object(self):
         self._check_bundle_with_android_app_indicator_object(
