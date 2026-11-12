@@ -66,6 +66,15 @@ class TestSplitPatternOnAnd(unittest.TestCase):
             [r"file:name = 'a\'b AND c'", "file:hashes.MD5 = 'x'"]
         )
 
+    def test_newline_ending_the_pattern(self):
+        # A pattern may end with a newline before its closing bracket: it
+        # stays with the last comparison, not a comparison of its own
+        pattern = "file:name = 'test.exe' AND file:hashes.MD5 = 'abcd'\n"
+        self.assertEqual(
+            _split(pattern),
+            ["file:name = 'test.exe'", "file:hashes.MD5 = 'abcd'\n"]
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
