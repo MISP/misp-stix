@@ -1,26 +1,46 @@
-[tool.poetry]
+[project]
 name = "misp-stix"
 version = "2026.10.12"
 description = "Python scripts used by MISP to export MISP format into STIX and to import STIX into MISP format."
-authors = ["Christian Studer <christian.studer@circl.lu>"]
-maintainers = ["Christian Studer <christian.studer@circl.lu>"]
+authors = [
+    {name = "Christian Studer", email = "christian.studer@circl.lu"}
+]
+maintainers = [
+    {name = "Christian Studer", email = "christian.studer@circl.lu"}
+]
 license = "BSD-3-Clause"
-repository = "https://github.com/MISP/misp-stix"
-documentation = "https://misp.github.io/misp-stix/"
 readme = "README.md"
+requires-python = ">=3.11,<3.16"
 
+dynamic = [ "classifiers" ]
+
+dependencies = [
+    "pymisp (>=3.0.0,<4.0.0)",
+    "stix (>=1.2.0.11,<2.0.0)",
+    "cybox (>=2.1.0.21,<3.0.0)",
+    "mixbox (>=1.0.5,<2.0.0)",
+    "maec (>=4.1.0.17,<5.0.0)",
+    "stix-edh (==1.0.3)",
+    "setuptools (>=83)",
+    "pycountry (>=26.2.16,<27.0.0)",
+    "stix2 (>=3.0.2,<4.0.0)"
+]
+
+[project.urls]
+repository = "https://github.com/MISP/misp-stix"
+issues = "https://github.com/MISP/misp-stix/issues"
+documentation = "https://misp.github.io/misp-stix/"
+
+[project.scripts]
+misp_stix_converter = "misp_stix_converter:main"
+
+[tool.poetry]
 classifiers = [
-    'License :: OSI Approved :: BSD License',
     'Development Status :: 5 - Production/Stable',
     'Environment :: Console',
     'Operating System :: POSIX :: Linux',
     'Intended Audience :: Science/Research',
     'Intended Audience :: Information Technology',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
-    'Programming Language :: Python :: 3.12',
-    'Programming Language :: Python :: 3.13',
-    'Programming Language :: Python :: 3.14',
     'Topic :: Security'
 ]
 
@@ -35,30 +55,11 @@ exclude = [
     "misp_stix_converter/data/STIX_2*"
 ]
 
-[tool.poetry.urls]
-"Source" = "https://github.com/MISP/misp-stix"
-"Bug Tracker" = "https://github.com/MISP/misp-stix/issues"
-
-[tool.poetry.scripts]
-misp_stix_converter = 'misp_stix_converter:main'
-
-[tool.poetry.dependencies]
-python = "^3.10"
-pymisp = "^2.5.34.1"
-stix = "^1.2.0.11"
-cybox = "^2.1.0.21"
-mixbox = "^1.0.5"
-maec = "^4.1.0.17"
-stix-edh = "1.0.3"
-setuptools = ">=83"
-pycountry = "^26.2.16"
-stix2 = "^3.0.2"
-
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.4.1"
 pytest = "^9.0.3"
 jsonschema = "^4.26.0"
 
 [build-system]
-requires = ["poetry_core>=1.2", "setuptools>=83"]
+requires = ["poetry-core>=2.0", "setuptools>=83"]
 build-backend = "poetry.core.masonry.api"
