@@ -1,6 +1,6 @@
 [project]
 name = "misp-stix"
-version = "2026.10.12"
+version = "2026.11.12"
 description = "Python scripts used by MISP to export MISP format into STIX and to import STIX into MISP format."
 authors = [
     {name = "Christian Studer", email = "christian.studer@circl.lu"}
