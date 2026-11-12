@@ -562,6 +562,24 @@ class TestSTIX2Import(TestSTIX):
         for text in (f'"{field}"', f'"{name}"', f'"{relation}"'):
             self.assertIn(text, reports[0])
 
+    def _check_unmapped_hashes(
+            self, misp_objects, hashes, object_id, warnings):
+        """A hash name no mapping knows keeps its value as a text attribute
+        under the name lowercased, reported once for each object holding it."""
+        for misp_object, stix_hashes in zip(misp_objects, hashes):
+            self.assertIn(
+                ('text', 'crc32', stix_hashes['CRC32']),
+                [
+                    (attribute.type, attribute.object_relation, attribute.value)
+                    for attribute in misp_object.attributes
+                ]
+            )
+        reports = self._reports_matching(warnings, 'Unknown hash type')
+        self.assertEqual(len(reports), len(misp_objects), reports)
+        for report in reports:
+            for text in ('"CRC32"', '"crc32"', object_id):
+                self.assertIn(text, report)
+
     def _check_unusable_producer_warning(self, producer, warnings):
         """A producer name a taxonomy tag has nothing left to carry from."""
         producer_warnings = self._reports_matching(

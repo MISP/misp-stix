@@ -3268,6 +3268,28 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             misp_object=file_object1, observable=file1
         )
 
+    def test_stix21_bundle_with_file_object_with_unmapped_hashes(self):
+        # A hash name outside the vocabulary is valid STIX: the file and its
+        # PE section keep it beside their other hashes
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_file_object_with_unmapped_hashes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        _, grouping, _, observable = bundle.objects
+        file_object, pe_object, section, *_ = self._check_misp_event_features_from_grouping(
+            self.parser.misp_event, grouping
+        )
+        self.assertEqual(
+            (file_object.name, pe_object.name, section.name),
+            ('file', 'pe', 'pe-section')
+        )
+        extension = observable.extensions['windows-pebinary-ext']
+        self._check_unmapped_hashes(
+            (file_object, section),
+            (observable.hashes, extension.sections[0].hashes),
+            observable.id, self.parser.warnings
+        )
+        self.assertEqual(dict(self.parser.errors), {})
+
     def test_stix21_bundle_with_identity_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_identity_objects()
         self.parser.load_stix_bundle(bundle)

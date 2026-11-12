@@ -16132,6 +16132,16 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_bundle_with_file_and_pe_observable_object(cls):
         return cls.__assemble_bundle(*_FILE_AND_PE_OBSERVABLE_OBJECT)
 
+    @classmethod
+    def get_bundle_with_file_and_pe_observable_object_with_unmapped_hashes(cls):
+        # A hash name outside the vocabulary, on the file and on a PE section
+        stix_objects = deepcopy(_FILE_AND_PE_OBSERVABLE_OBJECT)
+        observable = stix_objects[1]
+        observable['hashes']['CRC32'] = '4c2b1a7e'
+        extension = observable['extensions']['windows-pebinary-ext']
+        extension['sections'][0]['hashes']['CRC32'] = 'e3b0c442'
+        return cls.__assemble_bundle(*stix_objects)
+
     @staticmethod
     def __file_indicator_object(misp_value: Callable[[str], str]) -> dict:
         # The file Indicator, comparing its MISP values at the path

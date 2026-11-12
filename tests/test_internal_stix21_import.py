@@ -5589,6 +5589,28 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
+    def test_stix21_bundle_with_file_and_pe_observable_object_with_unmapped_hashes(self):
+        # A hash name outside the vocabulary is valid STIX: the file and its
+        # PE section keep it beside their other hashes
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_file_and_pe_observable_object_with_unmapped_hashes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        _, grouping, observed_data, observable, *_ = self._bundle_objects(bundle)
+        file_object, pe_object, section = self._check_misp_event_features_from_grouping(
+            self.parser.misp_event, grouping
+        )
+        self.assertEqual(
+            (file_object.name, pe_object.name, section.name),
+            ('file', 'pe', 'pe-section')
+        )
+        extension = observable.extensions['windows-pebinary-ext']
+        self._check_unmapped_hashes(
+            (file_object, section),
+            (observable.hashes, extension.sections[0].hashes),
+            observed_data.id, self.parser.warnings
+        )
+        self.assertEqual(dict(self.parser.errors), {})
+
     # The pe object and its sections the Nested Rooms fixture converts to,
     # file or not: each attribute with its `to_ids`
     _PE_NESTED_ROOMS_OBJECTS = (

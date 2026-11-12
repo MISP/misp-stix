@@ -9004,6 +9004,16 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_FILE_AND_PE_OBSERVABLE_OBJECT)
 
     @classmethod
+    def get_bundle_with_file_and_pe_observable_object_with_unmapped_hashes(cls):
+        # A hash name outside the vocabulary, on the file and on a PE section
+        stix_objects = deepcopy(_FILE_AND_PE_OBSERVABLE_OBJECT)
+        observable = stix_objects[0]['objects']['0']
+        observable['hashes']['CRC32'] = '4c2b1a7e'
+        extension = observable['extensions']['windows-pebinary-ext']
+        extension['sections'][0]['hashes']['CRC32'] = 'e3b0c442'
+        return cls.__assemble_bundle(*stix_objects)
+
+    @classmethod
     def get_bundle_with_file_indicator_object(cls):
         indicator = deepcopy(_FILE_INDICATOR_OBJECT)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:

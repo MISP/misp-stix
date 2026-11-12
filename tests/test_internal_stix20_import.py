@@ -3525,6 +3525,29 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             summary='File object with a Windows PE binary extension'
         )
 
+    def test_stix20_bundle_with_file_and_pe_observable_object_with_unmapped_hashes(self):
+        # A hash name outside the vocabulary is valid STIX: the file and its
+        # PE section keep it beside their other hashes
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_file_and_pe_observable_object_with_unmapped_hashes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        _, report, observed_data, *_ = bundle.objects
+        file_object, pe_object, section = self._check_misp_event_features(
+            self.parser.misp_event, report
+        )
+        self.assertEqual(
+            (file_object.name, pe_object.name, section.name),
+            ('file', 'pe', 'pe-section')
+        )
+        observable = observed_data.objects['0']
+        extension = observable.extensions['windows-pebinary-ext']
+        self._check_unmapped_hashes(
+            (file_object, section),
+            (observable.hashes, extension.sections[0].hashes),
+            observed_data.id, self.parser.warnings
+        )
+        self.assertEqual(dict(self.parser.errors), {})
+
     def test_stix20_bundle_with_file_indicator_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_file_indicator_object()
         self.parser.load_stix_bundle(bundle)

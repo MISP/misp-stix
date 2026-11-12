@@ -3445,6 +3445,17 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*observables)
 
     @classmethod
+    def get_bundle_with_file_object_with_unmapped_hashes(cls):
+        # A hash name outside the vocabulary, on the file and on a PE section
+        observed_data, observable = deepcopy(
+            [_FILE_OBJECTS[2], _FILE_OBJECTS[7]]
+        )
+        observable['hashes']['CRC32'] = '4c2b1a7e'
+        extension = observable['extensions']['windows-pebinary-ext']
+        extension['sections'][0]['hashes']['CRC32'] = 'e3b0c442'
+        return cls.__assemble_bundle(observed_data, observable)
+
+    @classmethod
     def get_bundle_with_identity_objects(cls):
         return cls.__assemble_bundle(*_IDENTITY_OBJECTS)
 
