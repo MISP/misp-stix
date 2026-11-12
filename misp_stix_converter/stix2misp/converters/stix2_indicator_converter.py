@@ -56,6 +56,11 @@ _PATTERN_FIELDS_TO_SKIP = (
 # escaped inside
 _PATTERN_STRING_RE = re.compile(r"'((?:[^'\\]|\\.)*)'")
 _PATTERN_ESCAPE_RE = re.compile(r"\\(['\\])")
+# A comparison of a pattern the export writes, up to the ` AND ` closing it:
+# a quoted string is read whole, so an ` AND ` inside a value splits nothing
+_PATTERN_COMPARISON_RE = re.compile(
+    r"((?:[^'\\]|\\.|'(?:[^'\\]|\\.)*')+?)(?: AND |\Z)"
+)
 # The object path of a comparison on a MISP value in the MISP property
 # extension: behind any reference step, at the top level of the extension or
 # in one of its Nested Rooms - the pe extension, a section of it, or a
@@ -3075,40 +3080,7 @@ class InternalSTIX2IndicatorConverter(
 
     @staticmethod
     def _split_pattern_on_and(pattern: str) -> list:
-        # Splits a STIX pattern on top-level ' AND ' separators, ignoring
-        # any ' AND ' that appears inside a quoted string value so a value
-        # such as 'evil AND you.exe' is not mistaken for two comparisons.
-        parts = []
-        buffer = []
-        in_string = False
-        index = 0
-        length = len(pattern)
-        while index < length:
-            character = pattern[index]
-            if in_string:
-                if character == '\\' and pattern[index + 1:index + 2] in ("'", '\\'):
-                    buffer.append(pattern[index:index + 2])
-                    index += 2
-                    continue
-                if character == "'":
-                    in_string = False
-                buffer.append(character)
-                index += 1
-                continue
-            if character == "'":
-                in_string = True
-                buffer.append(character)
-                index += 1
-                continue
-            if pattern[index:index + 5] == ' AND ':
-                parts.append(''.join(buffer))
-                buffer = []
-                index += 5
-                continue
-            buffer.append(character)
-            index += 1
-        parts.append(''.join(buffer))
-        return parts
+        return _PATTERN_COMPARISON_RE.findall(pattern)
 
     @staticmethod
     def _get_contained_value(first_value: str, second_value: str) -> tuple[str]:
