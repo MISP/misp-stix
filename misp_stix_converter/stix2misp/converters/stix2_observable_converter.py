@@ -206,9 +206,30 @@ class STIX2ObservableConverter(STIX2Converter):
         else:
             observable['misp_object'] = [observable['misp_object'], misp_object]
 
-    # Errors handling
-    def _hash_type_error(self, hash_type: str):
-        self.main_parser._add_error(f'Wrong hash_type: {hash_type}')
+    def _hash_attribute_mapping(
+            self, hash_type: str, object_id: str,
+            mapping: Optional[str] = 'file') -> dict:
+        """Pick the MISP attribute a hash of an observable maps to.
+
+        A hash name outside the vocabulary is valid STIX, so a name the
+        mapping table does not know keeps its value as a text attribute under
+        the name lowercased, and the loss of the hash type is reported.
+
+        :param hash_type: the hash name, as the `hashes` dictionary keys it
+        :param object_id: where the hash is read, for the warning: the STIX
+            object id, followed by the PE section path for a section hash
+        :param mapping: the hashes mapping table to read
+        :return: the `type` and `object_relation` the attribute takes
+        """
+        hashes_mapping = getattr(self._mapping, f'{mapping}_hashes_mapping')
+        attribute = hashes_mapping(hash_type)
+        if attribute is not None:
+            return attribute
+        relation = hash_type.lower()
+        self.main_parser._unknown_hash_type_warning(
+            hash_type, object_id, relation
+        )
+        return {'type': 'text', 'object_relation': relation}
 
 
 class ExternalSTIX2ObservableMapping(
@@ -419,16 +440,14 @@ class ExternalSTIX2ObservableConverter(
             self, indicator_ref: set | None, observable_type: str,
             hash_type: str, value: str, object_id: str,
             mapping: Optional[str] = 'file') -> dict:
-        attribute = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
-        if attribute is not None:
-            return self._populate_object_attribute(
-                value, attribute,
-                self._handle_object_id(
-                    indicator_ref, observable_type, value,
-                    f"{object_id} - {attribute['object_relation']}"
-                )
+        attribute = self._hash_attribute_mapping(hash_type, object_id, mapping)
+        return self._populate_object_attribute(
+            value, attribute,
+            self._handle_object_id(
+                indicator_ref, observable_type, value,
+                f"{object_id} - {attribute['object_relation']}"
             )
-        self._hash_type_error(hash_type)
+        )
 
     def _handle_object_attributes(
             self, observable: _OBSERVABLE_TYPING, mapping: dict,
@@ -1017,15 +1036,17 @@ class InternalSTIX2ObservableConverter(
         )
 
     def _handle_hash_attribute(self, hash_type: str, value: str, object_id: str,
-                               mapping: Optional[str] = 'file') -> dict:
-        mapping = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
-        if mapping is not None:
-            return self._populate_object_attribute(
-                value, mapping, self._handle_object_id(
-                    value, object_id, mapping['object_relation']
-                )
+                               mapping: Optional[str] = 'file',
+                               feature: Optional[str] = None) -> dict:
+        attribute = self._hash_attribute_mapping(
+            hash_type, feature or object_id, mapping
+        )
+        return self._populate_object_attribute(
+            value, attribute, self._handle_object_id(
+                value, object_id, attribute['object_relation'],
+                feature=feature
             )
-        self._hash_type_error(hash_type)
+        )
 
     def _handle_object_attributes(self, mapping: dict, values: Any,
                                   object_id: str) -> Iterator[dict]:
@@ -1559,16 +1580,9 @@ class InternalSTIX2ObservableConverter(
                 )
         if 'hashes' in section:
             for hash_type, hash_value in section['hashes'].items():
-                mapping = self._mapping.file_hashes_mapping(hash_type)
-                if mapping is not None:
-                    yield self._populate_object_attribute(
-                        hash_value, mapping, self._handle_object_id(
-                            hash_value, object_id, mapping['object_relation'],
-                            feature=feature
-                        )
-                    )
-                    continue
-                self._hash_type_error(hash_type)
+                yield self._handle_hash_attribute(
+                    hash_type, hash_value, object_id, feature=feature
+                )
 
     def _parse_process_observable(self, observable: _PROCESS_TYPING,
                                   object_id: str) -> Iterator[dict]:

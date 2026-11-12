@@ -87,9 +87,6 @@ class STIX2ObservedDataConverter(metaclass=ABCMeta):
             observable['misp_object'] = [observable['misp_object'], misp_object]
 
     # Errors handling
-    def _hash_type_error(self, hash_type: str):
-        self.main_parser._add_error(f'Wrong hash_type: {hash_type}')
-
     def _missing_observable_object_error(
             self, observed_data_id: str, observable_object_id: str):
         # a reference surfaced the loss and this error names it: the

@@ -1630,6 +1630,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             f'"{relation}".'
         )
 
+    def _unknown_hash_type_warning(
+            self, hash_type: str, object_id: str, relation: str):
+        self._add_warning(
+            f'Unknown hash type "{hash_type}" read from {object_id}: '
+            'the import mapping knows no attribute type for it, so it is '
+            'imported as a text attribute with the object relation '
+            f'"{relation}".'
+        )
+
     def _unknown_original_names_warning(
             self, object_id: str, names: list,
             path: str = _ORIGINAL_NAMES_PROPERTY):
