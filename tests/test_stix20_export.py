@@ -138,7 +138,7 @@ class TestSTIX20InputContract(TestSTIX20GenericExport):
             for message in messages
         )
         self.assertIn(
-            'Error with the Orgc field missing its uuidvalue.', errors
+            'Error with the Orgc field missing its uuid value.', errors
         )
 
     @staticmethod
