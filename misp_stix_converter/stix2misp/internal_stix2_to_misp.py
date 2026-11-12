@@ -12,6 +12,7 @@ from .converters import (
     InternalSTIX2ObservableConverter, InternalSTIX2ObservedDataConverter,
     InternalSTIX2ThreatActorConverter, InternalSTIX2ToolConverter,
     InternalSTIX2VulnerabilityConverter, STIX2CustomObjectConverter)
+from .converters.stix2converter import _as_custom_syntax
 from .stix2_to_misp import (
     STIX2toMISPParser, _BUNDLE_TYPING, _NOTE_TYPING, _OBSERVABLE_TYPING,
     _OPINION_TYPING, _SDO_TYPING)
@@ -22,7 +23,7 @@ from stix2.v20.sdo import CustomObject as CustomObject_v20
 from stix2.v20.sro import Sighting as Sighting_v20
 from stix2.v21.sdo import CustomObject as CustomObject_v21
 from stix2.v21.sro import Sighting as Sighting_v21
-from typing import Iterator, Optional, Union
+from typing import Any, Iterator, Optional, Union
 
 _STORAGE_VARIABLE_NAMES = ('_indicator', '_observed_data')
 
@@ -47,6 +48,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         'location': InternalSTIX2LocationConverter,
         'malware': InternalSTIX2MalwareConverter,
         'malware-analysis': InternalSTIX2MalwareAnalysisConverter,
+        'misp-attribute': STIX2CustomObjectConverter,
+        'misp-galaxy-cluster': STIX2CustomObjectConverter,
+        'misp-object': STIX2CustomObjectConverter,
         'note': InternalSTIX2NoteConverter,
         'observable': InternalSTIX2ObservableConverter,
         'observed-data': InternalSTIX2ObservedDataConverter,
@@ -124,27 +128,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._custom_object = {custom_object['id']: custom_object}
 
     def _load_custom_opinion(self, custom_object: _CUSTOM_TYPING):
-        sighting = MISPSighting()
-        sighting_args = {
-            'date_sighting': self._timestamp_from_stix_date(
-                custom_object['modified']
-            ),
-            'type': '1'
-        }
-        if 'x_misp_source' in custom_object:
-            sighting_args['source'] = custom_object['x_misp_source']
-        if 'x_misp_author' in custom_object:
-            sighting_args['Organisation'] = {
-                'uuid': custom_object['x_misp_author_ref'].split('--')[1],
-                'name': custom_object['x_misp_author']
-            }
-        sighting.from_dict(**sighting_args)
+        # Parsed with the sightings, once every identity its author reference
+        # may name is loaded
         object_ref = self._sanitise_uuid(custom_object['object_ref'])
         try:
-            self._sighting['custom_opinion'][object_ref].append(sighting)
+            self._sighting['custom_opinion'][object_ref].append(custom_object)
         except AttributeError:
             self._sighting = defaultdict(lambda: defaultdict(list))
-            self._sighting['custom_opinion'][object_ref].append(sighting)
+            self._sighting['custom_opinion'][object_ref].append(custom_object)
 
     def _load_note(self, note: _NOTE_TYPING):
         if 'misp:context-layer="Analyst Note"' in note.get('labels', []):
@@ -166,6 +157,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._observable = {observable['id']: observable}
 
     def _load_opinion(self, opinion: _OPINION_TYPING):
+        # MISP values are read here, before any converter runs: an Analyst
+        # Opinion's level now, the author of the Opinion a sighting is written
+        # as when the sightings are parsed, from the Opinion as presented here
+        opinion = _as_custom_syntax(opinion, self)
         if 'misp:context-layer="Analyst Opinion"' in opinion.get('labels', []):
             opinion_dict = {
                 'opinion': opinion['x_misp_opinion'],
@@ -198,15 +193,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute_uuid = attribute.uuid
         if attribute_uuid in self.replacement_uuids:
             attribute_uuid = self.replacement_uuids[attribute_uuid]
-        if attribute_uuid in self._sighting.get('sighting', {}):
-            for sighting in self._sighting['sighting'][attribute_uuid]:
-                attribute.add_sighting(self._parse_sighting(sighting))
-        if attribute_uuid in self._sighting.get('opinion', {}):
-            for opinion in self._sighting['opinion'][attribute_uuid]:
-                attribute.add_sighting(self._parse_opinion(opinion))
-        elif attribute_uuid in self._sighting.get('custom_opinion', {}):
-            for sighting in self._sighting['custom_opinion'][attribute_uuid]:
-                attribute.add_sighting(sighting)
+        for misp_sighting in self._parse_record_sightings(attribute_uuid):
+            attribute.add_sighting(misp_sighting)
 
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
@@ -235,20 +223,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         object_uuid = misp_object.uuid
         if object_uuid in self.replacement_uuids:
             object_uuid = self.replacement_uuids[object_uuid]
-        if object_uuid in self._sighting.get('sighting', {}):
-            for sighting in self._sighting['sighting'][object_uuid]:
-                misp_sighting = self._parse_sighting(sighting)
-                for attribute in misp_object.attributes:
-                    attribute.add_sighting(misp_sighting)
-        if object_uuid in self._sighting.get('opinion', {}):
-            for sighting in self._sighting['opinion'][object_uuid]:
-                misp_sighting = self._parse_opinion(sighting)
-                for attribute in misp_object.attributes:
-                    attribute.add_sighting(misp_sighting)
-        elif misp_object.uuid in self._sighting.get('custom_opinion', {}):
-            for sighting in self._sighting['custom_opinion'][object_uuid]:
-                for attribute in misp_object.attributes:
-                    attribute.add_sighting(sighting)
+        for misp_sighting in self._parse_record_sightings(object_uuid):
+            for attribute in misp_object.attributes:
+                attribute.add_sighting(misp_sighting)
 
     def _handle_tags_from_stix_fields(
             self, misp_layer: MISPAttribute | MISPEvent | MISPObject,
@@ -261,8 +238,31 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 continue
             yield label
 
-    def _parse_opinion(self, opinion: _OPINION_TYPING) -> MISPSighting:
+    def _parse_custom_opinion(
+            self, custom_opinion: _CUSTOM_TYPING) -> Optional[MISPSighting]:
+        sighting_args = {
+            'date_sighting': self._timestamp_from_stix_date(
+                custom_opinion['modified']
+            ),
+            'type': '1'
+        }
+        if 'x_misp_source' in custom_opinion:
+            sighting_args['source'] = custom_opinion['x_misp_source']
+        if any(field in custom_opinion
+               for field in ('x_misp_author', 'x_misp_author_ref')):
+            organisation = self._parse_opinion_organisation(
+                custom_opinion['id'], custom_opinion.get('x_misp_author_ref'),
+                custom_opinion.get('x_misp_author')
+            )
+            if organisation is None:
+                return None
+            sighting_args['Organisation'] = organisation
         misp_sighting = MISPSighting()
+        misp_sighting.from_dict(**sighting_args)
+        return misp_sighting
+
+    def _parse_opinion(
+            self, opinion: _OPINION_TYPING) -> Optional[MISPSighting]:
         sighting_args = {
             'date_sighting': self._timestamp_from_stix_date(
                 opinion['modified']
@@ -272,12 +272,76 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if 'x_misp_source' in opinion:
             sighting_args['source'] = opinion['x_misp_source']
         if 'x_misp_author_ref' in opinion:
-            identity = self._identity[opinion['x_misp_author_ref']]
-            sighting_args['Organisation'] = {
+            authors = opinion.get('authors')
+            organisation = self._parse_opinion_organisation(
+                opinion['id'], opinion['x_misp_author_ref'],
+                authors[0] if authors else None
+            )
+            if organisation is None:
+                return None
+            sighting_args['Organisation'] = organisation
+        misp_sighting = MISPSighting()
+        misp_sighting.from_dict(**sighting_args)
+        return misp_sighting
+
+    def _parse_opinion_organisation(
+            self, opinion_id: str, author_ref: Any,
+            author: Optional[str]) -> Optional[dict]:
+        # The organisation of the sighting an Opinion is written for: the
+        # identity its author reference names, else the uuid of that
+        # reference with the author name the Opinion carries itself. With
+        # neither, the Opinion is dropped.
+        if not isinstance(author_ref, str):
+            self._opinion_author_ref_error(opinion_id, author_ref)
+            return None
+        identity = getattr(self, '_identity', {}).get(author_ref)
+        if identity is not None:
+            return {
                 'uuid': self._sanitise_uuid(identity['id']),
                 'name': identity['name']
             }
-        misp_sighting.from_dict(**sighting_args)
+        if author is None:
+            self._opinion_author_error(opinion_id, author_ref)
+            return None
+        self._opinion_author_warning(opinion_id, author_ref, author)
+        return {'uuid': self._sanitise_uuid(author_ref), 'name': author}
+
+    def _parse_record_sightings(self, record_uuid: str) -> list:
+        # The sightings of an attribute or object: each one with no
+        # organisation to give is reported and dropped as it is parsed, and
+        # costs nothing else
+        misp_sightings = [
+            self._parse_sighting(sighting) for sighting
+            in self._sighting.get('sighting', {}).get(record_uuid, ())
+        ]
+        if record_uuid in self._sighting.get('opinion', {}):
+            misp_sightings.extend(
+                self._parse_opinion(opinion)
+                for opinion in self._sighting['opinion'][record_uuid]
+            )
+        else:
+            misp_sightings.extend(
+                self._parse_custom_opinion(custom_opinion)
+                for custom_opinion in self._sighting.get(
+                    'custom_opinion', {}
+                ).get(record_uuid, ())
+            )
+        return [
+            misp_sighting for misp_sighting in misp_sightings
+            if misp_sighting is not None
+        ]
+
+    def _parse_sighting(
+            self, sighting: _SIGHTING_TYPING) -> Optional[MISPSighting]:
+        # MISP writes a sighting with no Organisation with no
+        # where_sighted_refs
+        if 'where_sighted_refs' not in sighting:
+            return self._create_sighting(sighting)
+        misp_sighting = super()._parse_sighting(sighting)
+        if misp_sighting is None:
+            self._sighting_identity_error(
+                sighting['id'], sighting['where_sighted_refs']
+            )
         return misp_sighting
 
     ############################################################################

@@ -73,9 +73,12 @@ Since not all the fields of the galaxies and their clusters are exported into ST
                 "url": "https://attack.mitre.org/techniques/T1134"
             }
         ],
-        "x_misp_mitre_platforms": [
-            "Windows"
-        ]
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "mitre_platforms": "Windows"
+            }
+        }
     }
     ```
 
@@ -173,15 +176,30 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "misp:galaxy-name=\"Country\"",
             "misp:galaxy-type=\"country\""
         ],
-        "x_misp_capital": "Stockholm",
-        "x_misp_continent": "EU",
-        "x_misp_currencycode": "SEK",
-        "x_misp_currencyname": "Krona",
-        "x_misp_iso": "SE",
-        "x_misp_iso3": "SWE",
-        "x_misp_languages": "sv-SE,se,sma,fi-SE",
-        "x_misp_population": "9828655",
-        "x_misp_tld": ".se"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "capital": "Stockholm",
+                "original_names": {
+                    "capital": "Capital",
+                    "continent": "Continent",
+                    "currencycode": "CurrencyCode",
+                    "currencyname": "CurrencyName",
+                    "iso": "ISO",
+                    "iso3": "ISO3",
+                    "languages": "Languages",
+                    "population": "Population"
+                },
+                "continent": "EU",
+                "currencycode": "SEK",
+                "currencyname": "Krona",
+                "iso": "SE",
+                "iso3": "SWE",
+                "languages": "sv-SE,se,sma,fi-SE",
+                "population": "9828655",
+                "tld": ".se"
+            }
+        }
     }
     ```
 
@@ -391,9 +409,12 @@ Since not all the fields of the galaxies and their clusters are exported into ST
                 "url": "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report.pdf"
             }
         ],
-        "x_misp_mitre_platforms": [
-            "Windows"
-        ]
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "mitre_platforms": "Windows"
+            }
+        }
     }
     ```
 
@@ -451,23 +472,28 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "misp:galaxy-name=\"Regions UN M49\"",
             "misp:galaxy-type=\"region\""
         ],
-        "x_misp_subregion": [
-            "830 - Channel Islands",
-            "248 - \u00c5land Islands",
-            "208 - Denmark",
-            "233 - Estonia",
-            "234 - Faroe Islands",
-            "246 - Finland",
-            "352 - Iceland",
-            "372 - Ireland",
-            "833 - Isle of Man",
-            "428 - Latvia",
-            "440 - Lithuania",
-            "578 - Norway",
-            "744 - Svalbard and Jan Mayen Islands",
-            "752 - Sweden",
-            "826 - United Kingdom of Great Britain and Northern Ireland"
-        ]
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "subregion": [
+                    "830 - Channel Islands",
+                    "248 - \u00c5land Islands",
+                    "208 - Denmark",
+                    "233 - Estonia",
+                    "234 - Faroe Islands",
+                    "246 - Finland",
+                    "352 - Iceland",
+                    "372 - Ireland",
+                    "833 - Isle of Man",
+                    "428 - Latvia",
+                    "440 - Lithuania",
+                    "578 - Norway",
+                    "744 - Svalbard and Jan Mayen Islands",
+                    "752 - Sweden",
+                    "826 - United Kingdom of Great Britain and Northern Ireland"
+                ]
+            }
+        }
     }
     ```
 
@@ -1534,9 +1560,15 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "misp:galaxy-name=\"Threat Actor\"",
             "misp:galaxy-type=\"threat-actor\""
         ],
-        "x_misp_cfr_type_of_incident": [
-            "Denial of service"
-        ]
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "cfr_type_of_incident": "Denial of service",
+                "original_names": {
+                    "cfr_type_of_incident": "cfr-type-of-incident"
+                }
+            }
+        }
     }
     ```
 
@@ -1620,9 +1652,12 @@ Since not all the fields of the galaxies and their clusters are exported into ST
                 "url": "https://technet.microsoft.com/en-us/library/cc771049.aspx"
             }
         ],
-        "x_misp_mitre_platforms": [
-            "Windows"
-        ]
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "mitre_platforms": "Windows"
+            }
+        }
     }
     ```
 

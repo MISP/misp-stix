@@ -5,97 +5,142 @@
             "meta-category": "financial",
             "description": "An object describing bank account information based on account description from goAML 4.0",
             "uuid": "695e7924-2518-4054-9cea-f82853d37410",
-            "timestamp": "1603642920",
             "Attribute": [
+                {
+                    "uuid": "8acaad62-227a-4988-96e7-4586847421a2",
+                    "object_relation": "iban",
+                    "value": "LU1234567890ABCDEF1234567890",
+                    "type": "iban",
+                    "to_ids": true,
+                    "category": "Financial fraud"
+                },
+                {
+                    "uuid": "c53382a1-cf4b-4901-a890-1611dbcc7101",
+                    "object_relation": "swift",
+                    "value": "CTBKLUPP",
+                    "type": "bic",
+                    "to_ids": true,
+                    "category": "Financial fraud"
+                },
+                {
+                    "uuid": "c7c9f782-582f-4218-af79-e7901237e468",
+                    "object_relation": "account",
+                    "value": "1234567890",
+                    "type": "bank-account-nr",
+                    "to_ids": true,
+                    "category": "Financial fraud"
+                },
+                {
+                    "uuid": "c206e7b4-7333-40a3-bf02-9647d32f9df2",
+                    "object_relation": "institution-name",
+                    "value": "Central Bank",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "f388d5e6-e4eb-401d-8ea4-efdd519659a1",
+                    "object_relation": "account-name",
+                    "value": "John Smith's bank account",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "c1ea07c0-a855-4c47-9df2-4acc0d3c4e63",
+                    "object_relation": "beneficiary",
+                    "value": "John Smith",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "5421d979-9af5-45ae-8c81-5005a4d7fc55",
+                    "object_relation": "currency-code",
+                    "value": "EUR",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
+                }
+            ],
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "type": "misp-object",
+            "spec_version": "2.1",
+            "id": "misp-object--695e7924-2518-4054-9cea-f82853d37410",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "bank-account",
+            "meta_category": "financial",
+            "attributes": [
                 {
                     "type": "iban",
                     "object_relation": "iban",
                     "value": "LU1234567890ABCDEF1234567890",
+                    "category": "Financial fraud",
+                    "uuid": "8acaad62-227a-4988-96e7-4586847421a2",
                     "to_ids": true
                 },
                 {
                     "type": "bic",
                     "object_relation": "swift",
-                    "value": "CTBKLUPP"
+                    "value": "CTBKLUPP",
+                    "category": "Financial fraud",
+                    "uuid": "c53382a1-cf4b-4901-a890-1611dbcc7101",
+                    "to_ids": true
                 },
                 {
                     "type": "bank-account-nr",
                     "object_relation": "account",
-                    "value": "1234567890"
+                    "value": "1234567890",
+                    "category": "Financial fraud",
+                    "uuid": "c7c9f782-582f-4218-af79-e7901237e468",
+                    "to_ids": true
                 },
                 {
                     "type": "text",
                     "object_relation": "institution-name",
-                    "value": "Central Bank"
+                    "value": "Central Bank",
+                    "category": "Other",
+                    "uuid": "c206e7b4-7333-40a3-bf02-9647d32f9df2",
+                    "to_ids": false
                 },
                 {
                     "type": "text",
                     "object_relation": "account-name",
-                    "value": "John Smith's bank account"
+                    "value": "John Smith's bank account",
+                    "category": "Other",
+                    "uuid": "f388d5e6-e4eb-401d-8ea4-efdd519659a1",
+                    "to_ids": false
                 },
                 {
                     "type": "text",
                     "object_relation": "beneficiary",
-                    "value": "John Smith"
+                    "value": "John Smith",
+                    "category": "Other",
+                    "uuid": "c1ea07c0-a855-4c47-9df2-4acc0d3c4e63",
+                    "to_ids": false
                 },
                 {
                     "type": "text",
                     "object_relation": "currency-code",
-                    "value": "EUR"
+                    "value": "EUR",
+                    "category": "Other",
+                    "uuid": "5421d979-9af5-45ae-8c81-5005a4d7fc55",
+                    "to_ids": false
                 }
-            ]
-        },
-        "STIX": {
-            "type": "x-misp-object",
-            "spec_version": "2.1",
-            "id": "x-misp-object--695e7924-2518-4054-9cea-f82853d37410",
-            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
+            ],
             "labels": [
-                "misp:category=\"financial\"",
-                "misp:name=\"bank-account\""
+                "misp:name=\"bank-account\"",
+                "misp:meta-category=\"financial\""
             ],
-            "x_misp_attributes": [
-                {
-                    "object_relation": "iban",
-                    "to_ids": true,
-                    "type": "iban",
-                    "value": "LU1234567890ABCDEF1234567890"
-                },
-                {
-                    "object_relation": "swift",
-                    "type": "bic",
-                    "value": "CTBKLUPP"
-                },
-                {
-                    "object_relation": "account",
-                    "type": "bank-account-nr",
-                    "value": "1234567890"
-                },
-                {
-                    "object_relation": "institution-name",
-                    "type": "text",
-                    "value": "Central Bank"
-                },
-                {
-                    "object_relation": "account-name",
-                    "type": "text",
-                    "value": "John Smith's bank account"
-                },
-                {
-                    "object_relation": "beneficiary",
-                    "type": "text",
-                    "value": "John Smith"
-                },
-                {
-                    "object_relation": "currency-code",
-                    "type": "text",
-                    "value": "EUR"
+            "extensions": {
+                "extension-definition--a093107b-933f-4d72-a9a6-6d7318adadda": {
+                    "extension_type": "new-sdo"
                 }
-            ],
-            "x_misp_meta_category": "financial",
-            "x_misp_name": "bank-account"
+            }
         }
     },
     "btc-wallet": {
@@ -104,144 +149,176 @@
             "meta-category": "financial",
             "description": "An object to describe a Bitcoin wallet.",
             "uuid": "6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
-            "timestamp": "1603642920",
             "Attribute": [
+                {
+                    "uuid": "b25b2538-36e3-4418-a42a-440eed163ffa",
+                    "object_relation": "wallet-address",
+                    "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+                    "type": "btc",
+                    "to_ids": true,
+                    "category": "Financial fraud"
+                },
+                {
+                    "uuid": "dd142f6f-d8a0-4143-92b3-3b50e7cb1c51",
+                    "object_relation": "balance_BTC",
+                    "value": "2.25036953",
+                    "type": "float",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "7fd93652-5713-4390-bd15-94ec77e9c6d1",
+                    "object_relation": "BTC_received",
+                    "value": "3.35036953",
+                    "type": "float",
+                    "to_ids": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "c5c0532c-2a63-4f40-86a7-df27914a177e",
+                    "object_relation": "BTC_sent",
+                    "value": "1.1",
+                    "type": "float",
+                    "to_ids": false,
+                    "category": "Other"
+                }
+            ],
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "type": "misp-object",
+            "spec_version": "2.1",
+            "id": "misp-object--6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "btc-wallet",
+            "meta_category": "financial",
+            "attributes": [
                 {
                     "type": "btc",
                     "object_relation": "wallet-address",
                     "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+                    "category": "Financial fraud",
+                    "uuid": "b25b2538-36e3-4418-a42a-440eed163ffa",
                     "to_ids": true
                 },
                 {
                     "type": "float",
                     "object_relation": "balance_BTC",
-                    "value": "2.25036953"
+                    "value": "2.25036953",
+                    "category": "Other",
+                    "uuid": "dd142f6f-d8a0-4143-92b3-3b50e7cb1c51",
+                    "to_ids": false
                 },
                 {
                     "type": "float",
                     "object_relation": "BTC_received",
-                    "value": "3.35036953"
+                    "value": "3.35036953",
+                    "category": "Other",
+                    "uuid": "7fd93652-5713-4390-bd15-94ec77e9c6d1",
+                    "to_ids": false
                 },
                 {
                     "type": "float",
                     "object_relation": "BTC_sent",
-                    "value": "1.1"
+                    "value": "1.1",
+                    "category": "Other",
+                    "uuid": "c5c0532c-2a63-4f40-86a7-df27914a177e",
+                    "to_ids": false
                 }
-            ]
-        },
-        "STIX": {
-            "type": "x-misp-object",
-            "spec_version": "2.1",
-            "id": "x-misp-object--6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
-            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
+            ],
             "labels": [
-                "misp:category=\"financial\"",
-                "misp:name=\"btc-wallet\""
+                "misp:name=\"btc-wallet\"",
+                "misp:meta-category=\"financial\""
             ],
-            "x_misp_attributes": [
-                {
-                    "object_relation": "wallet-address",
-                    "to_ids": true,
-                    "type": "btc",
-                    "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE"
-                },
-                {
-                    "object_relation": "balance_BTC",
-                    "type": "float",
-                    "value": "2.25036953"
-                },
-                {
-                    "object_relation": "BTC_received",
-                    "type": "float",
-                    "value": "3.35036953"
-                },
-                {
-                    "object_relation": "BTC_sent",
-                    "type": "float",
-                    "value": "1.1"
+            "extensions": {
+                "extension-definition--a093107b-933f-4d72-a9a6-6d7318adadda": {
+                    "extension_type": "new-sdo"
                 }
-            ],
-            "x_misp_meta_category": "financial",
-            "x_misp_name": "btc-wallet"
+            }
         }
     },
-    "person": {
+    "report": {
         "MISP": {
-            "name": "person",
+            "name": "report",
             "meta-category": "misc",
-            "description": "An object which describes a person or an identity.",
-            "uuid": "868037d5-d804-4f1d-8016-f296361f9c68",
-            "timestamp": "1603642920",
+            "description": "Metadata used to generate an executive level report",
+            "uuid": "3e76898a-fcb1-485b-ac24-d450fe8c54bc",
             "Attribute": [
                 {
-                    "type": "first-name",
-                    "object_relation": "first-name",
-                    "value": "John"
+                    "uuid": "11798cf8-1f53-448d-b424-e0bd7402492c",
+                    "object_relation": "summary",
+                    "value": "It is compromised",
+                    "type": "text",
+                    "category": "Other",
+                    "to_ids": false
                 },
                 {
-                    "type": "last-name",
-                    "object_relation": "last-name",
-                    "value": "Smith"
+                    "uuid": "84a5575e-bbe4-4a55-a75d-c4a91b0d1e23",
+                    "object_relation": "type",
+                    "value": "Report",
+                    "type": "text",
+                    "to_ids": false,
+                    "category": "Other"
                 },
                 {
-                    "type": "nationality",
-                    "object_relation": "nationality",
-                    "value": "USA"
-                },
-                {
-                    "type": "passport-number",
-                    "object_relation": "passport-number",
-                    "value": "ABA9875413"
-                },
-                {
-                    "type": "phone-number",
-                    "object_relation": "phone-number",
-                    "value": "0123456789"
+                    "data": "VGhyZWF0IFJlcG9ydAoKSXQgaXMgY29tcHJvbWlzZWQK",
+                    "uuid": "5742717c-7689-4440-af20-3cb44edb45cf",
+                    "object_relation": "report-file(s)",
+                    "value": "report.md",
+                    "type": "attachment",
+                    "to_ids": false,
+                    "category": "External analysis"
                 }
-            ]
+            ],
+            "timestamp": "1603642920"
         },
         "STIX": {
-            "type": "x-misp-object",
+            "type": "misp-object",
             "spec_version": "2.1",
-            "id": "x-misp-object--868037d5-d804-4f1d-8016-f296361f9c68",
+            "id": "misp-object--3e76898a-fcb1-485b-ac24-d450fe8c54bc",
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "labels": [
-                "misp:category=\"misc\"",
-                "misp:name=\"person\""
-            ],
-            "x_misp_attributes": [
+            "name": "report",
+            "meta_category": "misc",
+            "attributes": [
                 {
-                    "object_relation": "first-name",
-                    "type": "first-name",
-                    "value": "John"
+                    "type": "text",
+                    "object_relation": "summary",
+                    "value": "It is compromised",
+                    "category": "Other",
+                    "uuid": "11798cf8-1f53-448d-b424-e0bd7402492c",
+                    "to_ids": false
                 },
                 {
-                    "object_relation": "last-name",
-                    "type": "last-name",
-                    "value": "Smith"
+                    "type": "text",
+                    "object_relation": "type",
+                    "value": "Report",
+                    "category": "Other",
+                    "uuid": "84a5575e-bbe4-4a55-a75d-c4a91b0d1e23",
+                    "to_ids": false
                 },
                 {
-                    "object_relation": "nationality",
-                    "type": "nationality",
-                    "value": "USA"
-                },
-                {
-                    "object_relation": "passport-number",
-                    "type": "passport-number",
-                    "value": "ABA9875413"
-                },
-                {
-                    "object_relation": "phone-number",
-                    "type": "phone-number",
-                    "value": "0123456789"
+                    "type": "attachment",
+                    "value": "report.md",
+                    "object_relation": "report-file",
+                    "category": "External analysis",
+                    "uuid": "5742717c-7689-4440-af20-3cb44edb45cf",
+                    "to_ids": false,
+                    "data": "VGhyZWF0IFJlcG9ydAoKSXQgaXMgY29tcHJvbWlzZWQK"
                 }
             ],
-            "x_misp_meta_category": "misc",
-            "x_misp_name": "person"
+            "labels": [
+                "misp:name=\"report\"",
+                "misp:meta-category=\"misc\""
+            ],
+            "extensions": {
+                "extension-definition--a093107b-933f-4d72-a9a6-6d7318adadda": {
+                    "extension_type": "new-sdo"
+                }
+            }
         }
     }
 }

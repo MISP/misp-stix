@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from ._test_stix import (
+    MISP_ATTRIBUTE_EXTENSION_ID, MISP_GALAXY_CLUSTER_EXTENSION_ID,
+    MISP_OBJECT_EXTENSION_ID, MISP_PROJECT_IDENTITY_ID,
+    MISP_PROPERTY_EXTENSION_ID, packaged_misp_extension)
 from ._test_stix_import import (
     SMUGGLING_PRODUCER, SMUGGLING_TAG_VALUE, TestSTIX2Bundles, UUIDv4)
 from base64 import b64encode
 from copy import deepcopy
+import json
 from pathlib import Path
 from stix2.parsing import dict_to_stix2
 from uuid import uuid5
@@ -1285,6 +1290,128 @@ _IP_ADDRESS_ATTRIBUTES = [
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2024-10-25T16:22:00Z"
+    }
+]
+_CUSTOM_TYPES_IN_BOTH_SYNTAXES = [
+    {
+        "type": "x-misp-attribute",
+        "spec_version": "2.1",
+        "id": "x-misp-attribute--3e773498-ff2d-4c19-8b3e-257136fa428b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:type="btc"', 'misp:category="Financial fraud"'],
+        "x_misp_category": "Financial fraud",
+        "x_misp_type": "btc",
+        "x_misp_value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE"
+    },
+    {
+        "type": "misp-attribute",
+        "spec_version": "2.1",
+        "id": "misp-attribute--3e773498-ff2d-4c19-8b3e-257136fa428b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:type="btc"', 'misp:category="Financial fraud"'],
+        "extensions": {
+            MISP_ATTRIBUTE_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "attribute_type": "btc",
+        "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+        "category": "Financial fraud",
+        "to_ids": True
+    },
+    {
+        "type": "x-misp-object",
+        "spec_version": "2.1",
+        "id": "x-misp-object--a6710a58-7739-415f-9efc-556c43f0209b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:name="btc-wallet"', 'misp:meta-category="financial"'],
+        "x_misp_attributes": [
+            {
+                "type": "btc",
+                "object_relation": "wallet-address",
+                "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+                "to_ids": True
+            }
+        ],
+        "x_misp_meta_category": "financial",
+        "x_misp_name": "btc-wallet"
+    },
+    {
+        "type": "misp-object",
+        "spec_version": "2.1",
+        "id": "misp-object--a6710a58-7739-415f-9efc-556c43f0209b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:name="btc-wallet"', 'misp:meta-category="financial"'],
+        "extensions": {
+            MISP_OBJECT_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "name": "btc-wallet",
+        "meta_category": "financial",
+        "attributes": [
+            {
+                "type": "btc",
+                "object_relation": "wallet-address",
+                "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+                "to_ids": True
+            }
+        ]
+    },
+    {
+        "type": "x-misp-galaxy-cluster",
+        "spec_version": "2.1",
+        "id": "x-misp-galaxy-cluster--3e5d4d07-5f5f-4f71-91dc-58684861f3ab",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:galaxy-name="Tea Matrix"', 'misp:galaxy-type="tea-matrix"'],
+        "x_misp_description": "Tea Matrix | Milk in tea",
+        "x_misp_name": "Tea Matrix",
+        "x_misp_type": "tea-matrix",
+        "x_misp_value": "Milk in tea"
+    },
+    {
+        "type": "misp-galaxy-cluster",
+        "spec_version": "2.1",
+        "id": "misp-galaxy-cluster--3e5d4d07-5f5f-4f71-91dc-58684861f3ab",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": ['misp:galaxy-name="Tea Matrix"', 'misp:galaxy-type="tea-matrix"'],
+        "extensions": {
+            MISP_GALAXY_CLUSTER_EXTENSION_ID: {"extension_type": "new-sdo"}
+        },
+        "galaxy_name": "Tea Matrix",
+        "galaxy_type": "tea-matrix",
+        "galaxy_description": "Tea Matrix",
+        "value": "Milk in tea",
+        "description": "Milk in tea"
+    }
+]
+_THIRD_PARTY_DEFINITION_AND_AUTHOR = [
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--48c13440-92cb-4b97-ab52-a1fc4980f832",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Extension Corp",
+        "identity_class": "organization"
+    },
+    {
+        "type": "extension-definition",
+        "spec_version": "2.1",
+        "id": "extension-definition--55f14b0a-5636-4702-955d-5d6f9e15fc5a",
+        "created_by_ref": "identity--48c13440-92cb-4b97-ab52-a1fc4980f832",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Extension Corp Property Extension",
+        "schema": "https://example.com/extension-corp/property-extension.json",
+        "version": "1.0.0",
+        "extension_types": ["property-extension"]
     }
 ]
 _LOCATION_OBJECTS = [
@@ -3128,6 +3255,47 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         ]
         return dict_to_stix2(bundle)
 
+    @staticmethod
+    def __misp_extensions(*identifiers) -> list:
+        # The MISP Project identity, then the MISP Extension definitions
+        return [
+            packaged_misp_extension(identifier)
+            for identifier in (MISP_PROJECT_IDENTITY_ID, *identifiers)
+        ]
+
+    @classmethod
+    def get_bundle_with_extension_definitions(cls):
+        """A collection with no Report, carrying the MISP Extension
+        definitions and a third-party one, whose authors author nothing else,
+        and IP addresses, one of them carrying the MISP property
+        extension."""
+        ip_addresses = deepcopy(_IP_ADDRESS_ATTRIBUTES[:-1])
+        ip_addresses[2]['extensions'] = {
+            MISP_PROPERTY_EXTENSION_ID: {
+                'extension_type': 'property-extension', 'text': 'Google DNS',
+                'original_names': {'text': 'Text'}
+            }
+        }
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [
+            deepcopy(cls.__identity),
+            *cls.__misp_extensions(MISP_PROPERTY_EXTENSION_ID),
+            *deepcopy(_THIRD_PARTY_DEFINITION_AND_AUTHOR), *ip_addresses
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
+    def get_bundle_with_misp_types(cls):
+        """Each `misp-*` type next to the `x-misp-*` type standing for the
+        same MISP record, sharing its uuid."""
+        bundle = cls.__assemble_bundle(*deepcopy(_CUSTOM_TYPES_IN_BOTH_SYNTAXES))
+        content = json.loads(bundle.serialize())
+        content['objects'][1:1] = cls.__misp_extensions(
+            MISP_ATTRIBUTE_EXTENSION_ID, MISP_OBJECT_EXTENSION_ID,
+            MISP_GALAXY_CLUSTER_EXTENSION_ID
+        )
+        return dict_to_stix2(content, allow_custom=True)
+
     @classmethod
     def get_bundle_without_grouping(cls):
         bundle = deepcopy(cls.__bundle)
@@ -3275,6 +3443,17 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             observables[2]['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(*observables)
+
+    @classmethod
+    def get_bundle_with_file_object_with_unmapped_hashes(cls):
+        # A hash name outside the vocabulary, on the file and on a PE section
+        observed_data, observable = deepcopy(
+            [_FILE_OBJECTS[2], _FILE_OBJECTS[7]]
+        )
+        observable['hashes']['CRC32'] = '4c2b1a7e'
+        extension = observable['extensions']['windows-pebinary-ext']
+        extension['sections'][0]['hashes']['CRC32'] = 'e3b0c442'
+        return cls.__assemble_bundle(observed_data, observable)
 
     @classmethod
     def get_bundle_with_identity_objects(cls):

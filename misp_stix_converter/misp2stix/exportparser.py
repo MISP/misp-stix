@@ -26,6 +26,9 @@ _CANONICAL_FLOAT = re.compile(r'[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?')
 
 class MISPtoSTIXParser(AbstractParser):
     __composite_separators = ('|', '_')
+    # Where a MISP value no STIX property holds is written, as the warnings
+    # about such a value say it
+    _misp_value_location = 'as a custom property'
     __published_fields = ('published', 'publish_timestamp')
     __PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
 
@@ -122,11 +125,17 @@ class MISPtoSTIXParser(AbstractParser):
                 continue
             if relation in with_uuid:
                 further = [
-                    value[0] if len(value) == 2 else value[:-1]
+                    MISPtoSTIXParser._value_without_uuid(value)
                     for value in further
                 ]
             repeated[relation] = further
         return attributes, repeated
+
+    @staticmethod
+    def _value_without_uuid(value: tuple) -> Union[str, tuple]:
+        # A value paired with its attribute uuid, last in the tuple: the
+        # value alone, or the value with its data
+        return value[0] if len(value) == 2 else value[:-1]
 
     def _extract_object_attribute_tags_and_galaxies(
             self, misp_object: dict) -> tuple:
@@ -156,11 +165,14 @@ class MISPtoSTIXParser(AbstractParser):
             for galaxy in self._misp_event['Galaxy']:
                 galaxy_type = galaxy['type']
                 to_call = self._mapping.galaxy_types_mapping(galaxy_type)
-                if to_call is not None:
-                    getattr(self, to_call.format('event'))(galaxy)
-                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
-                else:
-                    self._handle_undefined_event_galaxy(galaxy)
+                try:
+                    if to_call is not None:
+                        getattr(self, to_call.format('event'))(galaxy)
+                        tag_names.extend(self._quick_fetch_tag_names(galaxy))
+                    else:
+                        self._handle_undefined_event_galaxy(galaxy)
+                except Exception as exception:
+                    self._event_galaxy_error(galaxy, exception)
             return tuple(
                 tag['name'] for tag in self._misp_event.get('Tag', [])
                 if tag['name'] not in tag_names
@@ -416,9 +428,34 @@ class MISPtoSTIXParser(AbstractParser):
             f'converted as a {_UNKNOWN_TEMPLATE_NAME} one.', identifier
         )
 
+    def _event_galaxy_error(self, galaxy: dict, exception: Exception):
+        tb = self._parse_traceback(exception)
+        self._add_error(
+            f"Error with the {galaxy['type']} galaxy in event:\n{tb}."
+        )
+
     def _event_galaxy_not_mapped_warning(self, galaxy_type: str):
         self._add_warning(
             f'{galaxy_type} galaxy in event not mapped.'
+        )
+
+    def _extension_property_collision_warning(
+            self, misp_object: Union[MISPObject, dict], relation: str,
+            name: str):
+        self._add_warning(
+            f"MISP object {misp_object['name']} (uuid: "
+            f"{misp_object['uuid']}): relation \"{relation}\" is written as "
+            f'"{name}" in the MISP property extension, already set by another '
+            'value of the same object, the last value wins.'
+        )
+
+    def _galaxy_meta_extension_collision_warning(
+            self, value: str, key: str, name: str):
+        self._add_warning(
+            f'Galaxy cluster "{value}": meta key "{key}" is written as '
+            f'"{name}" in the MISP property extension, already set by another '
+            'meta key of the same cluster, the last value wins and only its '
+            'spelling is carried.'
         )
 
     def _galaxy_meta_key_reserved_warning(
@@ -443,10 +480,10 @@ class MISPtoSTIXParser(AbstractParser):
         self._add_error('Missing Orgc field.')
 
     def _missing_orgc_field_error(self, orgc: dict):
-        missing = (field for field in ('name', 'uuid') if field not in orgc)
+        missing = [field for field in ('name', 'uuid') if field not in orgc]
         self._add_error(
             f"Error with the Orgc field missing its {' and '.join(missing)}"
-            f"{'values' if len(missing) > 1 else 'value'}. Please make sure"
+            f" {'values' if len(missing) > 1 else 'value'}. Please make sure"
             ' both the name and uuid values are provided.'
         )
 
@@ -472,12 +509,19 @@ class MISPtoSTIXParser(AbstractParser):
             self, relation: str, value: Any, record: str, kind: str):
         self._add_warning(
             f'{relation!r} in the {record} is not a canonical {kind}: '
-            f'{value!r} written as a custom property.'
+            f'{value!r} written {self._misp_value_location}.'
         )
 
     @staticmethod
     def _attribute_record(attribute: Union[MISPAttribute, dict]) -> str:
         return f"{attribute['type']} attribute (uuid: {attribute['uuid']})"
+
+    def _object_without_attributes_error(
+            self, misp_object: Union[MISPObject, dict]):
+        self._add_error(
+            f'The {self._object_record(misp_object)} holds no attribute: a '
+            'misp-object needs one, so the object is not exported.'
+        )
 
     @staticmethod
     def _object_record(misp_object: Union[MISPObject, dict]) -> str:

@@ -12,6 +12,10 @@ class AttributeFromPatternParsingError(STIXtoMISPError):
     pass
 
 
+class InvalidMISPExtensionError(STIXtoMISPError):
+    pass
+
+
 class InvalidSTIXPatternError(STIXtoMISPError):
     pass
 

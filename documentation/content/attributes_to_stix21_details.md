@@ -18,12 +18,12 @@ For the rest of this documentation, we will then, in order to keep the content c
 ### Unmapped attribute types
 
 You may have noticed we are very far from having all the attribute types supported. This is due to the various use cases that MISP can be used for.  
-Nonetheless, every attribute whose type is not in the list, is exported as `Custom` object.  
+Nonetheless, every attribute whose type is not in the list, is exported as a `misp-attribute` object, which the MISP Attribute Extension defines.  
 With the following examples, `btc` and `iban` are attribute types that are not mapped, where the other ones:
 - are already mentioned above and giving valid STIX 2.1 pattern expressions when their `to_ids` flag is set to `True`.
-- are not providing enough information to produce Observable objects and are then exported as `Custom` objects when their `to_ids` flag is unset.
+- are not providing enough information to produce Observable objects and are then exported as `misp-attribute` objects when their `to_ids` flag is unset.
 
-Let us see those examples of custom objects exported from attributes:
+Let us see those examples of `misp-attribute` objects exported from attributes:
 {_custom_attributes_to_stix21_mapping_}
 
 ## The other detailed mappings

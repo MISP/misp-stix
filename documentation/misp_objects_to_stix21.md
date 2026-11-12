@@ -100,12 +100,17 @@ For the rest of this documentation, we will then, in order to keep the content c
             "misp:name=\"script\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_script": "print('You are infected')",
-        "x_misp_script_as_attachment": {
-            "value": "infected.py",
-            "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
-        },
-        "x_misp_state": "Malicious"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "script": "print('You are infected')",
+                "script_as_attachment": {
+                    "value": "infected.py",
+                    "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
+                },
+                "state": "Malicious"
+            }
+        }
     }
     ```
 
@@ -192,13 +197,18 @@ For the rest of this documentation, we will then, in order to keep the content c
             "misp:name=\"script\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_language": "Python",
-        "x_misp_script": "print('Hello World')",
-        "x_misp_script_as_attachment": {
-            "value": "hello.py",
-            "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK"
-        },
-        "x_misp_state": "Harmless"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "language": "Python",
+                "script": "print('Hello World')",
+                "script_as_attachment": {
+                    "value": "hello.py",
+                    "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK"
+                },
+                "state": "Harmless"
+            }
+        }
     }
     ```
 
@@ -265,8 +275,13 @@ For the rest of this documentation, we will then, in order to keep the content c
             "spec_version": "2.1",
             "id": "software--02782ed5-b27f-4abc-8bae-efebe13a46dd",
             "name": "Facebook",
-            "x_misp_certificate": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
-            "x_misp_domain": "facebook.com"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "certificate": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
+                    "domain": "facebook.com"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -275,7 +290,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[software:name = 'Facebook' AND software:x_misp_certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:x_misp_domain = 'facebook.com']",
+            "pattern": "[software:name = 'Facebook' AND software:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.domain = 'facebook.com']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -451,11 +466,16 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "misp:name=\"annotation\"",
                 "misp:meta-category=\"misc\""
             ],
-            "x_misp_attachment": {
-                "value": "annotation.attachment",
-                "data": "OC44LjguOCBpcyB0aGUgR29[...]WRkcmVzc2VzIChJUHY0KS4K"
-            },
-            "x_misp_type": "Executive Summary"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "type": "Executive Summary",
+                    "attachment": {
+                        "value": "annotation.attachment",
+                        "data": "OC44LjguOCBpcyB0aGUgR29[...]WRkcmVzc2VzIChJUHY0KS4K"
+                    }
+                }
+            }
         },
         {
             "type": "relationship",
@@ -673,10 +693,15 @@ For the rest of this documentation, we will then, in order to keep the content c
             "id": "autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f",
             "number": 66642,
             "name": "AS name",
-            "x_misp_subnet_announced": [
-                "1.2.3.4",
-                "8.8.8.8"
-            ]
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "subnet_announced": [
+                        "1.2.3.4",
+                        "8.8.8.8"
+                    ]
+                }
+            }
         },
         {
             "type": "indicator",
@@ -809,12 +834,17 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "external_id": "CAPEC-9"
             }
         ],
-        "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
-        "x_misp_related_weakness": [
-            "CWE-118",
-            "CWE-120"
-        ],
-        "x_misp_solutions": "Carefully review the service's implementation before making it available to users."
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "related_weakness": [
+                    "CWE-118",
+                    "CWE-120"
+                ],
+                "prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+                "solutions": "Carefully review the service's implementation before making it available to users."
+            }
+        }
     }
     ```
 
@@ -910,12 +940,17 @@ For the rest of this documentation, we will then, in order to keep the content c
             "misp:name=\"course-of-action\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_cost": "Low",
-        "x_misp_efficacy": "High",
-        "x_misp_impact": "Low",
-        "x_misp_objective": "Block communication between the PIVY agents and the C2 Server",
-        "x_misp_stage": "Response",
-        "x_misp_type": "Perimeter Blocking"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "type": "Perimeter Blocking",
+                "objective": "Block communication between the PIVY agents and the C2 Server",
+                "stage": "Response",
+                "cost": "Low",
+                "impact": "Low",
+                "efficacy": "High"
+            }
+        }
     }
     ```
 
@@ -1012,7 +1047,12 @@ For the rest of this documentation, we will then, in order to keep the content c
             ],
             "vendor": "Microsoft",
             "version": "2002",
-            "x_misp_description": "Microsoft Word is a word processing software developed by Microsoft."
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "description": "Microsoft Word is a word processing software developed by Microsoft."
+                }
+            }
         },
         {
             "type": "indicator",
@@ -1145,11 +1185,16 @@ For the rest of this documentation, we will then, in order to keep the content c
             "id": "user-account--5b1f9378-46d4-494b-a4c1-044e0a00020f",
             "user_id": "misp",
             "credential": "Password1234",
-            "x_misp_format": "clear-text",
-            "x_misp_notification": "victim-notified",
-            "x_misp_origin": "malware-analysis",
-            "x_misp_text": "MISP default credentials",
-            "x_misp_type": "password"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "text": "MISP default credentials",
+                    "type": "password",
+                    "origin": "malware-analysis",
+                    "format": "clear-text",
+                    "notification": "victim-notified"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -1158,7 +1203,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[user-account:x_misp_text = 'MISP default credentials']",
+            "pattern": "[user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.text = 'MISP default credentials']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -1380,8 +1425,13 @@ For the rest of this documentation, we will then, in order to keep the content c
             "resolves_to_refs": [
                 "ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca"
             ],
-            "x_misp_hostname": "circl.lu",
-            "x_misp_port": "8443"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "hostname": "circl.lu",
+                    "port": "8443"
+                }
+            }
         },
         {
             "type": "ipv4-addr",
@@ -1396,7 +1446,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+            "pattern": "[domain-name:value = 'circl.lu' AND domain-name:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -1771,8 +1821,13 @@ For the rest of this documentation, we will then, in order to keep the content c
                     "content_disposition": "attachment; filename='attachment2.file'"
                 }
             ],
-            "x_misp_mime_boundary": "Test mime boundary",
-            "x_misp_user_agent": "Test user agent"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "user_agent": "Test user agent",
+                    "mime_boundary": "Test mime boundary"
+                }
+            }
         },
         {
             "type": "email-addr",
@@ -1973,7 +2028,12 @@ For the rest of this documentation, we will then, in order to keep the content c
             "bcc_refs": [
                 "email-addr--3b940996-f99b-4bda-b065-69b8957f688c"
             ],
-            "x_misp_cc_display_name": "Marie Curie"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "cc_display_name": "Marie Curie"
+                }
+            }
         },
         {
             "type": "email-addr",
@@ -2187,10 +2247,15 @@ For the rest of this documentation, we will then, in order to keep the content c
             "user_id": "1392781243",
             "account_login": "octocat",
             "account_type": "facebook",
-            "x_misp_link": "https://facebook.com/octocat",
-            "x_misp_user_avatar": {
-                "value": "octocat.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "link": "https://facebook.com/octocat",
+                    "user_avatar": {
+                        "value": "octocat.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    }
+                }
             }
         },
         {
@@ -2371,9 +2436,14 @@ For the rest of this documentation, we will then, in order to keep the content c
             "mtime": "2022-10-25T16:22:00Z",
             "parent_directory_ref": "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
             "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "x_misp_attachment": {
-                "value": "non",
-                "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "attachment": {
+                        "value": "non",
+                        "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+                    }
+                }
             }
         },
         {
@@ -2393,7 +2463,12 @@ For the rest of this documentation, we will then, in order to keep the content c
             },
             "encryption_algorithm": "mime-type-indicated",
             "decryption_key": "infected",
-            "x_misp_filename": "oui"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "filename": "oui"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -2402,7 +2477,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+            "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -2754,6 +2829,23 @@ For the rest of this documentation, we will then, in order to keep the content c
             "size": 1234,
             "name": "oui",
             "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "entropy": "1.234",
+                    "windows_pebinary_ext": {
+                        "compilation_timestamp": "2019-03-16T12:31:22Z",
+                        "original_filename": "PuTTy",
+                        "internal_filename": "PuTTy",
+                        "file_description": "SSH, Telnet and Rlogin client",
+                        "file_version": "Release 0.71 (with embedded help)",
+                        "lang_id": "080904B0",
+                        "product_name": "PuTTy suite",
+                        "product_version": "Release 0.71",
+                        "company_name": "Simoe Tatham",
+                        "legal_copyright": "Copyright \u00a9 1997-2019 Simon Tatham.",
+                        "impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt"
+                    }
+                },
                 "windows-pebinary-ext": {
                     "pe_type": "exe",
                     "imphash": "23ea835ab4b9017c74dfb023d2301c99",
@@ -2774,21 +2866,9 @@ For the rest of this documentation, we will then, in order to keep the content c
                                 "SSDEEP": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK"
                             }
                         }
-                    ],
-                    "x_misp_company_name": "Simoe Tatham",
-                    "x_misp_compilation_timestamp": "2019-03-16T12:31:22Z",
-                    "x_misp_file_description": "SSH, Telnet and Rlogin client",
-                    "x_misp_file_version": "Release 0.71 (with embedded help)",
-                    "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
-                    "x_misp_internal_filename": "PuTTy",
-                    "x_misp_lang_id": "080904B0",
-                    "x_misp_legal_copyright": "Copyright \u00a9 1997-2019 Simon Tatham.",
-                    "x_misp_original_filename": "PuTTy",
-                    "x_misp_product_name": "PuTTy suite",
-                    "x_misp_product_version": "Release 0.71"
+                    ]
                 }
-            },
-            "x_misp_entropy": "1.234"
+            }
         },
         {
             "type": "indicator",
@@ -2797,7 +2877,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.'SHA-256' = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+            "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.'SHA-256' = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.original_filename = 'PuTTy' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.internal_filename = 'PuTTy' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -2939,8 +3019,13 @@ For the rest of this documentation, we will then, in order to keep the content c
             "misp:name=\"geolocation\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_altitude": "55",
-        "x_misp_country": "USA"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "country": "USA",
+                "altitude": "55"
+            }
+        }
     }
     ```
 
@@ -3027,10 +3112,15 @@ For the rest of this documentation, we will then, in order to keep the content c
             "account_login": "octocat",
             "account_type": "github",
             "display_name": "Octo Cat",
-            "x_misp_organisation": "GitHub",
-            "x_misp_profile_image": {
-                "value": "octocat.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "organisation": "GitHub",
+                    "profile_image": {
+                        "value": "octocat.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    }
+                }
             }
         },
         {
@@ -3337,14 +3427,19 @@ For the rest of this documentation, we will then, in order to keep the content c
             },
             "size": 35,
             "name": "oui",
-            "x_misp_knownmalicious": "hashlookup-known-malicious-source",
-            "x_misp_packagearch": "amd64",
-            "x_misp_packagedescription": "GNU core utilities",
-            "x_misp_packagemaintainer": "Ubuntu Developers",
-            "x_misp_packagename": "coreutils",
-            "x_misp_packagerelease": "4.1ubuntu1",
-            "x_misp_packageversion": "8.32",
-            "x_misp_source": "https://www.circl.lu/services/hashlookup"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "knownmalicious": "hashlookup-known-malicious-source",
+                    "packagename": "coreutils",
+                    "packageversion": "8.32",
+                    "packagerelease": "4.1ubuntu1",
+                    "packagearch": "amd64",
+                    "packagedescription": "GNU core utilities",
+                    "packagemaintainer": "Ubuntu Developers",
+                    "source": "https://www.circl.lu/services/hashlookup"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -3500,9 +3595,12 @@ For the rest of this documentation, we will then, in order to keep the content c
                         "Content-Type": "JSON",
                         "User-Agent": "Mozilla Firefox"
                     }
+                },
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "url": "http://circl.lu/projects/internships/"
                 }
-            },
-            "x_misp_url": "http://circl.lu/projects/internships/"
+            }
         },
         {
             "type": "ipv4-addr",
@@ -3710,7 +3808,12 @@ For the rest of this documentation, we will then, in order to keep the content c
             "id": "file--939b2f03-c487-4f62-a90e-cab7acfee294",
             "name": "STIX.png",
             "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "x_misp_image_text": "STIX"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "image_text": "STIX"
+                }
+            }
         },
         {
             "type": "artifact",
@@ -3718,8 +3821,13 @@ For the rest of this documentation, we will then, in order to keep the content c
             "id": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "mime_type": "image/png",
             "payload_bin": "iVBORw0KGgoAAAANSUhEUgA[...]gEefQAAAABJRU5ErkJggg==",
-            "x_misp_filename": "STIX.png",
-            "x_misp_url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "filename": "STIX.png",
+                    "url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -3728,7 +3836,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[file:name = 'STIX.png' AND file:content_ref.payload_bin = 'iVBORw0KGgoAAAANSUhEUgA[...]gEefQAAAABJRU5ErkJggg==' AND file:content_ref.mime_type = 'image/png' AND file:content_ref.x_misp_filename = 'STIX.png' AND file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png']",
+            "pattern": "[file:name = 'STIX.png' AND file:content_ref.payload_bin = 'iVBORw0KGgoAAAANSUhEUgA[...]gEefQAAAABJRU5ErkJggg==' AND file:content_ref.mime_type = 'image/png' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'STIX.png' AND file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -3967,7 +4075,12 @@ For the rest of this documentation, we will then, in order to keep the content c
             "protocols": [
                 "ipv4"
             ],
-            "x_misp_domain": "circl.lu"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "domain": "circl.lu"
+                }
+            }
         },
         {
             "type": "ipv4-addr",
@@ -4100,11 +4213,16 @@ For the rest of this documentation, we will then, in order to keep the content c
             "misp:name=\"legal-entity\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_logo": {
-            "value": "umbrella_logo",
-            "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC"
-        },
-        "x_misp_registration_number": "11223344556677889900"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "registration_number": "11223344556677889900",
+                "logo": {
+                    "value": "umbrella_logo",
+                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC"
+                }
+            }
+        }
     }
     ```
 
@@ -4261,7 +4379,12 @@ For the rest of this documentation, we will then, in order to keep the content c
             },
             "encryption_algorithm": "mime-type-indicated",
             "decryption_key": "infected",
-            "x_misp_filename": "oui"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "filename": "oui"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -4270,7 +4393,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+            "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -4361,8 +4484,13 @@ For the rest of this documentation, we will then, in order to keep the content c
             "spec_version": "2.1",
             "id": "mutex--b0f55591-6a63-4fbd-a169-064e64738d95",
             "name": "MutexTest",
-            "x_misp_description": "Test mutex on unix",
-            "x_misp_operating_system": "Unix"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "description": "Test mutex on unix",
+                    "operating_system": "Unix"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -4706,7 +4834,12 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "tcp",
                 "http"
             ],
-            "x_misp_hostname_dst": "circl.lu"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "hostname_dst": "circl.lu"
+                }
+            }
         },
         {
             "type": "ipv4-addr",
@@ -4887,10 +5020,13 @@ For the rest of this documentation, we will then, in order to keep the content c
                     "address_family": "AF_INET",
                     "is_listening": true,
                     "socket_type": "SOCK_RAW"
+                },
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "domain_family": "PF_INET",
+                    "hostname_dst": "circl.lu"
                 }
-            },
-            "x_misp_domain_family": "PF_INET",
-            "x_misp_hostname_dst": "circl.lu"
+            }
         },
         {
             "type": "ipv4-addr",
@@ -5041,9 +5177,14 @@ For the rest of this documentation, we will then, in order to keep the content c
             "misp:name=\"news-agency\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_attachment": {
-            "value": "AFP_logo.png",
-            "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg=="
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "attachment": {
+                    "value": "AFP_logo.png",
+                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg=="
+                }
+            }
         }
     }
     ```
@@ -5193,7 +5334,12 @@ For the rest of this documentation, we will then, in order to keep the content c
             "misp:name=\"organization\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_alias": "CIRCL"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "alias": "CIRCL"
+            }
+        }
     }
     ```
 
@@ -5327,10 +5473,15 @@ For the rest of this documentation, we will then, in order to keep the content c
             "user_id": "42",
             "account_login": "ParlerOctocat",
             "account_type": "parler",
-            "x_misp_human": false,
-            "x_misp_profile_photo": {
-                "value": "octocat.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "human": false,
+                    "profile_photo": {
+                        "value": "octocat.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    }
+                }
             }
         },
         {
@@ -5636,18 +5787,23 @@ For the rest of this documentation, we will then, in order to keep the content c
                                 "SSDEEP": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK"
                             }
                         }
-                    ],
-                    "x_misp_company_name": "Simoe Tatham",
-                    "x_misp_compilation_timestamp": "2019-03-16T12:31:22Z",
-                    "x_misp_file_description": "SSH, Telnet and Rlogin client",
-                    "x_misp_file_version": "Release 0.71 (with embedded help)",
-                    "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
-                    "x_misp_internal_filename": "PuTTy",
-                    "x_misp_lang_id": "080904B0",
-                    "x_misp_legal_copyright": "Copyright \u00a9 1997-2019 Simon Tatham.",
-                    "x_misp_original_filename": "PuTTy",
-                    "x_misp_product_name": "PuTTy suite",
-                    "x_misp_product_version": "Release 0.71"
+                    ]
+                },
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "windows_pebinary_ext": {
+                        "compilation_timestamp": "2019-03-16T12:31:22Z",
+                        "original_filename": "PuTTy",
+                        "internal_filename": "PuTTy",
+                        "file_description": "SSH, Telnet and Rlogin client",
+                        "file_version": "Release 0.71 (with embedded help)",
+                        "lang_id": "080904B0",
+                        "product_name": "PuTTy suite",
+                        "product_version": "Release 0.71",
+                        "company_name": "Simoe Tatham",
+                        "legal_copyright": "Copyright \u00a9 1997-2019 Simon Tatham.",
+                        "impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt"
+                    }
                 }
             }
         },
@@ -5658,7 +5814,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+            "pattern": "[file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.original_filename = 'PuTTy' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.internal_filename = 'PuTTy' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -5766,8 +5922,13 @@ For the rest of this documentation, we will then, in order to keep the content c
             "misp:name=\"person\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_nationality": "USA",
-        "x_misp_passport_number": "ABA9875413"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "nationality": "USA",
+                "passport_number": "ABA9875413"
+            }
+        }
     }
     ```
 
@@ -5900,8 +6061,13 @@ For the rest of this documentation, we will then, in order to keep the content c
             "child_refs": [
                 "process--518b4bcb-a86b-4783-9457-391d548b605b"
             ],
-            "x_misp_name": "TestProcess",
-            "x_misp_port": "1234"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "name": "TestProcess",
+                    "port": "1234"
+                }
+            }
         },
         {
             "type": "file",
@@ -5916,7 +6082,12 @@ For the rest of this documentation, we will then, in order to keep the content c
             "pid": 2107,
             "command_line": "grep -nrG iglocska /home/viktor/friends.txt",
             "image_ref": "file--d01ef2c6-3154-4f8a-a3dc-9de1f34dd5d0",
-            "x_misp_process_name": "Friends_From_H"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "process_name": "Friends_From_H"
+                }
+            }
         },
         {
             "type": "process",
@@ -6039,11 +6210,16 @@ For the rest of this documentation, we will then, in order to keep the content c
             "user_id": "666",
             "account_login": "RedditOctocat",
             "account_type": "reddit",
-            "x_misp_account_avatar": {
-                "value": "octocat.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
-            },
-            "x_misp_description": "Reddit account of the OctoCat"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "description": "Reddit account of the OctoCat",
+                    "account_avatar": {
+                        "value": "octocat.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    }
+                }
+            }
         },
         {
             "type": "indicator",
@@ -6175,7 +6351,12 @@ For the rest of this documentation, we will then, in order to keep the content c
                 }
             ],
             "modified_time": "2020-10-25T16:22:00Z",
-            "x_misp_hive": "hklm"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "hive": "hklm"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -6380,7 +6561,12 @@ For the rest of this documentation, we will then, in order to keep the content c
                 }
             ],
             "modified_time": "2020-10-25T16:22:00Z",
-            "x_misp_hive": "hklm"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "hive": "hklm"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -6389,7 +6575,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+            "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.hive = 'hklm']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -6606,7 +6792,12 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "url": "https://www.us-cert.gov/ncas/alerts/TA17-293A"
             }
         ],
-        "x_misp_context": "disk"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "context": "disk"
+            }
+        }
     }
     ```
 
@@ -6761,10 +6952,15 @@ For the rest of this documentation, we will then, in order to keep the content c
             "user_id": "1234567890",
             "account_login": "T3l3gr4mUs3r",
             "account_type": "telegram",
-            "x_misp_phone": [
-                "0112233445",
-                "0556677889"
-            ]
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "phone": [
+                        "0112233445",
+                        "0556677889"
+                    ]
+                }
+            }
         },
         {
             "type": "indicator",
@@ -6884,10 +7080,15 @@ For the rest of this documentation, we will then, in order to keep the content c
             "account_login": "octocat",
             "account_type": "twitter",
             "display_name": "Octo Cat",
-            "x_misp_followers": "666",
-            "x_misp_profile_image": {
-                "value": "octocat.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "followers": "666",
+                    "profile_image": {
+                        "value": "octocat.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    }
+                }
             }
         },
         {
@@ -7004,10 +7205,15 @@ For the rest of this documentation, we will then, in order to keep the content c
             "spec_version": "2.1",
             "id": "url--5ac347ca-dac4-4562-9775-04120a00020f",
             "value": "https://www.circl.lu/team",
-            "x_misp_domain": "circl.lu",
-            "x_misp_host": "www.circl.lu",
-            "x_misp_ip": "149.13.33.14",
-            "x_misp_port": "443"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "domain": "circl.lu",
+                    "host": "www.circl.lu",
+                    "misp_ip": "149.13.33.14",
+                    "port": "443"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -7016,7 +7222,7 @@ For the rest of this documentation, we will then, in order to keep the content c
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[url:value = 'https://www.circl.lu/team' AND url:x_misp_domain = 'circl.lu' AND url:x_misp_host = 'www.circl.lu' AND url:x_misp_ip = '149.13.33.14']",
+            "pattern": "[url:value = 'https://www.circl.lu/team' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.domain = 'circl.lu' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.host = 'www.circl.lu' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.misp_ip = '149.13.33.14']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -7185,11 +7391,14 @@ For the rest of this documentation, we will then, in order to keep the content c
                         "donald-fan"
                     ],
                     "home_dir": "/home/iglocska"
+                },
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "user_avatar": {
+                        "value": "octocat.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    }
                 }
-            },
-            "x_misp_user_avatar": {
-                "value": "octocat.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
             }
         },
         {
@@ -7325,9 +7534,14 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
             }
         ],
-        "x_misp_created": "2017-10-13T07:29:00Z",
-        "x_misp_cvss_score": "6.8",
-        "x_misp_published": "2017-10-13T07:29:00Z"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "cvss_score": "6.8",
+                "created": "2017-10-13T07:29:00Z",
+                "published": "2017-10-13T07:29:00Z"
+            }
+        }
     }
     ```
 
@@ -7543,7 +7757,12 @@ For the rest of this documentation, we will then, in order to keep the content c
             "subject_public_key_algorithm": "PublicKeyAlgorithm",
             "subject_public_key_modulus": "C5",
             "subject_public_key_exponent": 2,
-            "x_misp_pem": "RawCertificateInPEMFormat"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "pem": "RawCertificateInPEMFormat"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -7657,7 +7876,7 @@ For the rest of this documentation, we will then, in order to keep the content c
 ### Unmapped object names
 
 Not all the MISP objects are mapped and exported as know STIX 2.1 objects.  
-Those unmapped objects are then exported as STIX Custom objects. Here are some examples:
+Those unmapped objects are then exported as `misp-object` objects, which the MISP Object Extension defines. Here are some examples:
 - bank-account
   - MISP
     ```json
@@ -7666,100 +7885,145 @@ Those unmapped objects are then exported as STIX Custom objects. Here are some e
         "meta-category": "financial",
         "description": "An object describing bank account information based on account description from goAML 4.0",
         "uuid": "695e7924-2518-4054-9cea-f82853d37410",
-        "timestamp": "1603642920",
         "Attribute": [
             {
-                "type": "iban",
+                "uuid": "8acaad62-227a-4988-96e7-4586847421a2",
                 "object_relation": "iban",
                 "value": "LU1234567890ABCDEF1234567890",
-                "to_ids": true
+                "type": "iban",
+                "to_ids": true,
+                "category": "Financial fraud"
             },
             {
-                "type": "bic",
+                "uuid": "c53382a1-cf4b-4901-a890-1611dbcc7101",
                 "object_relation": "swift",
-                "value": "CTBKLUPP"
+                "value": "CTBKLUPP",
+                "type": "bic",
+                "to_ids": true,
+                "category": "Financial fraud"
             },
             {
-                "type": "bank-account-nr",
+                "uuid": "c7c9f782-582f-4218-af79-e7901237e468",
                 "object_relation": "account",
-                "value": "1234567890"
+                "value": "1234567890",
+                "type": "bank-account-nr",
+                "to_ids": true,
+                "category": "Financial fraud"
             },
             {
-                "type": "text",
+                "uuid": "c206e7b4-7333-40a3-bf02-9647d32f9df2",
                 "object_relation": "institution-name",
-                "value": "Central Bank"
+                "value": "Central Bank",
+                "type": "text",
+                "to_ids": false,
+                "category": "Other"
             },
             {
-                "type": "text",
+                "uuid": "f388d5e6-e4eb-401d-8ea4-efdd519659a1",
                 "object_relation": "account-name",
-                "value": "John Smith's bank account"
+                "value": "John Smith's bank account",
+                "type": "text",
+                "to_ids": false,
+                "category": "Other"
             },
             {
-                "type": "text",
+                "uuid": "c1ea07c0-a855-4c47-9df2-4acc0d3c4e63",
                 "object_relation": "beneficiary",
-                "value": "John Smith"
+                "value": "John Smith",
+                "type": "text",
+                "to_ids": false,
+                "category": "Other"
             },
             {
-                "type": "text",
+                "uuid": "5421d979-9af5-45ae-8c81-5005a4d7fc55",
                 "object_relation": "currency-code",
-                "value": "EUR"
+                "value": "EUR",
+                "type": "text",
+                "to_ids": false,
+                "category": "Other"
             }
-        ]
+        ],
+        "timestamp": "1603642920"
     }
     ```
   - STIX
     ```json
     {
-        "type": "x-misp-object",
+        "type": "misp-object",
         "spec_version": "2.1",
-        "id": "x-misp-object--695e7924-2518-4054-9cea-f82853d37410",
+        "id": "misp-object--695e7924-2518-4054-9cea-f82853d37410",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:category=\"financial\"",
-            "misp:name=\"bank-account\""
-        ],
-        "x_misp_attributes": [
+        "name": "bank-account",
+        "meta_category": "financial",
+        "attributes": [
             {
-                "object_relation": "iban",
-                "to_ids": true,
                 "type": "iban",
-                "value": "LU1234567890ABCDEF1234567890"
+                "object_relation": "iban",
+                "value": "LU1234567890ABCDEF1234567890",
+                "category": "Financial fraud",
+                "uuid": "8acaad62-227a-4988-96e7-4586847421a2",
+                "to_ids": true
             },
             {
-                "object_relation": "swift",
                 "type": "bic",
-                "value": "CTBKLUPP"
+                "object_relation": "swift",
+                "value": "CTBKLUPP",
+                "category": "Financial fraud",
+                "uuid": "c53382a1-cf4b-4901-a890-1611dbcc7101",
+                "to_ids": true
             },
             {
-                "object_relation": "account",
                 "type": "bank-account-nr",
-                "value": "1234567890"
+                "object_relation": "account",
+                "value": "1234567890",
+                "category": "Financial fraud",
+                "uuid": "c7c9f782-582f-4218-af79-e7901237e468",
+                "to_ids": true
             },
             {
+                "type": "text",
                 "object_relation": "institution-name",
-                "type": "text",
-                "value": "Central Bank"
+                "value": "Central Bank",
+                "category": "Other",
+                "uuid": "c206e7b4-7333-40a3-bf02-9647d32f9df2",
+                "to_ids": false
             },
             {
+                "type": "text",
                 "object_relation": "account-name",
-                "type": "text",
-                "value": "John Smith's bank account"
+                "value": "John Smith's bank account",
+                "category": "Other",
+                "uuid": "f388d5e6-e4eb-401d-8ea4-efdd519659a1",
+                "to_ids": false
             },
             {
+                "type": "text",
                 "object_relation": "beneficiary",
-                "type": "text",
-                "value": "John Smith"
+                "value": "John Smith",
+                "category": "Other",
+                "uuid": "c1ea07c0-a855-4c47-9df2-4acc0d3c4e63",
+                "to_ids": false
             },
             {
-                "object_relation": "currency-code",
                 "type": "text",
-                "value": "EUR"
+                "object_relation": "currency-code",
+                "value": "EUR",
+                "category": "Other",
+                "uuid": "5421d979-9af5-45ae-8c81-5005a4d7fc55",
+                "to_ids": false
             }
         ],
-        "x_misp_meta_category": "financial",
-        "x_misp_name": "bank-account"
+        "labels": [
+            "misp:name=\"bank-account\"",
+            "misp:meta-category=\"financial\""
+        ],
+        "extensions": {
+            "extension-definition--a093107b-933f-4d72-a9a6-6d7318adadda": {
+                "extension_type": "new-sdo"
+            }
+        }
     }
     ```
 
@@ -7771,153 +8035,185 @@ Those unmapped objects are then exported as STIX Custom objects. Here are some e
         "meta-category": "financial",
         "description": "An object to describe a Bitcoin wallet.",
         "uuid": "6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
-        "timestamp": "1603642920",
         "Attribute": [
+            {
+                "uuid": "b25b2538-36e3-4418-a42a-440eed163ffa",
+                "object_relation": "wallet-address",
+                "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+                "type": "btc",
+                "to_ids": true,
+                "category": "Financial fraud"
+            },
+            {
+                "uuid": "dd142f6f-d8a0-4143-92b3-3b50e7cb1c51",
+                "object_relation": "balance_BTC",
+                "value": "2.25036953",
+                "type": "float",
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "7fd93652-5713-4390-bd15-94ec77e9c6d1",
+                "object_relation": "BTC_received",
+                "value": "3.35036953",
+                "type": "float",
+                "to_ids": false,
+                "category": "Other"
+            },
+            {
+                "uuid": "c5c0532c-2a63-4f40-86a7-df27914a177e",
+                "object_relation": "BTC_sent",
+                "value": "1.1",
+                "type": "float",
+                "to_ids": false,
+                "category": "Other"
+            }
+        ],
+        "timestamp": "1603642920"
+    }
+    ```
+  - STIX
+    ```json
+    {
+        "type": "misp-object",
+        "spec_version": "2.1",
+        "id": "misp-object--6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "btc-wallet",
+        "meta_category": "financial",
+        "attributes": [
             {
                 "type": "btc",
                 "object_relation": "wallet-address",
                 "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+                "category": "Financial fraud",
+                "uuid": "b25b2538-36e3-4418-a42a-440eed163ffa",
                 "to_ids": true
             },
             {
                 "type": "float",
                 "object_relation": "balance_BTC",
-                "value": "2.25036953"
+                "value": "2.25036953",
+                "category": "Other",
+                "uuid": "dd142f6f-d8a0-4143-92b3-3b50e7cb1c51",
+                "to_ids": false
             },
             {
                 "type": "float",
                 "object_relation": "BTC_received",
-                "value": "3.35036953"
+                "value": "3.35036953",
+                "category": "Other",
+                "uuid": "7fd93652-5713-4390-bd15-94ec77e9c6d1",
+                "to_ids": false
             },
             {
                 "type": "float",
                 "object_relation": "BTC_sent",
-                "value": "1.1"
+                "value": "1.1",
+                "category": "Other",
+                "uuid": "c5c0532c-2a63-4f40-86a7-df27914a177e",
+                "to_ids": false
             }
-        ]
-    }
-    ```
-  - STIX
-    ```json
-    {
-        "type": "x-misp-object",
-        "spec_version": "2.1",
-        "id": "x-misp-object--6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
-        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
+        ],
         "labels": [
-            "misp:category=\"financial\"",
-            "misp:name=\"btc-wallet\""
+            "misp:name=\"btc-wallet\"",
+            "misp:meta-category=\"financial\""
         ],
-        "x_misp_attributes": [
-            {
-                "object_relation": "wallet-address",
-                "to_ids": true,
-                "type": "btc",
-                "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE"
-            },
-            {
-                "object_relation": "balance_BTC",
-                "type": "float",
-                "value": "2.25036953"
-            },
-            {
-                "object_relation": "BTC_received",
-                "type": "float",
-                "value": "3.35036953"
-            },
-            {
-                "object_relation": "BTC_sent",
-                "type": "float",
-                "value": "1.1"
+        "extensions": {
+            "extension-definition--a093107b-933f-4d72-a9a6-6d7318adadda": {
+                "extension_type": "new-sdo"
             }
-        ],
-        "x_misp_meta_category": "financial",
-        "x_misp_name": "btc-wallet"
+        }
     }
     ```
 
-- person
+- report
   - MISP
     ```json
     {
-        "name": "person",
+        "name": "report",
         "meta-category": "misc",
-        "description": "An object which describes a person or an identity.",
-        "uuid": "868037d5-d804-4f1d-8016-f296361f9c68",
-        "timestamp": "1603642920",
+        "description": "Metadata used to generate an executive level report",
+        "uuid": "3e76898a-fcb1-485b-ac24-d450fe8c54bc",
         "Attribute": [
             {
-                "type": "first-name",
-                "object_relation": "first-name",
-                "value": "John"
+                "uuid": "11798cf8-1f53-448d-b424-e0bd7402492c",
+                "object_relation": "summary",
+                "value": "It is compromised",
+                "type": "text",
+                "category": "Other",
+                "to_ids": false
             },
             {
-                "type": "last-name",
-                "object_relation": "last-name",
-                "value": "Smith"
+                "uuid": "84a5575e-bbe4-4a55-a75d-c4a91b0d1e23",
+                "object_relation": "type",
+                "value": "Report",
+                "type": "text",
+                "to_ids": false,
+                "category": "Other"
             },
             {
-                "type": "nationality",
-                "object_relation": "nationality",
-                "value": "USA"
-            },
-            {
-                "type": "passport-number",
-                "object_relation": "passport-number",
-                "value": "ABA9875413"
-            },
-            {
-                "type": "phone-number",
-                "object_relation": "phone-number",
-                "value": "0123456789"
+                "data": "VGhyZWF0IFJlcG9ydAoKSXQgaXMgY29tcHJvbWlzZWQK",
+                "uuid": "5742717c-7689-4440-af20-3cb44edb45cf",
+                "object_relation": "report-file(s)",
+                "value": "report.md",
+                "type": "attachment",
+                "to_ids": false,
+                "category": "External analysis"
             }
-        ]
+        ],
+        "timestamp": "1603642920"
     }
     ```
   - STIX
     ```json
     {
-        "type": "x-misp-object",
+        "type": "misp-object",
         "spec_version": "2.1",
-        "id": "x-misp-object--868037d5-d804-4f1d-8016-f296361f9c68",
+        "id": "misp-object--3e76898a-fcb1-485b-ac24-d450fe8c54bc",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "labels": [
-            "misp:category=\"misc\"",
-            "misp:name=\"person\""
-        ],
-        "x_misp_attributes": [
+        "name": "report",
+        "meta_category": "misc",
+        "attributes": [
             {
-                "object_relation": "first-name",
-                "type": "first-name",
-                "value": "John"
+                "type": "text",
+                "object_relation": "summary",
+                "value": "It is compromised",
+                "category": "Other",
+                "uuid": "11798cf8-1f53-448d-b424-e0bd7402492c",
+                "to_ids": false
             },
             {
-                "object_relation": "last-name",
-                "type": "last-name",
-                "value": "Smith"
+                "type": "text",
+                "object_relation": "type",
+                "value": "Report",
+                "category": "Other",
+                "uuid": "84a5575e-bbe4-4a55-a75d-c4a91b0d1e23",
+                "to_ids": false
             },
             {
-                "object_relation": "nationality",
-                "type": "nationality",
-                "value": "USA"
-            },
-            {
-                "object_relation": "passport-number",
-                "type": "passport-number",
-                "value": "ABA9875413"
-            },
-            {
-                "object_relation": "phone-number",
-                "type": "phone-number",
-                "value": "0123456789"
+                "type": "attachment",
+                "value": "report.md",
+                "object_relation": "report-file",
+                "category": "External analysis",
+                "uuid": "5742717c-7689-4440-af20-3cb44edb45cf",
+                "to_ids": false,
+                "data": "VGhyZWF0IFJlcG9ydAoKSXQgaXMgY29tcHJvbWlzZWQK"
             }
         ],
-        "x_misp_meta_category": "misc",
-        "x_misp_name": "person"
+        "labels": [
+            "misp:name=\"report\"",
+            "misp:meta-category=\"misc\""
+        ],
+        "extensions": {
+            "extension-definition--a093107b-933f-4d72-a9a6-6d7318adadda": {
+                "extension_type": "new-sdo"
+            }
+        }
     }
     ```
 

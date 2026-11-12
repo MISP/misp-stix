@@ -39,9 +39,12 @@ The following examples show one STIX 2.1 object type per entry. Since MISP Galax
                 "url": "https://attack.mitre.org/techniques/T1134"
             }
         ],
-        "x_misp_mitre_platforms": [
-            "Windows"
-        ]
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "mitre_platforms": "Windows"
+            }
+        }
     }
     ```
   - MISP
@@ -72,9 +75,7 @@ The following examples show one STIX 2.1 object type per entry. Since MISP Galax
                     }
                 ],
                 "meta": {
-                    "mitre_platforms": [
-                        "Windows"
-                    ],
+                    "mitre_platforms": "Windows",
                     "refs": [
                         "https://attack.mitre.org/techniques/T1134"
                     ],
@@ -327,9 +328,12 @@ The following examples show one STIX 2.1 object type per entry. Since MISP Galax
                 "url": "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report-appendix.zip"
             }
         ],
-        "x_misp_mitre_platforms": [
-            "Windows"
-        ]
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "mitre_platforms": "Windows"
+            }
+        }
     }
     ```
   - MISP
@@ -365,9 +369,7 @@ The following examples show one STIX 2.1 object type per entry. Since MISP Galax
                 ],
                 "meta": {
                     "is_family": false,
-                    "mitre_platforms": [
-                        "Windows"
-                    ],
+                    "mitre_platforms": "Windows",
                     "refs": [
                         "https://attack.mitre.org/software/S0017",
                         "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report-appendix.zip"
@@ -412,9 +414,15 @@ The following examples show one STIX 2.1 object type per entry. Since MISP Galax
             "misp:galaxy-name=\"Threat Actor\"",
             "misp:galaxy-type=\"threat-actor\""
         ],
-        "x_misp_cfr_type_of_incident": [
-            "Denial of service"
-        ]
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "cfr_type_of_incident": "Denial of service",
+                "original_names": {
+                    "cfr_type_of_incident": "cfr-type-of-incident"
+                }
+            }
+        }
     }
     ```
   - MISP
@@ -436,9 +444,7 @@ The following examples show one STIX 2.1 object type per entry. Since MISP Galax
                     "synonyms": [
                         "Ghambar"
                     ],
-                    "cfr-type-of-incident": [
-                        "Denial of service"
-                    ]
+                    "cfr-type-of-incident": "Denial of service"
                 },
                 "default": false,
                 "distribution": "0",
@@ -490,9 +496,12 @@ The following examples show one STIX 2.1 object type per entry. Since MISP Galax
                 "url": "https://technet.microsoft.com/en-us/library/bb490880.aspx"
             }
         ],
-        "x_misp_mitre_platforms": [
-            "Windows"
-        ]
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "mitre_platforms": "Windows"
+            }
+        }
     }
     ```
   - MISP
@@ -531,9 +540,7 @@ The following examples show one STIX 2.1 object type per entry. Since MISP Galax
                         "cmd.exe",
                         "cmd"
                     ],
-                    "mitre_platforms": [
-                        "Windows"
-                    ],
+                    "mitre_platforms": "Windows",
                     "refs": [
                         "https://attack.mitre.org/software/S0106",
                         "https://technet.microsoft.com/en-us/library/bb490880.aspx"

@@ -4,3 +4,6 @@
 [submodule "misp-galaxy"]
 	path = data/misp-galaxy
     url = https://github.com/MISP/misp-galaxy
+[submodule "data/cti-stix2-json-schemas"]
+	path = data/cti-stix2-json-schemas
+	url = https://github.com/oasis-open/cti-stix2-json-schemas.git

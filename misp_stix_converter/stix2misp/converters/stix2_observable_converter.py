@@ -3,7 +3,8 @@
 
 from ...misp_stix_mapping import Mapping
 from .stix2converter import (
-    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter)
+    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,
+    _as_custom_syntax, _CustomSyntaxView)
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
@@ -205,9 +206,30 @@ class STIX2ObservableConverter(STIX2Converter):
         else:
             observable['misp_object'] = [observable['misp_object'], misp_object]
 
-    # Errors handling
-    def _hash_type_error(self, hash_type: str):
-        self.main_parser._add_error(f'Wrong hash_type: {hash_type}')
+    def _hash_attribute_mapping(
+            self, hash_type: str, object_id: str,
+            mapping: Optional[str] = 'file') -> dict:
+        """Pick the MISP attribute a hash of an observable maps to.
+
+        A hash name outside the vocabulary is valid STIX, so a name the
+        mapping table does not know keeps its value as a text attribute under
+        the name lowercased, and the loss of the hash type is reported.
+
+        :param hash_type: the hash name, as the `hashes` dictionary keys it
+        :param object_id: where the hash is read, for the warning: the STIX
+            object id, followed by the PE section path for a section hash
+        :param mapping: the hashes mapping table to read
+        :return: the `type` and `object_relation` the attribute takes
+        """
+        hashes_mapping = getattr(self._mapping, f'{mapping}_hashes_mapping')
+        attribute = hashes_mapping(hash_type)
+        if attribute is not None:
+            return attribute
+        relation = hash_type.lower()
+        self.main_parser._unknown_hash_type_warning(
+            hash_type, object_id, relation
+        )
+        return {'type': 'text', 'object_relation': relation}
 
 
 class ExternalSTIX2ObservableMapping(
@@ -418,16 +440,14 @@ class ExternalSTIX2ObservableConverter(
             self, indicator_ref: set | None, observable_type: str,
             hash_type: str, value: str, object_id: str,
             mapping: Optional[str] = 'file') -> dict:
-        attribute = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
-        if attribute is not None:
-            return self._populate_object_attribute(
-                value, attribute,
-                self._handle_object_id(
-                    indicator_ref, observable_type, value,
-                    f"{object_id} - {attribute['object_relation']}"
-                )
+        attribute = self._hash_attribute_mapping(hash_type, object_id, mapping)
+        return self._populate_object_attribute(
+            value, attribute,
+            self._handle_object_id(
+                indicator_ref, observable_type, value,
+                f"{object_id} - {attribute['object_relation']}"
             )
-        self._hash_type_error(hash_type)
+        )
 
     def _handle_object_attributes(
             self, observable: _OBSERVABLE_TYPING, mapping: dict,
@@ -1016,15 +1036,17 @@ class InternalSTIX2ObservableConverter(
         )
 
     def _handle_hash_attribute(self, hash_type: str, value: str, object_id: str,
-                               mapping: Optional[str] = 'file') -> dict:
-        mapping = getattr(self._mapping, f'{mapping}_hashes_mapping')(hash_type)
-        if mapping is not None:
-            return self._populate_object_attribute(
-                value, mapping, self._handle_object_id(
-                    value, object_id, mapping['object_relation']
-                )
+                               mapping: Optional[str] = 'file',
+                               feature: Optional[str] = None) -> dict:
+        attribute = self._hash_attribute_mapping(
+            hash_type, feature or object_id, mapping
+        )
+        return self._populate_object_attribute(
+            value, attribute, self._handle_object_id(
+                value, object_id, attribute['object_relation'],
+                feature=feature
             )
-        self._hash_type_error(hash_type)
+        )
 
     def _handle_object_attributes(self, mapping: dict, values: Any,
                                   object_id: str) -> Iterator[dict]:
@@ -1103,12 +1125,12 @@ class InternalSTIX2ObservableConverter(
             'uuid': self.main_parser._create_v5_uuid(reference)
         }
 
-    def _has_domain_custom_fields(self, observable: DomainName_v21) -> bool:
+    def _has_domain_custom_fields(self, observable: _CustomSyntaxView) -> bool:
         mapping = self._mapping.domain_ip_object_mapping()
         for feature in mapping:
             if feature == 'value':
                 continue
-            if hasattr(observable, feature):
+            if feature in observable:
                 return True
         return any(self._unlisted_custom_properties(observable, mapping))
 
@@ -1117,21 +1139,30 @@ class InternalSTIX2ObservableConverter(
         yield from self._parse_generic_observable(observable, 'asn', object_id)
 
     def _parse_domain_ip_observable(
-            self, observable: _DOMAIN_TYPING) -> Iterator[dict]:
+            self, observable: _DOMAIN_TYPING,
+            observed_data_id: str) -> Iterator[dict]:
+        observable = _as_custom_syntax(observable, self.main_parser)
         if self._has_domain_custom_fields(observable):
             fields = self._parse_object_fields(
                 observable, 'domain-ip',
-                self._mapping.domain_ip_object_mapping(), observable.id
+                self._mapping.domain_ip_object_mapping(), observable['id']
             )
-            for attribute, value in fields:
-                yield from self._populate_object_attributes(
-                    attribute, value, observable.id
-                )
+            # The values' `to_ids` comes from the Indicator sharing the
+            # Observed Data's uuid, which the domain does not always share
+            for attribute, values in fields:
+                for value in values if isinstance(values, list) else [values]:
+                    yield self._populate_object_attribute(
+                        value, attribute, self._handle_object_id(
+                            value, observed_data_id,
+                            attribute['object_relation'],
+                            feature=observable['id']
+                        )
+                    )
         else:
             yield {
-                'value': observable.value,
+                'value': observable['value'],
                 **self._mapping.domain_attribute(),
-                **self.main_parser._sanitise_attribute_uuid(observable.id)
+                **self.main_parser._sanitise_attribute_uuid(observable['id'])
             }
 
     def _parse_email_observable(self, observable: _EMAIL_MESSAGE_TYPING,
@@ -1199,8 +1230,8 @@ class InternalSTIX2ObservableConverter(
 
     def _parse_file_observable(
             self, observable: _FILE_TYPING, object_id: str) -> Iterator[dict]:
-        if hasattr(observable, 'hashes'):
-            for hash_type, value in observable.hashes.items():
+        if 'hashes' in observable:
+            for hash_type, value in observable['hashes'].items():
                 yield self._handle_hash_attribute(hash_type, value, object_id)
         yield from self._parse_observable_fields_with_data(
             observable, 'file', object_id
@@ -1283,7 +1314,9 @@ class InternalSTIX2ObservableConverter(
 
         The table's fields come first, in table order, each custom one
         resolved against the object template; then the custom properties the
-        table does not list, which used to be dropped in silence.
+        table does not list, which used to be dropped in silence. The MISP
+        property extension values are read with them, under the custom
+        property names they stand for.
 
         :param observable: the observable carrying the object's attributes
         :param name: the MISP object template name
@@ -1292,17 +1325,21 @@ class InternalSTIX2ObservableConverter(
             deep prefix naming the part of it - what a warning points at
         :return: the attribute mapping and the value of every property read
         """
+        observable = _as_custom_syntax(observable, self.main_parser)
         for field, attribute in mapping.items():
-            if hasattr(observable, field):
+            if field in observable:
                 yield (
                     self._object_relation_mapping(
                         name, field, attribute, object_id
                     ),
-                    getattr(observable, field)
+                    observable[field]
                 )
         for field in self._unlisted_custom_properties(observable, mapping):
             yield (
-                self._object_relation_mapping(name, field, None, object_id),
+                self._object_relation_mapping(
+                    name, field, None, object_id,
+                    path=observable.path(field)
+                ),
                 observable[field]
             )
 
@@ -1331,17 +1368,19 @@ class InternalSTIX2ObservableConverter(
     def _parse_image_attachment_observable(
             self, observable: _ARTIFACT_TYPING,
             observed_data_id: str) -> Iterator[dict]:
+        observable = _as_custom_syntax(observable, self.main_parser)
         attribute = {
-            'value': observable.x_misp_filename, 'data': observable.payload_bin
+            'value': observable['x_misp_filename'],
+            'data': observable['payload_bin']
         }
         yield from self._handle_object_attributes_with_data(
             self._mapping.attachment_attribute(),
             attribute, observed_data_id
         )
-        if hasattr(observable, 'x_misp_url'):
-            yield from self._populate_object_attributes(
+        if 'x_misp_url' in observable:
+            yield from self._handle_object_attributes(
                 self._mapping.url_attribute(),
-                observable.x_misp_url, observed_data_id
+                observable['x_misp_url'], observed_data_id
             )
     
     def _parse_image_url_observable(self, observable: _ARTIFACT_TYPING,
@@ -1502,10 +1541,10 @@ class InternalSTIX2ObservableConverter(
     def _parse_pe_extension_observable(self, extension: _EXTENSION_TYPING,
                                        object_id: str) -> Iterator[dict]:
         feature = f'{object_id} - windows-pebinary-ext'
-        if hasattr(extension, 'optional_header'):
-            if hasattr(extension.optional_header, 'address_of_entry_point'):
+        if 'optional_header' in extension:
+            if 'address_of_entry_point' in extension['optional_header']:
                 mapping = self._mapping.entrypoint_address_attribute()
-                value = extension.optional_header.address_of_entry_point
+                value = extension['optional_header']['address_of_entry_point']
                 yield self._populate_object_attribute(
                     value, mapping, self._handle_object_id(
                         value, object_id, mapping['object_relation'],
@@ -1539,18 +1578,11 @@ class InternalSTIX2ObservableConverter(
                         feature=feature
                     )
                 )
-        if hasattr(section, 'hashes'):
-            for hash_type, hash_value in section.hashes.items():
-                mapping = self._mapping.file_hashes_mapping(hash_type)
-                if mapping is not None:
-                    yield self._populate_object_attribute(
-                        hash_value, mapping, self._handle_object_id(
-                            hash_value, object_id, mapping['object_relation'],
-                            feature=feature
-                        )
-                    )
-                    continue
-                self._hash_type_error(hash_type)
+        if 'hashes' in section:
+            for hash_type, hash_value in section['hashes'].items():
+                yield self._handle_hash_attribute(
+                    hash_type, hash_value, object_id, feature=feature
+                )
 
     def _parse_process_observable(self, observable: _PROCESS_TYPING,
                                   object_id: str) -> Iterator[dict]:

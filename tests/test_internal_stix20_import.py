@@ -397,6 +397,34 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         from misp_stix_converter import MISPtoSTIX20Parser
         self._check_colliding_galaxy_meta_keys_round_trip(MISPtoSTIX20Parser())
 
+    def test_stix20_first_and_last_seen_galaxy_meta_round_trip(self):
+        # On the five types with no such property, whose top-level property
+        # raised at export or, with other custom properties, was dropped
+        from misp_stix_converter import MISPtoSTIX20Parser
+        from .test_events import (
+            get_event_with_galaxies_with_first_and_last_seen_as_only_leftovers)
+        event = get_event_with_galaxies_with_first_and_last_seen_as_only_leftovers()
+        export_parser = MISPtoSTIX20Parser()
+        export_parser.parse_misp_event(event['Event'])
+        self.parser.load_stix_bundle(export_parser.bundle)
+        self.parser.parse_stix_bundle()
+        clusters = {
+            cluster.uuid: cluster
+            for galaxy in self.parser.misp_event.galaxies
+            for cluster in galaxy.clusters
+        }
+        *galaxies, _ = event['Event']['Galaxy']
+        self.assertEqual(len(galaxies), 5)
+        for galaxy in galaxies:
+            cluster = galaxy['GalaxyCluster'][0]
+            meta = clusters[cluster['uuid']].meta
+            for field in ('first_seen', 'last_seen'):
+                self.assertEqual(
+                    self._meta_elements(meta[field]), cluster['meta'][field]
+                )
+        self.assertEqual(dict(self.parser.warnings), {})
+        self.assertEqual(dict(self.parser.errors), {})
+
     def test_stix20_every_template_relation_folds_back(self):
         self._check_every_template_relation_folds_back()
 
@@ -455,6 +483,44 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._populate_documentation(
             attribute=json.loads(attribute.to_json()),
             observed_data=observed_data
+        )
+
+    def test_stix20_bundle_with_and_in_attachment_indicator_attribute_value(self):
+        # An attachment with no data, its name compared alone
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_attachment_indicator_attribute_without_data(),
+            'attachment.test'
+        )
+
+    def test_stix20_bundle_with_and_in_github_username_indicator_attribute_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_github_username_indicator_attribute(),
+            'chrisr3d'
+        )
+
+    def test_stix20_bundle_with_and_in_hash_composite_indicator_attribute_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_hash_composite_indicator_attributes(),
+            'filename1'
+        )
+
+    def test_stix20_bundle_with_and_in_ip_port_indicator_attribute_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_ip_port_indicator_attributes(),
+            '1.2.3.4'
+        )
+
+    def test_stix20_bundle_with_and_in_malware_sample_indicator_attribute_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_malware_sample_indicator_attribute(),
+            'oui'
+        )
+
+    def test_stix20_bundle_with_and_in_regkey_value_indicator_attribute_value(self):
+        # The key, as the pattern escapes it
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_regkey_value_indicator_attribute(),
+            r'HKLM\\Software\\mthjk'
         )
 
     def test_stix20_bundle_with_attachment_attribute(self):
@@ -2322,6 +2388,74 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         # claiming a uuid - so nothing here is a collision to report.
         self._check_uuid_collision_warning_absence(self.parser.warnings)
 
+    def test_stix20_bundle_with_sightings_missing_identities(self):
+        # The sightings are parsed once every object is: a sighting whose
+        # organisation the bundle does not carry costs at most itself, never
+        # the rest of the document
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_sightings_missing_identities()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, identity1, identity2, identity4, report, *stix_objects = bundle.objects
+        self.assertEqual(event.uuid, report.id.split('--')[1])
+        self.assertEqual(len(event.attributes), 2)
+        AS, domain = event.attributes
+        observed_data, sighting1, sighting2, opinion1, opinion2, indicator, sighting3, opinion3, sighting4, opinion4 = stix_objects
+        absent_id = 'identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90'
+        self.assertEqual(AS.uuid, observed_data.id.split('--')[1])
+        self.assertEqual(len(AS.sightings), 4)
+        stix_objects = (sighting1, sighting2, opinion1, opinion2)
+        for sighting, stix_object in zip(AS.sightings, stix_objects):
+            self.assertEqual(sighting.date_sighting, self._timestamp_from_datetime(stix_object.modified))
+            self.assertEqual(sighting.type, '0' if stix_object.type == 'sighting' else '1')
+        no_organisation, *sightings = AS.sightings
+        # MISP writes a sighting with no Organisation with no where_sighted_refs
+        self.assertNotIn('Organisation', no_organisation.to_dict())
+        # The Opinion keeps the organisation its author reference and its
+        # author name, with a warning
+        organisations = (
+            (identity2.id, identity2.name),
+            (absent_id, 'Oscorp Industries'),
+            (identity4.id, identity4.name)
+        )
+        for sighting, (identity_id, name) in zip(sightings, organisations):
+            self.assertEqual(sighting.Organisation['uuid'], identity_id.split('--')[1])
+            self.assertEqual(sighting.Organisation['name'], name)
+        self._check_absent_identity_report(self.parser.warnings, opinion1.id, absent_id)
+        self.assertEqual(self._reports_matching(self.parser.errors, opinion1.id), [])
+        # The Sighting, and the Opinion with no author name, have no
+        # organisation to give: each is dropped, with an error
+        self.assertEqual(domain.uuid, indicator.id.split('--')[1])
+        self.assertEqual(len(domain.sightings), 2)
+        stix_objects = (sighting3, opinion3)
+        identities = (identity1, identity2)
+        for sighting, stix_object, identity in zip(domain.sightings, stix_objects, identities):
+            self.assertEqual(sighting.date_sighting, self._timestamp_from_datetime(stix_object.modified))
+            self.assertEqual(sighting.type, '0' if stix_object.type == 'sighting' else '1')
+            self.assertEqual(sighting.Organisation['uuid'], identity.id.split('--')[1])
+            self.assertEqual(sighting.Organisation['name'], identity.name)
+        for stix_object in (sighting4, opinion4):
+            self._check_absent_identity_report(self.parser.errors, stix_object.id, absent_id)
+
+    def test_stix20_bundle_with_sighting_opinion_author_ref_missing(self):
+        # Parsed with the sightings, an Opinion naming its author with no
+        # reference to the identity costs only itself
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_sighting_opinion_author_ref_missing()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(len(self.parser.misp_event.attributes), 2)
+        AS, domain = self.parser.misp_event.attributes
+        *_, sighting1, sighting2, opinion1, opinion2 = bundle.objects[:11]
+        self.assertEqual(
+            [sighting.date_sighting for sighting in AS.sightings],
+            [
+                self._timestamp_from_datetime(stix_object.modified)
+                for stix_object in (sighting1, sighting2, opinion1)
+            ]
+        )
+        self.assertEqual(len(domain.sightings), 4)
+        self.assertEqual(len(self._reports_matching(self.parser.errors, opinion2.id)), 1)
+
     def test_stix20_bundle_with_single_report(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_single_report()
         self.parser.load_stix_bundle(bundle)
@@ -2907,6 +3041,125 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data=[user_od, user_ind, user_rel]
         )
 
+    def test_stix20_bundle_with_and_in_account_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_account_indicator_objects(),
+            'John Doe'
+        )
+
+    def test_stix20_bundle_with_and_in_account_with_attachment_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_account_with_attachment_indicator_objects(),
+            'Reddit account of the OctoCat'
+        )
+
+    def test_stix20_bundle_with_and_in_asn_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_asn_indicator_object(),
+            'AS name'
+        )
+
+    def test_stix20_bundle_with_and_in_domain_ip_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_domain_ip_indicator_object(),
+            '149.13.33.14'
+        )
+
+    def test_stix20_bundle_with_and_in_email_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_email_indicator_object(),
+            'Email test subject'
+        )
+
+    def test_stix20_bundle_with_and_in_file_indicator_object_value(self):
+        # The name of an attachment, closing the group comparing it
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_file_indicator_object(),
+            'non'
+        )
+
+    def test_stix20_bundle_with_and_in_http_request_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_http_request_indicator_object(),
+            'Mozilla Firefox'
+        )
+
+    def test_stix20_bundle_with_and_in_image_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_image_indicator_object(),
+            'STIX'
+        )
+
+    def test_stix20_bundle_with_and_in_ip_port_indicator_object_value(self):
+        # The domain, closing the group comparing it
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_ip_port_indicator_object(),
+            'circl.lu'
+        )
+
+    def test_stix20_bundle_with_and_in_lnk_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_lnk_indicator_object(),
+            '/var/www/MISP/app/files/scripts/tmp'
+        )
+
+    def test_stix20_bundle_with_and_in_mutex_indicator_object_value(self):
+        # The reader the objects with no reader of their own share
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_mutex_indicator_object(),
+            'Test mutex on unix'
+        )
+
+    def test_stix20_bundle_with_and_in_netflow_indicator_object_value(self):
+        # The source address, inside the group comparing it
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_netflow_indicator_object(),
+            '1.2.3.4'
+        )
+
+    def test_stix20_bundle_with_and_in_network_connection_indicator_object_value(self):
+        # The domain, closing the group comparing it
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_network_connection_indicator_object(),
+            'circl.lu'
+        )
+
+    def test_stix20_bundle_with_and_in_pe_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_pe_indicator_object(),
+            'PuTTy suite'
+        )
+
+    def test_stix20_bundle_with_and_in_process_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_process_indicator_object(),
+            'TestProcess'
+        )
+
+    def test_stix20_bundle_with_and_in_registry_key_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_registry_key_indicator_object(),
+            'RegistryName'
+        )
+
+    def test_stix20_bundle_with_and_in_registry_key_value_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_registry_key_value_indicator_object(),
+            'RegistryName'
+        )
+
+    def test_stix20_bundle_with_and_in_user_account_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_account_with_attachment_indicator_objects(),
+            'Code Monkey'
+        )
+
+    def test_stix20_bundle_with_and_in_x509_indicator_object_value(self):
+        self._check_and_in_a_pattern_value(
+            TestInternalSTIX20Bundles.get_bundle_with_x509_indicator_object(),
+            'Issuer Name'
+        )
+
     def test_stix20_bundle_with_android_app_indicator_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_android_app_indicator_object()
         self.parser.load_stix_bundle(bundle)
@@ -3271,6 +3524,29 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             name='File object with a Windows PE binary extension',
             summary='File object with a Windows PE binary extension'
         )
+
+    def test_stix20_bundle_with_file_and_pe_observable_object_with_unmapped_hashes(self):
+        # A hash name outside the vocabulary is valid STIX: the file and its
+        # PE section keep it beside their other hashes
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_file_and_pe_observable_object_with_unmapped_hashes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        _, report, observed_data, *_ = bundle.objects
+        file_object, pe_object, section = self._check_misp_event_features(
+            self.parser.misp_event, report
+        )
+        self.assertEqual(
+            (file_object.name, pe_object.name, section.name),
+            ('file', 'pe', 'pe-section')
+        )
+        observable = observed_data.objects['0']
+        extension = observable.extensions['windows-pebinary-ext']
+        self._check_unmapped_hashes(
+            (file_object, section),
+            (observable.hashes, extension.sections[0].hashes),
+            observed_data.id, self.parser.warnings
+        )
+        self.assertEqual(dict(self.parser.errors), {})
 
     def test_stix20_bundle_with_file_indicator_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_file_indicator_object()

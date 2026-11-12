@@ -18,7 +18,7 @@ For the rest of this documentation, we will then, in order to keep the content c
 ### Unmapped object names
 
 Not all the MISP objects are mapped and exported as know STIX 2.1 objects.  
-Those unmapped objects are then exported as STIX Custom objects. Here are some examples:
+Those unmapped objects are then exported as `misp-object` objects, which the MISP Object Extension defines. Here are some examples:
 {_custom_objects_to_stix21_mapping_}
 
 ## The other detailed mappings

@@ -6,12 +6,15 @@
 
 The import of STIX 2.1 content into MISP distinguishes between STIX bundles that were originally produced by MISP (internal) and those produced by third-party tools (external).
 
+A bundle produced by MISP carries the content no standard STIX object or property holds in the [MISP Extensions](#misp-extensions). Up to version 2026.10.12, MISP wrote that content as custom objects and properties (`x-misp-*`, `x_misp_*`): those bundles still import into the same MISP content.
+
 | STIX object | MISP datastructure |
 | -- | -- |
 | `Report` or `Grouping` | Event |
 | `Indicator` | Attribute or Object (`to_ids` flag set) |
 | `Observed Data` + SCOs | Attribute or Object (`to_ids` flag unset) |
 | `AttackPattern`, `CourseOfAction`, `IntrusionSet`, `Malware`, `ThreatActor`, `Tool`, `Vulnerability` | Galaxy Cluster |
+| `misp-attribute`, `misp-object`, `misp-galaxy-cluster` (internal) | Attribute, Object, Galaxy Cluster |
 
 #### Attributes from STIX 2.1
 

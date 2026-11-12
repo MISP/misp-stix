@@ -3864,14 +3864,15 @@ The list of currently supported MISP object templates is available [here](https:
             },
             {
                 "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
-                "uuid": "e668d25a-e269-5c1f-b3f4-2ca7cd08c106",
+                "uuid": "c017d1fb-8cbd-5ef7-93ea-8cad07705538",
                 "object_relation": "malware-sample",
                 "value": "oui|8764605c6f388c89096b534d33565802",
                 "type": "malware-sample",
                 "disable_correlation": false,
                 "to_ids": true,
                 "category": "Payload delivery",
-                "malware_filename": "oui"
+                "malware_filename": "oui",
+                "comment": "Indicator ID: indicator--5e384ae7-672c-4250-9cda-3b4da964451a"
             }
         ],
         "distribution": "5",
@@ -5204,13 +5205,14 @@ The list of currently supported MISP object templates is available [here](https:
                 "comment": "Indicator ID: indicator--939b2f03-c487-4f62-a90e-cab7acfee294"
             },
             {
-                "uuid": "958e2620-a436-505b-acb3-76cdf6cb1745",
+                "uuid": "510dcb5c-b6b0-5354-b906-1a135be93fe2",
                 "object_relation": "url",
                 "value": "https://oasis-open.github.io/cti-documentation/img/STIX.png",
                 "type": "url",
                 "disable_correlation": false,
                 "to_ids": true,
-                "category": "Network activity"
+                "category": "Network activity",
+                "comment": "Indicator ID: indicator--939b2f03-c487-4f62-a90e-cab7acfee294"
             }
         ],
         "distribution": "5",
@@ -5485,6 +5487,16 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
+                "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC",
+                "uuid": "d220af83-dcb0-5ec5-abe2-571e470ce9de",
+                "object_relation": "logo",
+                "value": "umbrella_logo",
+                "type": "attachment",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "External analysis"
+            },
+            {
                 "uuid": "0697eb7d-e314-5047-970b-d36ed2061aaa",
                 "object_relation": "phone-number",
                 "value": "1234567890",
@@ -5498,16 +5510,6 @@ The list of currently supported MISP object templates is available [here](https:
                 "object_relation": "website",
                 "value": "https://umbrella.org",
                 "type": "link",
-                "disable_correlation": false,
-                "to_ids": false,
-                "category": "External analysis"
-            },
-            {
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC",
-                "uuid": "df270bb6-d3e2-5f65-ad02-2003d642a03b",
-                "object_relation": "logo",
-                "value": "umbrella_logo",
-                "type": "attachment",
                 "disable_correlation": false,
                 "to_ids": false,
                 "category": "External analysis"
@@ -5824,14 +5826,15 @@ The list of currently supported MISP object templates is available [here](https:
             },
             {
                 "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
-                "uuid": "529a0000-d017-530b-adf0-0cbced67e315",
+                "uuid": "b99c4b87-c1c7-5fe4-a90b-5b0c1d79ca23",
                 "object_relation": "malware-sample",
                 "value": "oui|8764605c6f388c89096b534d33565802",
                 "type": "malware-sample",
                 "disable_correlation": false,
                 "to_ids": true,
                 "category": "Payload delivery",
-                "malware_filename": "oui"
+                "malware_filename": "oui",
+                "comment": "Indicator ID: indicator--153ef8d5-9182-45ec-bf1c-5819932b9ab7"
             }
         ],
         "distribution": "5",
@@ -6945,6 +6948,25 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
+                "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg==",
+                "uuid": "661b7770-8af5-5198-bcd5-8e94357a9a91",
+                "object_relation": "attachment",
+                "value": "AFP_logo.png",
+                "type": "attachment",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "External analysis"
+            },
+            {
+                "uuid": "57ed3ea5-e92f-5d3e-86dc-b45c8dfba524",
+                "object_relation": "link",
+                "value": "https://www.afp.com/",
+                "type": "link",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "External analysis"
+            },
+            {
                 "uuid": "771c5a1c-043c-52dc-8101-1a284408aa66",
                 "object_relation": "address",
                 "value": "13 place de la Bourse, 75002 Paris; Southern Railway Building, 1500 K Street, NW, Suite 600",
@@ -6970,16 +6992,6 @@ The list of currently supported MISP object templates is available [here](https:
                 "disable_correlation": false,
                 "to_ids": false,
                 "category": "Person"
-            },
-            {
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg==",
-                "uuid": "33f4e49c-5c88-5cbc-8e99-d8f2c77ad16a",
-                "object_relation": "attachment",
-                "value": "AFP_logo.png",
-                "type": "attachment",
-                "disable_correlation": false,
-                "to_ids": false,
-                "category": "External analysis"
             }
         ],
         "distribution": "5",

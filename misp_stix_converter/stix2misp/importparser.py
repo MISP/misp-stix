@@ -4,14 +4,13 @@ import json
 import re
 import traceback
 from ..abstract import AbstractParser
+from ..tools.misp_object_templates import MISP_org_uuid
 from abc import ABCMeta
 from datetime import datetime
 from pymisp import MISPEvent, MISPObject
 from pymisp.abstract import resources_path
 from typing import Any, Optional, Union
 from uuid import UUID, uuid4
-
-MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
 
 _DEFAULT_DISTRIBUTION = 0
 

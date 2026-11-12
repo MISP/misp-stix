@@ -81,12 +81,17 @@
                 "misp:name=\"script\"",
                 "misp:meta-category=\"misc\""
             ],
-            "x_misp_script": "print('You are infected')",
-            "x_misp_script_as_attachment": {
-                "value": "infected.py",
-                "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
-            },
-            "x_misp_state": "Malicious"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "script": "print('You are infected')",
+                    "script_as_attachment": {
+                        "value": "infected.py",
+                        "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
+                    },
+                    "state": "Malicious"
+                }
+            }
         }
     },
     "Script object where state is not \"Malicious\"": {
@@ -167,13 +172,18 @@
                 "misp:name=\"script\"",
                 "misp:meta-category=\"misc\""
             ],
-            "x_misp_language": "Python",
-            "x_misp_script": "print('Hello World')",
-            "x_misp_script_as_attachment": {
-                "value": "hello.py",
-                "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK"
-            },
-            "x_misp_state": "Harmless"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "language": "Python",
+                    "script": "print('Hello World')",
+                    "script_as_attachment": {
+                        "value": "hello.py",
+                        "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK"
+                    },
+                    "state": "Harmless"
+                }
+            }
         }
     },
     "android-app": {
@@ -234,8 +244,13 @@
                 "spec_version": "2.1",
                 "id": "software--02782ed5-b27f-4abc-8bae-efebe13a46dd",
                 "name": "Facebook",
-                "x_misp_certificate": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
-                "x_misp_domain": "facebook.com"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "certificate": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
+                        "domain": "facebook.com"
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -244,7 +259,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[software:name = 'Facebook' AND software:x_misp_certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:x_misp_domain = 'facebook.com']",
+                "pattern": "[software:name = 'Facebook' AND software:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.domain = 'facebook.com']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -414,11 +429,16 @@
                     "misp:name=\"annotation\"",
                     "misp:meta-category=\"misc\""
                 ],
-                "x_misp_attachment": {
-                    "value": "annotation.attachment",
-                    "data": "OC44LjguOCBpcyB0aGUgR29[...]WRkcmVzc2VzIChJUHY0KS4K"
-                },
-                "x_misp_type": "Executive Summary"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "type": "Executive Summary",
+                        "attachment": {
+                            "value": "annotation.attachment",
+                            "data": "OC44LjguOCBpcyB0aGUgR29[...]WRkcmVzc2VzIChJUHY0KS4K"
+                        }
+                    }
+                }
             },
             {
                 "type": "relationship",
@@ -624,10 +644,15 @@
                 "id": "autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f",
                 "number": 66642,
                 "name": "AS name",
-                "x_misp_subnet_announced": [
-                    "1.2.3.4",
-                    "8.8.8.8"
-                ]
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "subnet_announced": [
+                            "1.2.3.4",
+                            "8.8.8.8"
+                        ]
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -754,12 +779,17 @@
                     "external_id": "CAPEC-9"
                 }
             ],
-            "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
-            "x_misp_related_weakness": [
-                "CWE-118",
-                "CWE-120"
-            ],
-            "x_misp_solutions": "Carefully review the service's implementation before making it available to users."
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "related_weakness": [
+                        "CWE-118",
+                        "CWE-120"
+                    ],
+                    "prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+                    "solutions": "Carefully review the service's implementation before making it available to users."
+                }
+            }
         }
     },
     "course-of-action": {
@@ -849,12 +879,17 @@
                 "misp:name=\"course-of-action\"",
                 "misp:meta-category=\"misc\""
             ],
-            "x_misp_cost": "Low",
-            "x_misp_efficacy": "High",
-            "x_misp_impact": "Low",
-            "x_misp_objective": "Block communication between the PIVY agents and the C2 Server",
-            "x_misp_stage": "Response",
-            "x_misp_type": "Perimeter Blocking"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "type": "Perimeter Blocking",
+                    "objective": "Block communication between the PIVY agents and the C2 Server",
+                    "stage": "Response",
+                    "cost": "Low",
+                    "impact": "Low",
+                    "efficacy": "High"
+                }
+            }
         }
     },
     "cpe-asset": {
@@ -945,7 +980,12 @@
                 ],
                 "vendor": "Microsoft",
                 "version": "2002",
-                "x_misp_description": "Microsoft Word is a word processing software developed by Microsoft."
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "description": "Microsoft Word is a word processing software developed by Microsoft."
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -1072,11 +1112,16 @@
                 "id": "user-account--5b1f9378-46d4-494b-a4c1-044e0a00020f",
                 "user_id": "misp",
                 "credential": "Password1234",
-                "x_misp_format": "clear-text",
-                "x_misp_notification": "victim-notified",
-                "x_misp_origin": "malware-analysis",
-                "x_misp_text": "MISP default credentials",
-                "x_misp_type": "password"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "text": "MISP default credentials",
+                        "type": "password",
+                        "origin": "malware-analysis",
+                        "format": "clear-text",
+                        "notification": "victim-notified"
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -1085,7 +1130,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[user-account:x_misp_text = 'MISP default credentials']",
+                "pattern": "[user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.text = 'MISP default credentials']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -1295,8 +1340,13 @@
                 "resolves_to_refs": [
                     "ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca"
                 ],
-                "x_misp_hostname": "circl.lu",
-                "x_misp_port": "8443"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "hostname": "circl.lu",
+                        "port": "8443"
+                    }
+                }
             },
             {
                 "type": "ipv4-addr",
@@ -1311,7 +1361,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+                "pattern": "[domain-name:value = 'circl.lu' AND domain-name:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -1674,8 +1724,13 @@
                         "content_disposition": "attachment; filename='attachment2.file'"
                     }
                 ],
-                "x_misp_mime_boundary": "Test mime boundary",
-                "x_misp_user_agent": "Test user agent"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "user_agent": "Test user agent",
+                        "mime_boundary": "Test mime boundary"
+                    }
+                }
             },
             {
                 "type": "email-addr",
@@ -1870,7 +1925,12 @@
                 "bcc_refs": [
                     "email-addr--3b940996-f99b-4bda-b065-69b8957f688c"
                 ],
-                "x_misp_cc_display_name": "Marie Curie"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "cc_display_name": "Marie Curie"
+                    }
+                }
             },
             {
                 "type": "email-addr",
@@ -2072,10 +2132,15 @@
                 "user_id": "1392781243",
                 "account_login": "octocat",
                 "account_type": "facebook",
-                "x_misp_link": "https://facebook.com/octocat",
-                "x_misp_user_avatar": {
-                    "value": "octocat.png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "link": "https://facebook.com/octocat",
+                        "user_avatar": {
+                            "value": "octocat.png",
+                            "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                        }
+                    }
                 }
             },
             {
@@ -2250,9 +2315,14 @@
                 "mtime": "2022-10-25T16:22:00Z",
                 "parent_directory_ref": "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
                 "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                "x_misp_attachment": {
-                    "value": "non",
-                    "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "attachment": {
+                            "value": "non",
+                            "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+                        }
+                    }
                 }
             },
             {
@@ -2272,7 +2342,12 @@
                 },
                 "encryption_algorithm": "mime-type-indicated",
                 "decryption_key": "infected",
-                "x_misp_filename": "oui"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "filename": "oui"
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -2281,7 +2356,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+                "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -2627,6 +2702,23 @@
                 "size": 1234,
                 "name": "oui",
                 "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "entropy": "1.234",
+                        "windows_pebinary_ext": {
+                            "compilation_timestamp": "2019-03-16T12:31:22Z",
+                            "original_filename": "PuTTy",
+                            "internal_filename": "PuTTy",
+                            "file_description": "SSH, Telnet and Rlogin client",
+                            "file_version": "Release 0.71 (with embedded help)",
+                            "lang_id": "080904B0",
+                            "product_name": "PuTTy suite",
+                            "product_version": "Release 0.71",
+                            "company_name": "Simoe Tatham",
+                            "legal_copyright": "Copyright © 1997-2019 Simon Tatham.",
+                            "impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt"
+                        }
+                    },
                     "windows-pebinary-ext": {
                         "pe_type": "exe",
                         "imphash": "23ea835ab4b9017c74dfb023d2301c99",
@@ -2647,21 +2739,9 @@
                                     "SSDEEP": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK"
                                 }
                             }
-                        ],
-                        "x_misp_company_name": "Simoe Tatham",
-                        "x_misp_compilation_timestamp": "2019-03-16T12:31:22Z",
-                        "x_misp_file_description": "SSH, Telnet and Rlogin client",
-                        "x_misp_file_version": "Release 0.71 (with embedded help)",
-                        "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
-                        "x_misp_internal_filename": "PuTTy",
-                        "x_misp_lang_id": "080904B0",
-                        "x_misp_legal_copyright": "Copyright © 1997-2019 Simon Tatham.",
-                        "x_misp_original_filename": "PuTTy",
-                        "x_misp_product_name": "PuTTy suite",
-                        "x_misp_product_version": "Release 0.71"
+                        ]
                     }
-                },
-                "x_misp_entropy": "1.234"
+                }
             },
             {
                 "type": "indicator",
@@ -2670,7 +2750,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.'SHA-256' = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+                "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.'SHA-256' = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.original_filename = 'PuTTy' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.internal_filename = 'PuTTy' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -2806,8 +2886,13 @@
                 "misp:name=\"geolocation\"",
                 "misp:meta-category=\"misc\""
             ],
-            "x_misp_altitude": "55",
-            "x_misp_country": "USA"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "country": "USA",
+                    "altitude": "55"
+                }
+            }
         }
     },
     "github-user": {
@@ -2888,10 +2973,15 @@
                 "account_login": "octocat",
                 "account_type": "github",
                 "display_name": "Octo Cat",
-                "x_misp_organisation": "GitHub",
-                "x_misp_profile_image": {
-                    "value": "octocat.png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "organisation": "GitHub",
+                        "profile_image": {
+                            "value": "octocat.png",
+                            "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                        }
+                    }
                 }
             },
             {
@@ -3186,14 +3276,19 @@
                 },
                 "size": 35,
                 "name": "oui",
-                "x_misp_knownmalicious": "hashlookup-known-malicious-source",
-                "x_misp_packagearch": "amd64",
-                "x_misp_packagedescription": "GNU core utilities",
-                "x_misp_packagemaintainer": "Ubuntu Developers",
-                "x_misp_packagename": "coreutils",
-                "x_misp_packagerelease": "4.1ubuntu1",
-                "x_misp_packageversion": "8.32",
-                "x_misp_source": "https://www.circl.lu/services/hashlookup"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "knownmalicious": "hashlookup-known-malicious-source",
+                        "packagename": "coreutils",
+                        "packageversion": "8.32",
+                        "packagerelease": "4.1ubuntu1",
+                        "packagearch": "amd64",
+                        "packagedescription": "GNU core utilities",
+                        "packagemaintainer": "Ubuntu Developers",
+                        "source": "https://www.circl.lu/services/hashlookup"
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -3343,9 +3438,12 @@
                             "Content-Type": "JSON",
                             "User-Agent": "Mozilla Firefox"
                         }
+                    },
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "url": "http://circl.lu/projects/internships/"
                     }
-                },
-                "x_misp_url": "http://circl.lu/projects/internships/"
+                }
             },
             {
                 "type": "ipv4-addr",
@@ -3541,7 +3639,12 @@
                 "id": "file--939b2f03-c487-4f62-a90e-cab7acfee294",
                 "name": "STIX.png",
                 "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                "x_misp_image_text": "STIX"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "image_text": "STIX"
+                    }
+                }
             },
             {
                 "type": "artifact",
@@ -3549,8 +3652,13 @@
                 "id": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
                 "mime_type": "image/png",
                 "payload_bin": "iVBORw0KGgoAAAANSUhEUgA[...]gEefQAAAABJRU5ErkJggg==",
-                "x_misp_filename": "STIX.png",
-                "x_misp_url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "filename": "STIX.png",
+                        "url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -3559,7 +3667,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[file:name = 'STIX.png' AND file:content_ref.payload_bin = 'iVBORw0KGgoAAAANSUhEUgA[...]gEefQAAAABJRU5ErkJggg==' AND file:content_ref.mime_type = 'image/png' AND file:content_ref.x_misp_filename = 'STIX.png' AND file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png']",
+                "pattern": "[file:name = 'STIX.png' AND file:content_ref.payload_bin = 'iVBORw0KGgoAAAANSUhEUgA[...]gEefQAAAABJRU5ErkJggg==' AND file:content_ref.mime_type = 'image/png' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'STIX.png' AND file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -3786,7 +3894,12 @@
                 "protocols": [
                     "ipv4"
                 ],
-                "x_misp_domain": "circl.lu"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "domain": "circl.lu"
+                    }
+                }
             },
             {
                 "type": "ipv4-addr",
@@ -3913,11 +4026,16 @@
                 "misp:name=\"legal-entity\"",
                 "misp:meta-category=\"misc\""
             ],
-            "x_misp_logo": {
-                "value": "umbrella_logo",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC"
-            },
-            "x_misp_registration_number": "11223344556677889900"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "registration_number": "11223344556677889900",
+                    "logo": {
+                        "value": "umbrella_logo",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC"
+                    }
+                }
+            }
         }
     },
     "lnk": {
@@ -4068,7 +4186,12 @@
                 },
                 "encryption_algorithm": "mime-type-indicated",
                 "decryption_key": "infected",
-                "x_misp_filename": "oui"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "filename": "oui"
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -4077,7 +4200,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+                "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -4162,8 +4285,13 @@
                 "spec_version": "2.1",
                 "id": "mutex--b0f55591-6a63-4fbd-a169-064e64738d95",
                 "name": "MutexTest",
-                "x_misp_description": "Test mutex on unix",
-                "x_misp_operating_system": "Unix"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "description": "Test mutex on unix",
+                        "operating_system": "Unix"
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -4495,7 +4623,12 @@
                     "tcp",
                     "http"
                 ],
-                "x_misp_hostname_dst": "circl.lu"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "hostname_dst": "circl.lu"
+                    }
+                }
             },
             {
                 "type": "ipv4-addr",
@@ -4670,10 +4803,13 @@
                         "address_family": "AF_INET",
                         "is_listening": true,
                         "socket_type": "SOCK_RAW"
+                    },
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "domain_family": "PF_INET",
+                        "hostname_dst": "circl.lu"
                     }
-                },
-                "x_misp_domain_family": "PF_INET",
-                "x_misp_hostname_dst": "circl.lu"
+                }
             },
             {
                 "type": "ipv4-addr",
@@ -4818,9 +4954,14 @@
                 "misp:name=\"news-agency\"",
                 "misp:meta-category=\"misc\""
             ],
-            "x_misp_attachment": {
-                "value": "AFP_logo.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg=="
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "attachment": {
+                        "value": "AFP_logo.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg=="
+                    }
+                }
             }
         }
     },
@@ -4958,7 +5099,12 @@
                 "misp:name=\"organization\"",
                 "misp:meta-category=\"misc\""
             ],
-            "x_misp_alias": "CIRCL"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "alias": "CIRCL"
+                }
+            }
         }
     },
     "owasp-crs-rule": {
@@ -5080,10 +5226,15 @@
                 "user_id": "42",
                 "account_login": "ParlerOctocat",
                 "account_type": "parler",
-                "x_misp_human": false,
-                "x_misp_profile_photo": {
-                    "value": "octocat.png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "human": false,
+                        "profile_photo": {
+                            "value": "octocat.png",
+                            "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                        }
+                    }
                 }
             },
             {
@@ -5383,18 +5534,23 @@
                                     "SSDEEP": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK"
                                 }
                             }
-                        ],
-                        "x_misp_company_name": "Simoe Tatham",
-                        "x_misp_compilation_timestamp": "2019-03-16T12:31:22Z",
-                        "x_misp_file_description": "SSH, Telnet and Rlogin client",
-                        "x_misp_file_version": "Release 0.71 (with embedded help)",
-                        "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
-                        "x_misp_internal_filename": "PuTTy",
-                        "x_misp_lang_id": "080904B0",
-                        "x_misp_legal_copyright": "Copyright © 1997-2019 Simon Tatham.",
-                        "x_misp_original_filename": "PuTTy",
-                        "x_misp_product_name": "PuTTy suite",
-                        "x_misp_product_version": "Release 0.71"
+                        ]
+                    },
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "windows_pebinary_ext": {
+                            "compilation_timestamp": "2019-03-16T12:31:22Z",
+                            "original_filename": "PuTTy",
+                            "internal_filename": "PuTTy",
+                            "file_description": "SSH, Telnet and Rlogin client",
+                            "file_version": "Release 0.71 (with embedded help)",
+                            "lang_id": "080904B0",
+                            "product_name": "PuTTy suite",
+                            "product_version": "Release 0.71",
+                            "company_name": "Simoe Tatham",
+                            "legal_copyright": "Copyright © 1997-2019 Simon Tatham.",
+                            "impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt"
+                        }
                     }
                 }
             },
@@ -5405,7 +5561,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+                "pattern": "[file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.original_filename = 'PuTTy' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.internal_filename = 'PuTTy' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -5507,8 +5663,13 @@
                 "misp:name=\"person\"",
                 "misp:meta-category=\"misc\""
             ],
-            "x_misp_nationality": "USA",
-            "x_misp_passport_number": "ABA9875413"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "nationality": "USA",
+                    "passport_number": "ABA9875413"
+                }
+            }
         }
     },
     "process": {
@@ -5635,8 +5796,13 @@
                 "child_refs": [
                     "process--518b4bcb-a86b-4783-9457-391d548b605b"
                 ],
-                "x_misp_name": "TestProcess",
-                "x_misp_port": "1234"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "name": "TestProcess",
+                        "port": "1234"
+                    }
+                }
             },
             {
                 "type": "file",
@@ -5651,7 +5817,12 @@
                 "pid": 2107,
                 "command_line": "grep -nrG iglocska /home/viktor/friends.txt",
                 "image_ref": "file--d01ef2c6-3154-4f8a-a3dc-9de1f34dd5d0",
-                "x_misp_process_name": "Friends_From_H"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "process_name": "Friends_From_H"
+                    }
+                }
             },
             {
                 "type": "process",
@@ -5768,11 +5939,16 @@
                 "user_id": "666",
                 "account_login": "RedditOctocat",
                 "account_type": "reddit",
-                "x_misp_account_avatar": {
-                    "value": "octocat.png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
-                },
-                "x_misp_description": "Reddit account of the OctoCat"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "description": "Reddit account of the OctoCat",
+                        "account_avatar": {
+                            "value": "octocat.png",
+                            "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                        }
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -5898,7 +6074,12 @@
                     }
                 ],
                 "modified_time": "2020-10-25T16:22:00Z",
-                "x_misp_hive": "hklm"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "hive": "hklm"
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -6097,7 +6278,12 @@
                     }
                 ],
                 "modified_time": "2020-10-25T16:22:00Z",
-                "x_misp_hive": "hklm"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "hive": "hklm"
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -6106,7 +6292,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+                "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.hive = 'hklm']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -6311,7 +6497,12 @@
                     "url": "https://www.us-cert.gov/ncas/alerts/TA17-293A"
                 }
             ],
-            "x_misp_context": "disk"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "context": "disk"
+                }
+            }
         }
     },
     "suricata": {
@@ -6454,10 +6645,15 @@
                 "user_id": "1234567890",
                 "account_login": "T3l3gr4mUs3r",
                 "account_type": "telegram",
-                "x_misp_phone": [
-                    "0112233445",
-                    "0556677889"
-                ]
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "phone": [
+                            "0112233445",
+                            "0556677889"
+                        ]
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -6571,10 +6767,15 @@
                 "account_login": "octocat",
                 "account_type": "twitter",
                 "display_name": "Octo Cat",
-                "x_misp_followers": "666",
-                "x_misp_profile_image": {
-                    "value": "octocat.png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "followers": "666",
+                        "profile_image": {
+                            "value": "octocat.png",
+                            "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                        }
+                    }
                 }
             },
             {
@@ -6685,10 +6886,15 @@
                 "spec_version": "2.1",
                 "id": "url--5ac347ca-dac4-4562-9775-04120a00020f",
                 "value": "https://www.circl.lu/team",
-                "x_misp_domain": "circl.lu",
-                "x_misp_host": "www.circl.lu",
-                "x_misp_ip": "149.13.33.14",
-                "x_misp_port": "443"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "domain": "circl.lu",
+                        "host": "www.circl.lu",
+                        "misp_ip": "149.13.33.14",
+                        "port": "443"
+                    }
+                }
             },
             {
                 "type": "indicator",
@@ -6697,7 +6903,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[url:value = 'https://www.circl.lu/team' AND url:x_misp_domain = 'circl.lu' AND url:x_misp_host = 'www.circl.lu' AND url:x_misp_ip = '149.13.33.14']",
+                "pattern": "[url:value = 'https://www.circl.lu/team' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.domain = 'circl.lu' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.host = 'www.circl.lu' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.misp_ip = '149.13.33.14']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -6860,11 +7066,14 @@
                             "donald-fan"
                         ],
                         "home_dir": "/home/iglocska"
+                    },
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "user_avatar": {
+                            "value": "octocat.png",
+                            "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                        }
                     }
-                },
-                "x_misp_user_avatar": {
-                    "value": "octocat.png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
                 }
             },
             {
@@ -6994,9 +7203,14 @@
                     "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
                 }
             ],
-            "x_misp_created": "2017-10-13T07:29:00Z",
-            "x_misp_cvss_score": "6.8",
-            "x_misp_published": "2017-10-13T07:29:00Z"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "cvss_score": "6.8",
+                    "created": "2017-10-13T07:29:00Z",
+                    "published": "2017-10-13T07:29:00Z"
+                }
+            }
         }
     },
     "wazuh-rule": {
@@ -7200,7 +7414,12 @@
                 "subject_public_key_algorithm": "PublicKeyAlgorithm",
                 "subject_public_key_modulus": "C5",
                 "subject_public_key_exponent": 2,
-                "x_misp_pem": "RawCertificateInPEMFormat"
+                "extensions": {
+                    "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                        "extension_type": "property-extension",
+                        "pem": "RawCertificateInPEMFormat"
+                    }
+                }
             },
             {
                 "type": "indicator",

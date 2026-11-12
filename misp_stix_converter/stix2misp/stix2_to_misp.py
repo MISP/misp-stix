@@ -137,6 +137,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def __init__(self):
         super().__init__()
         self._creators: set = set()
+        self._definition_authors: set = set()
         self._mapping: Union[
             ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping
         ]
@@ -217,7 +218,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         object_type = stix_object['type']
         feature = self._mapping.stix_object_loading_mapping(object_type)
         if feature is None:
-            if object_type not in self._mapping.object_type_refs_to_skip():
+            if object_type == 'extension-definition':
+                # Its author is no creator of the content: an identity
+                # authoring nothing else converts to nothing, and the
+                # producer is still read from the content's creators
+                if 'created_by_ref' in stix_object:
+                    self._definition_authors.add(stix_object['created_by_ref'])
+            elif object_type not in self._mapping.object_type_refs_to_skip():
                 self._add_error(
                     f'Unable to load STIX object type: {object_type}'
                 )
@@ -323,6 +330,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         super()._reset_bundle_state()
         self._parsed_object_refs = set()
         self._creators = set()
+        self._definition_authors = set()
         self._analyst_data = defaultdict(list)
         self._clusters = {}
         self._consumed_invalid_ids = set()
@@ -583,11 +591,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _get_stix_object(self, object_ref: str):
         object_type = object_ref.split('--')[0]
-        if object_type.startswith('x-misp-'):
-            object_type = (
-                'note' if object_type == 'x-misp-event-report'
-                else object_type.replace('x-misp', 'custom')
-            )
+        # The MISP custom types share their stores in both syntaxes: an
+        # `x-misp-*` type and the `misp-*` type standing for the same MISP
+        # record load into the same one
+        if object_type == 'x-misp-event-report':
+            object_type = 'note'
+        elif object_type.startswith(('x-misp-', 'misp-')):
+            object_type = f"custom-{object_type.split('misp-', 1)[1]}"
         feature = f"_{object_type.replace('-', '_')}"
         try:
             return getattr(self, feature)[object_ref]
@@ -1282,7 +1292,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if not self.galaxies_as_tags:
             self._parse_galaxy_relationships()
 
-    def _parse_sighting(self, sighting: _SIGHTING_TYPING) -> MISPSighting:
+    def _create_sighting(
+            self, sighting: _SIGHTING_TYPING,
+            identity: Optional[Identity_v20 | Identity_v21 | dict] = None
+            ) -> MISPSighting:
         misp_sighting = MISPSighting()
         sighting_args = {
             'date_sighting': self._timestamp_from_stix_date(
@@ -1292,17 +1305,21 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         }
         if 'description' in sighting:
             sighting_args['source'] = sighting['description']
-        if 'where_sighted_refs' in sighting:
-            for reference in sighting['where_sighted_refs']:
-                identity = self._identity.get(reference)
-                if identity is None:
-                    continue
-                sighting_args['Organisation'] = {
-                    'uuid': self._sanitise_uuid(identity['id']),
-                    'name': identity['name']
-                }
-                misp_sighting.from_dict(**sighting_args)
-                return misp_sighting
+        if identity is not None:
+            sighting_args['Organisation'] = {
+                'uuid': self._sanitise_uuid(identity['id']),
+                'name': identity['name']
+            }
+        misp_sighting.from_dict(**sighting_args)
+        return misp_sighting
+
+    def _parse_sighting(
+            self, sighting: _SIGHTING_TYPING) -> Optional[MISPSighting]:
+        for reference in sighting.get('where_sighted_refs', []):
+            identity = getattr(self, '_identity', {}).get(reference)
+            if identity is not None:
+                return self._create_sighting(sighting, identity)
+        return None
 
     def _parse_sightings(self):
         for attribute in self.misp_event.attributes:
@@ -1493,6 +1510,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return title
         return self.generic_info_field
 
+    def _is_author(self, identity_ref: str) -> bool:
+        # An identity authoring the content, or only the extension
+        # definitions the bundle carries, is no content of its own
+        return (
+            identity_ref in self._creators
+            or identity_ref in self._definition_authors
+        )
+
     def _handle_creator(self, reference: str) -> str:
         if reference in getattr(self, '_identity', {}):
             return self._identity[reference]['name']
@@ -1556,6 +1581,45 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             f'Unknown STIX Marking Definition extension: {identifier}'
         )
 
+    def _custom_syntax_collision_warning(
+            self, object_id: str, field: str, path: str):
+        self._add_warning(
+            f'Both syntaxes carry the MISP value "{field}" on the STIX object '
+            f'with id {object_id}: the value of {path} in the MISP property '
+            'extension is read, the custom property is ignored.'
+        )
+
+    def _opinion_author_error(self, opinion_id: str, author_ref: str):
+        self._add_error(
+            'Unable to import the sighting from the STIX object with id '
+            f'{opinion_id}: the bundle carries no identity with id '
+            f'{author_ref}, its author, and the object names no author either.'
+        )
+
+    def _opinion_author_ref_error(self, opinion_id: str, author_ref: Any):
+        self._add_error(
+            'Unable to import the sighting from the STIX object with id '
+            f'{opinion_id}: its author reference, {author_ref!r}, is not an '
+            'identity id.'
+        )
+
+    def _opinion_author_warning(
+            self, opinion_id: str, author_ref: str, author: str):
+        self._add_warning(
+            f'The bundle carries no identity with id {author_ref}, the author '
+            f'of the STIX object with id {opinion_id}: the organisation of '
+            'its sighting takes the uuid of that id and the name '
+            f'"{author}" the object carries.'
+        )
+
+    def _sighting_identity_error(self, sighting_id: str, references: list):
+        self._add_error(
+            'Unable to import the sighting from the STIX object with id '
+            f'{sighting_id}: the bundle carries none of the identities it is '
+            f"sighted where ({', '.join(references)}), so the sighting has no "
+            'organisation.'
+        )
+
     def _unknown_custom_property_warning(
             self, name: str, object_id: str, field: str, relation: str):
         self._add_warning(
@@ -1566,10 +1630,21 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             f'"{relation}".'
         )
 
-    def _unknown_original_names_warning(self, object_id: str, names: list):
+    def _unknown_hash_type_warning(
+            self, hash_type: str, object_id: str, relation: str):
+        self._add_warning(
+            f'Unknown hash type "{hash_type}" read from {object_id}: '
+            'the import mapping knows no attribute type for it, so it is '
+            'imported as a text attribute with the object relation '
+            f'"{relation}".'
+        )
+
+    def _unknown_original_names_warning(
+            self, object_id: str, names: list,
+            path: str = _ORIGINAL_NAMES_PROPERTY):
         quoted = ', '.join(f'"{name}"' for name in names)
         self._add_warning(
-            f'Ignored the {_ORIGINAL_NAMES_PROPERTY} '
+            f'Ignored the {path} '
             f"{'entries' if len(names) > 1 else 'entry'} {quoted} of "
             f'{object_id}: the object carries no such property or meta key '
             'to spell.'
