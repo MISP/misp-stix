@@ -3705,16 +3705,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             for misp_object in objects_to_parse.values():
                 annotation_object = misp_object['misp_object']
                 self._current_misp_object = annotation_object
-                custom = (
-                    annotation_object.get('ObjectReference') is None or
-                    not self._annotates(
-                        annotation_object['ObjectReference']
+                try:
+                    custom = (
+                        annotation_object.get('ObjectReference') is None or
+                        not self._annotates(
+                            annotation_object['ObjectReference']
+                        )
                     )
-                )
-                if custom:
-                    self._parse_custom_object(annotation_object)
-                else:
-                    self._parse_annotation_object(annotation_object)
+                    if custom:
+                        self._parse_custom_object(annotation_object)
+                    else:
+                        self._parse_annotation_object(annotation_object)
+                except Exception as exception:
+                    self._object_error(annotation_object, exception)
 
     def _resolve_pe_to_parse(self, pe_object: dict):
         to_ids, section_uuids = self._handle_pe_object_references(
