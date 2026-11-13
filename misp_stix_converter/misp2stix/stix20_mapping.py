@@ -54,6 +54,11 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
         "mime_type": "application/zip"
     }
     __malware_sample_additional_pattern_values = "file:content_ref.mime_type = 'application/zip'"
+    # The types a galaxy cluster becomes whose STIX 2.0 object has no
+    # `first_seen` / `last_seen`: these meta are MISP values there
+    __types_without_seen_properties = (
+        'attack-pattern', 'malware', 'threat-actor', 'tool', 'vulnerability'
+    )
 
     # STIX 2.0 specific MISP OBJECTS MAPPING
     __objects_mapping = MISPtoSTIX2Mapping.objects_mapping()
@@ -275,6 +280,10 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def tlp_markings(cls, field: str) -> Union[MarkingDefinition, None]:
         return cls.__tlp_markings.get(field)
+
+    @classmethod
+    def types_without_seen_properties(cls) -> tuple:
+        return cls.__types_without_seen_properties
 
     @classmethod
     def user_account_object_mapping(cls, field: str) -> Union[dict, None]:

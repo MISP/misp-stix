@@ -1,3 +1,6 @@
 /tmp/*
 !/tmp/empty
 **/__pycache__
+.coverage*
+.DS_Store
+tmp_*.py

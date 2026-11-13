@@ -4,6 +4,7 @@ from misp_stix_converter.misp2stix.misp_to_stix2 import MISPtoSTIX2Parser
 
 _qs = MISPtoSTIX2Parser._quote_segment
 _qcp = MISPtoSTIX2Parser._quote_custom_property
+_cpn = MISPtoSTIX2Parser._custom_property_name
 _ev = MISPtoSTIX2Parser._escape_pattern_value
 
 
@@ -52,24 +53,72 @@ class TestQuoteSegment(unittest.TestCase):
         self.assertEqual(_qs('a\\b'), r"'a\\b'")
 
 
+class TestCustomPropertyName(unittest.TestCase):
+    # STIX 2.0 §7.1 / STIX 2.1 §11.1.1: ASCII, a-z, 0-9 and `_` only.
+    _RULE = re.compile(r'^x_misp_[a-z0-9_]*$')
+
+    def test_conforming_relation_unchanged(self):
+        self.assertEqual(_cpn('filename'), 'x_misp_filename')
+        self.assertEqual(_cpn('sha512_224'), 'x_misp_sha512_224')
+
+    def test_hyphen_becomes_underscore(self):
+        self.assertEqual(_cpn('rel-with-dash'), 'x_misp_rel_with_dash')
+        self.assertEqual(_cpn('user-avatar'), 'x_misp_user_avatar')
+
+    def test_uppercase_folds_to_lowercase(self):
+        self.assertEqual(_cpn('KnownMalicious'), 'x_misp_knownmalicious')
+        self.assertEqual(_cpn('VAT'), 'x_misp_vat')
+        self.assertEqual(_cpn('AS'), 'x_misp_as')
+        self.assertEqual(_cpn('ISO3'), 'x_misp_iso3')
+
+    def test_other_characters_become_underscore(self):
+        # relations taken from the misp-objects templates
+        self.assertEqual(_cpn('sha512/224'), 'x_misp_sha512_224')
+        self.assertEqual(
+            _cpn('classification.identifier'),
+            'x_misp_classification_identifier'
+        )
+        self.assertEqual(_cpn('more informations'), 'x_misp_more_informations')
+        self.assertEqual(
+            _cpn('father-s-family-name-&-forename'),
+            'x_misp_father_s_family_name___forename'
+        )
+        self.assertEqual(_cpn('fDenyTSConnections:'), 'x_misp_fdenytsconnections_')
+
+    def test_non_ascii_becomes_underscore(self):
+        self.assertEqual(_cpn('Aménagement'), 'x_misp_am_nagement')
+        self.assertEqual(_cpn('genome_copies_®'), 'x_misp_genome_copies__')
+
+    def test_every_output_satisfies_the_rule(self):
+        for relation in (
+                'filename', 'rel-with-dash', 'KnownMalicious', 'sha512/224',
+                'classification.identifier', 'more informations',
+                'father-s-family-name-&-forename', 'Aménagement',
+                "rel' OR file:name = 'x", ''):
+            with self.subTest(relation=relation):
+                self.assertRegex(_cpn(relation), self._RULE)
+
+
 class TestQuoteCustomProperty(unittest.TestCase):
+    # The folded name is always a bare pattern keyword, so the quoting
+    # backstop from the pattern property-name quoting work never fires on a
+    # custom property; it stays as defence in depth.
 
     def test_hyphen_becomes_underscore_and_stays_bare(self):
         self.assertEqual(_qcp('rel-with-dash'), 'x_misp_rel_with_dash')
         self.assertEqual(_qcp('user-avatar'), 'x_misp_user_avatar')
         self.assertEqual(_qcp('filename'), 'x_misp_filename')
 
-    def test_metacharacters_quoted_as_one_segment(self):
-        self.assertEqual(_qcp('a.b'), "'x_misp_a.b'")
-        self.assertEqual(_qcp('rel]'), "'x_misp_rel]'")
-        self.assertEqual(_qcp('rel=1'), "'x_misp_rel=1'")
-        self.assertEqual(_qcp('weird relation'), "'x_misp_weird relation'")
+    def test_metacharacters_fold_and_stay_bare(self):
+        self.assertEqual(_qcp('a.b'), 'x_misp_a_b')
+        self.assertEqual(_qcp('rel]'), 'x_misp_rel_')
+        self.assertEqual(_qcp('rel=1'), 'x_misp_rel_1')
+        self.assertEqual(_qcp('weird relation'), 'x_misp_weird_relation')
 
-    def test_apostrophe_escaped_inside_the_quoted_segment(self):
-        self.assertEqual(_qcp("x'"), r"'x_misp_x\''")
+    def test_pattern_syntax_cannot_escape_the_segment(self):
+        self.assertEqual(_qcp("x'"), 'x_misp_x_')
         self.assertEqual(
-            _qcp("rel' OR file:name = 'x"),
-            r"'x_misp_rel\' OR file:name = \'x'"
+            _qcp("rel' OR file:name = 'x"), 'x_misp_rel__or_file_name____x'
         )
 
     def test_empty_relation_stays_bare(self):

@@ -99,6 +99,11 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
             'Australia and New Zealand': 'australia-new-zealand'
         }
     )
+    # The types a galaxy cluster becomes whose STIX 2.1 object has no
+    # `first_seen` / `last_seen`: these meta are MISP values there
+    __types_without_seen_properties = (
+        'attack-pattern', 'location', 'tool', 'vulnerability'
+    )
 
     # STIX 2.1 specific MISP OBJECTS MAPPING
     __objects_mapping = Mapping(
@@ -553,6 +558,10 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     @classmethod
     def tlp2_markings(cls, field: str) -> Union[MarkingDefinition, None]:
         return TLP2MarkingDefinitions.by_tag_name(field)
+
+    @classmethod
+    def types_without_seen_properties(cls) -> tuple:
+        return cls.__types_without_seen_properties
 
     @classmethod
     def user_account_object_mapping(cls, field: str) -> Union[dict, None]:

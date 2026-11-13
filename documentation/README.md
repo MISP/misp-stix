@@ -385,7 +385,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | reddit-account |  Object and IoCs described in Indicator (pattern) |
 | registry-key |  Object and IoCs described in Indicator (pattern) |
 | registry-key with references to registry-key-value(s) | Registry Key Object referencing multiple Registry Key Value Objects |
-| registry-key-value | **X-misp-object** / **Indicator** |
+| registry-key-value | **Indicator** / **X-misp-object** |
 | telegram-account |  Object and IoCs described in Indicator (pattern) |
 | twitter-account |  Object and IoCs described in Indicator (pattern) |
 | url |  Object and IoCs described in Indicator (pattern) |
@@ -425,13 +425,29 @@ The detailed mapping for galaxies, with explanations and examples, is available 
 | MISP datastructure | STIX object|
 | -- | -- |
 | Event | `Report` or `Grouping` |
-| Attribute | `Indicator` or `Observable` in most cases, `Vulnerability`, `Campaign` or `Custom Object` otherwise |
-| Object | `Indicator` or `Observable` in most cases, `Vulnerability`, `Threat Actor`, `Course of Action` or `Custom Object` otherwise |
-| Galaxy | `Vulnerability`, `Threat Actor`, or `Course of Action` |
+| Attribute | `Indicator` or `Observable` in most cases, `Vulnerability`, `Campaign` or `misp-attribute` otherwise |
+| Object | `Indicator` or `Observable` in most cases, `Vulnerability`, `Threat Actor`, `Course of Action` or `misp-object` otherwise |
+| Galaxy | `Vulnerability`, `Threat Actor`, `Course of Action` or `misp-galaxy-cluster` |
 
 ##### Detailed mapping
 
 The detailed mapping for events and its contained structures, with explanations and examples, is available [here](misp_events_to_stix21.md)
+
+#### MISP Extensions
+
+The MISP content no standard STIX 2.1 object or property holds is carried in four MISP Extensions, STIX 2.1 extension definitions created by the MISP Project:
+- the **MISP Attribute Extension** defines `misp-attribute`, for a MISP attribute no standard STIX object represents;
+- the **MISP Object Extension** defines `misp-object`, for a MISP object no standard STIX object represents, with its attributes;
+- the **MISP Galaxy Cluster Extension** defines `misp-galaxy-cluster`, for a galaxy cluster no standard STIX object represents;
+- the **MISP Property Extension** is a property extension of the standard STIX objects: it holds the values of the MISP object relations and galaxy cluster meta keys their standard properties leave over, a few MISP fields such as an opinion score or an attachment, and the values of the MISP objects nested in a STIX structure (a PE and its sections in a file, the values of a registry key).
+
+A bundle carries the extension definitions it uses, with the MISP Project identity creating them, once each: in an event, ahead of the Report or Grouping of the first event using them; in a collection, ahead of the first object using them. The detailed mappings leave them out.
+
+- The extension definitions packaged with the library: [`misp_stix_converter/data/misp_extensions/`](../misp_stix_converter/data/misp_extensions/)
+- Their JSON schemas and examples: [`data/misp-extensions/extension-definition-specifications/misp-5ec/`](../data/misp-extensions/extension-definition-specifications/misp-5ec/)
+- Their documentation: [MISP Extensions for STIX 2.1](../data/misp-extensions/extension-definition-specifications/misp-5ec/README.md)
+
+STIX 2.0 has no extension definitions: the STIX 2.0 export keeps writing this content as custom objects (`x-misp-attribute`, `x-misp-object`, `x-misp-galaxy-cluster`) and custom properties (`x_misp_*`), as the STIX 2.1 export did up to version 2026.10.12.
 
 #### Attributes to STIX 2.1 mapping
 
@@ -621,22 +637,28 @@ The detailed mapping for galaxies, with explanations and examples, is available 
 
 When importing STIX 2.x content into MISP, the converter first determines the origin of the bundle to apply the appropriate parsing strategy:
 
-- **Internal**: The bundle was originally produced by MISP (detected via the `misp:tool="MISP-STIX-Converter"` label on the `Report` or `Grouping` object). The import performs a faithful round-trip, reconstructing MISP attributes, objects, and galaxy clusters from MISP-specific custom types (`x-misp-attribute`, `x-misp-object`, `x-misp-galaxy-cluster`).
+- **Internal**: The bundle was originally produced by MISP (detected via the `misp:tool="MISP-STIX-Converter"` label on the `Report` or `Grouping` object). The import performs a faithful round-trip, reconstructing MISP attributes, objects, and galaxy clusters from the MISP-specific content: the MISP Extensions in STIX 2.1, the custom objects and properties in STIX 2.0 (see below). The object relations the export folded into property names (`KnownMalicious` travels as `knownmalicious` in STIX 2.1, as `x_misp_knownmalicious` in STIX 2.0) come back with their original spelling and type from the MISP object template pymisp ships, whatever the relation; a property no template nor mapping knows is kept as a `text` attribute under the folded name, and a warning names the object and the property. Galaxy cluster meta keys are free-form, so no template can invert them: the export carries the spelling of every key the fold changed in an `original_names` dictionary (`x_misp_original_names` in STIX 2.0) on the cluster's own STIX object, written only when there is a spelling to carry, and the import reads the keys back from it verbatim (`Capital`, `origin:Storm-0558`, `cfr-type-of-incident`).
 
 - **External**: The bundle was produced by a third-party tool. Standard STIX SDOs and SCOs are mapped to MISP attributes, objects, and galaxies using heuristics. SDOs that represent threat intelligence concepts (`AttackPattern`, `Malware`, `ThreatActor`, etc.) are imported as new MISP Galaxy Clusters.
 
 Both use cases are documented for STIX 2.0 and STIX 2.1 in the sections below.
 
+### MISP content in STIX 2.1 and STIX 2.0
+
+In STIX 2.1, MISP carries the content no standard STIX object or property holds in the [MISP Extensions](#misp-extensions): the `misp-attribute`, `misp-object` and `misp-galaxy-cluster` types, and the MISP Property Extension on standard objects (`knownmalicious`, `original_names`). STIX 2.0 has no extension definitions, so the STIX 2.0 export writes the same content as custom objects (`x-misp-attribute`, `x-misp-object`, `x-misp-galaxy-cluster`) and custom properties (`x_misp_knownmalicious`, `x_misp_original_names`), as the STIX 2.1 export did up to version 2026.10.12.
+
+The import reads both forms, object by object: STIX 2.1 bundles written with custom objects and properties up to version 2026.10.12 still import into the same MISP content.
+
 ### Objects whose template name cannot be resolved
 
-A MISP object names the template describing it, and an `x-misp-object` carries that name in
-its `x_misp_name` property. A name that is not a plain template name — one holding a path
-separator, a `..`, or any character a template directory does not use — is **not** resolved
-as a template: the object is imported under the name `unknown-template`, with the name the
-bundle sent kept in the object's `comment` so nothing is lost. A name that does resolve is
-imported exactly as before, custom templates included. The same applies on export, to the
-events and objects handed in as JSON: a stored name that cannot be a template is replaced
-the same way rather than resolved again.
+A MISP object names the template describing it, and a `misp-object` carries that name in its
+`name` property, an `x-misp-object` in its `x_misp_name` property. A name that is not a plain
+template name — one holding a path separator, a `..`, or any character a template directory
+does not use — is **not** resolved as a template: the object is imported under the name
+`unknown-template`, with the name the bundle sent kept in the object's `comment` so nothing is
+lost. A name that does resolve is imported exactly as before, custom templates included. The
+same applies on export, to the events and objects handed in as JSON: a stored name that cannot
+be a template is replaced the same way rather than resolved again.
 
 ### STIX 2.0 to MISP
 
@@ -890,12 +912,15 @@ The detailed mapping for MISP galaxies from external STIX 2.0 bundles, with expl
 
 The import of STIX 2.1 content into MISP distinguishes between STIX bundles that were originally produced by MISP (internal) and those produced by third-party tools (external).
 
+A bundle produced by MISP carries the content no standard STIX object or property holds in the [MISP Extensions](#misp-extensions). Up to version 2026.10.12, MISP wrote that content as custom objects and properties (`x-misp-*`, `x_misp_*`): those bundles still import into the same MISP content.
+
 | STIX object | MISP datastructure |
 | -- | -- |
 | `Report` or `Grouping` | Event |
 | `Indicator` | Attribute or Object (`to_ids` flag set) |
 | `Observed Data` + SCOs | Attribute or Object (`to_ids` flag unset) |
 | `AttackPattern`, `CourseOfAction`, `IntrusionSet`, `Malware`, `ThreatActor`, `Tool`, `Vulnerability` | Galaxy Cluster |
+| `misp-attribute`, `misp-object`, `misp-galaxy-cluster` (internal) | Attribute, Object, Galaxy Cluster |
 
 #### Attributes from STIX 2.1
 
