@@ -225,7 +225,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.'SHA-256' = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:x_misp_entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_compilation_timestamp = '2019-03-16T12:31:22Z' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'windows-pebinary-ext'.x_misp_file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'windows-pebinary-ext'.x_misp_lang_id = '080904B0' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.x_misp_product_version = 'Release 0.71' AND file:extensions.'windows-pebinary-ext'.x_misp_company_name = 'Simoe Tatham' AND file:extensions.'windows-pebinary-ext'.x_misp_legal_copyright = 'Copyright \u00a9 1997-2019 Simon Tatham.' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+        "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.'SHA-256' = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.compilation_timestamp = '2019-03-16T12:31:22Z' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.original_filename = 'PuTTy' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.internal_filename = 'PuTTy' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.lang_id = '080904B0' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.product_name = 'PuTTy suite' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.product_version = 'Release 0.71' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.company_name = 'Simoe Tatham' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.legal_copyright = 'Copyright \u00a9 1997-2019 Simon Tatham.' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.windows_pebinary_ext.impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-1' = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-256' = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.'SHA-512' = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -615,21 +615,26 @@ The list of currently supported MISP object templates is available [here](https:
                                 "SSDEEP": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK"
                             }
                         }
-                    ],
-                    "x_misp_company_name": "Simoe Tatham",
-                    "x_misp_compilation_timestamp": "2019-03-16T12:31:22Z",
-                    "x_misp_file_description": "SSH, Telnet and Rlogin client",
-                    "x_misp_file_version": "Release 0.71 (with embedded help)",
-                    "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
-                    "x_misp_internal_filename": "PuTTy",
-                    "x_misp_lang_id": "080904B0",
-                    "x_misp_legal_copyright": "Copyright \u00a9 1997-2019 Simon Tatham.",
-                    "x_misp_original_filename": "PuTTy",
-                    "x_misp_product_name": "PuTTy suite",
-                    "x_misp_product_version": "Release 0.71"
+                    ]
+                },
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "entropy": "1.234",
+                    "windows_pebinary_ext": {
+                        "company_name": "Simoe Tatham",
+                        "compilation_timestamp": "2019-03-16T12:31:22Z",
+                        "file_description": "SSH, Telnet and Rlogin client",
+                        "file_version": "Release 0.71 (with embedded help)",
+                        "impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
+                        "internal_filename": "PuTTy",
+                        "lang_id": "080904B0",
+                        "legal_copyright": "Copyright \u00a9 1997-2019 Simon Tatham.",
+                        "original_filename": "PuTTy",
+                        "product_name": "PuTTy suite",
+                        "product_version": "Release 0.71"
+                    }
                 }
-            },
-            "x_misp_entropy": "1.234"
+            }
         }
     ]
     ```
@@ -996,12 +1001,17 @@ The list of currently supported MISP object templates is available [here](https:
             "misp:name=\"script\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_script": "print('You are infected')",
-        "x_misp_script_as_attachment": {
-            "value": "infected.py",
-            "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
-        },
-        "x_misp_state": "Malicious"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "script": "print('You are infected')",
+                "script_as_attachment": {
+                    "value": "infected.py",
+                    "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
+                },
+                "state": "Malicious"
+            }
+        }
     }
     ```
   - MISP
@@ -1098,13 +1108,18 @@ The list of currently supported MISP object templates is available [here](https:
             "misp:name=\"script\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_language": "Python",
-        "x_misp_script": "print('Hello World')",
-        "x_misp_script_as_attachment": {
-            "value": "hello.py",
-            "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK"
-        },
-        "x_misp_state": "Harmless"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "language": "Python",
+                "script": "print('Hello World')",
+                "script_as_attachment": {
+                    "value": "hello.py",
+                    "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK"
+                },
+                "state": "Harmless"
+            }
+        }
     }
     ```
   - MISP
@@ -1189,7 +1204,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[software:name = 'Facebook' AND software:x_misp_certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:x_misp_domain = 'facebook.com']",
+        "pattern": "[software:name = 'Facebook' AND software:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.domain = 'facebook.com']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -1274,8 +1289,13 @@ The list of currently supported MISP object templates is available [here](https:
             "spec_version": "2.1",
             "id": "software--02782ed5-b27f-4abc-8bae-efebe13a46dd",
             "name": "Facebook",
-            "x_misp_certificate": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
-            "x_misp_domain": "facebook.com"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "certificate": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
+                    "domain": "facebook.com"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -1284,7 +1304,7 @@ The list of currently supported MISP object templates is available [here](https:
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[software:name = 'Facebook' AND software:x_misp_certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:x_misp_domain = 'facebook.com']",
+            "pattern": "[software:name = 'Facebook' AND software:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.domain = 'facebook.com']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -1377,11 +1397,16 @@ The list of currently supported MISP object templates is available [here](https:
             "misp:name=\"annotation\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_attachment": {
-            "value": "annotation.attachment",
-            "data": "OC44LjguOCBpcyB0aGUgR29[...]WRkcmVzc2VzIChJUHY0KS4K"
-        },
-        "x_misp_type": "Executive Summary"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "attachment": {
+                    "value": "annotation.attachment",
+                    "data": "OC44LjguOCBpcyB0aGUgR29[...]WRkcmVzc2VzIChJUHY0KS4K"
+                },
+                "type": "Executive Summary"
+            }
+        }
     }
     ```
   - MISP
@@ -1419,7 +1444,7 @@ The list of currently supported MISP object templates is available [here](https:
             },
             {
                 "data": "OC44LjguOCBpcyB0aGUgR29[...]WRkcmVzc2VzIChJUHY0KS4K",
-                "uuid": "a7d0d60a-a387-5af6-90d6-1d7be2b304aa",
+                "uuid": "7e406ea3-449f-526e-b59d-6df2b79f912e",
                 "object_relation": "attachment",
                 "value": "annotation.attachment",
                 "type": "attachment",
@@ -1654,7 +1679,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[autonomous-system:number = '66642' AND autonomous-system:name = 'AS name' AND autonomous-system:x_misp_subnet_announced = '1.2.3.4' AND autonomous-system:x_misp_subnet_announced = '8.8.8.8']",
+        "pattern": "[autonomous-system:number = '66642' AND autonomous-system:name = 'AS name' AND autonomous-system:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.subnet_announced[*] = '1.2.3.4' AND autonomous-system:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.subnet_announced[*] = '8.8.8.8']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -1749,10 +1774,15 @@ The list of currently supported MISP object templates is available [here](https:
             "id": "autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f",
             "number": 66642,
             "name": "AS name",
-            "x_misp_subnet_announced": [
-                "1.2.3.4",
-                "8.8.8.8"
-            ]
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "subnet_announced": [
+                        "1.2.3.4",
+                        "8.8.8.8"
+                    ]
+                }
+            }
         },
         {
             "type": "indicator",
@@ -1870,12 +1900,17 @@ The list of currently supported MISP object templates is available [here](https:
                 "external_id": "CAPEC-9"
             }
         ],
-        "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
-        "x_misp_related_weakness": [
-            "CWE-118",
-            "CWE-120"
-        ],
-        "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+                "related_weakness": [
+                    "CWE-118",
+                    "CWE-120"
+                ],
+                "solutions": "Carefully review the service\\'s implementation before making it available to users."
+            }
+        }
     }
     ```
   - MISP
@@ -1974,12 +2009,17 @@ The list of currently supported MISP object templates is available [here](https:
             "misp:name=\"course-of-action\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_cost": "Low",
-        "x_misp_efficacy": "High",
-        "x_misp_impact": "Low",
-        "x_misp_objective": "Block communication between the PIVY agents and the C2 Server",
-        "x_misp_stage": "Response",
-        "x_misp_type": "Perimeter Blocking"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "cost": "Low",
+                "efficacy": "High",
+                "impact": "Low",
+                "objective": "Block communication between the PIVY agents and the C2 Server",
+                "stage": "Response",
+                "type": "Perimeter Blocking"
+            }
+        }
     }
     ```
   - MISP
@@ -2081,7 +2121,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[software:cpe = 'cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*' AND software:languages = 'ENG' AND software:name = 'Word' AND software:vendor = 'Microsoft' AND software:version = '2002' AND software:x_misp_description = 'Microsoft Word is a word processing software developed by Microsoft.']",
+        "pattern": "[software:cpe = 'cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*' AND software:languages = 'ENG' AND software:name = 'Word' AND software:vendor = 'Microsoft' AND software:version = '2002' AND software:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.description = 'Microsoft Word is a word processing software developed by Microsoft.']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -2199,7 +2239,12 @@ The list of currently supported MISP object templates is available [here](https:
             ],
             "vendor": "Microsoft",
             "version": "2002",
-            "x_misp_description": "Microsoft Word is a word processing software developed by Microsoft."
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "description": "Microsoft Word is a word processing software developed by Microsoft."
+                }
+            }
         },
         {
             "type": "indicator",
@@ -2317,7 +2362,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[user-account:user_id = 'misp' AND user-account:credential = 'Password1234' AND user-account:x_misp_text = 'MISP default credentials' AND user-account:x_misp_type = 'password' AND user-account:x_misp_origin = 'malware-analysis' AND user-account:x_misp_format = 'clear-text' AND user-account:x_misp_notification = 'victim-notified']",
+        "pattern": "[user-account:user_id = 'misp' AND user-account:credential = 'Password1234' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.text = 'MISP default credentials' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.type = 'password' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.origin = 'malware-analysis' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.format = 'clear-text' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.notification = 'victim-notified']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -2439,11 +2484,16 @@ The list of currently supported MISP object templates is available [here](https:
             "id": "user-account--5b1f9378-46d4-494b-a4c1-044e0a00020f",
             "user_id": "misp",
             "credential": "Password1234",
-            "x_misp_format": "clear-text",
-            "x_misp_notification": "victim-notified",
-            "x_misp_origin": "malware-analysis",
-            "x_misp_text": "MISP default credentials",
-            "x_misp_type": "password"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "format": "clear-text",
+                    "notification": "victim-notified",
+                    "origin": "malware-analysis",
+                    "text": "MISP default credentials",
+                    "type": "password"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -2452,7 +2502,7 @@ The list of currently supported MISP object templates is available [here](https:
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[user-account:x_misp_text = 'MISP default credentials']",
+            "pattern": "[user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.text = 'MISP default credentials']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -2785,7 +2835,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:x_misp_port = '8443']",
+        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.port = '8443']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -2883,8 +2933,13 @@ The list of currently supported MISP object templates is available [here](https:
             "resolves_to_refs": [
                 "ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca"
             ],
-            "x_misp_hostname": "circl.lu",
-            "x_misp_port": "8443"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "hostname": "circl.lu",
+                    "port": "8443"
+                }
+            }
         },
         {
             "type": "ipv4-addr",
@@ -2899,7 +2954,7 @@ The list of currently supported MISP object templates is available [here](https:
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+            "pattern": "[domain-name:value = 'circl.lu' AND domain-name:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -2937,22 +2992,24 @@ The list of currently supported MISP object templates is available [here](https:
         "uuid": "dc624447-684a-488f-9e16-f78f717d8efd",
         "Attribute": [
             {
-                "uuid": "8b1ca103-25f5-55fd-bdb7-acb7a47adde0",
+                "uuid": "3e8b5a38-2a98-53c0-88f0-1f513d4c1b7e",
                 "object_relation": "domain",
                 "value": "circl.lu",
                 "type": "domain",
                 "category": "Network activity",
                 "disable_correlation": false,
-                "to_ids": true
+                "to_ids": true,
+                "comment": "Indicator ID: indicator--dc624447-684a-488f-9e16-f78f717d8efd"
             },
             {
-                "uuid": "13e41e43-27b6-56be-b938-428ad0dc2c15",
+                "uuid": "0a807d61-cdc6-54b3-b153-8a37578f6300",
                 "object_relation": "hostname",
                 "value": "circl.lu",
                 "type": "hostname",
                 "disable_correlation": false,
                 "to_ids": true,
-                "category": "Network activity"
+                "category": "Network activity",
+                "comment": "Indicator ID: indicator--dc624447-684a-488f-9e16-f78f717d8efd"
             },
             {
                 "uuid": "64c83027-4029-5d64-afe0-2c67665592a7",
@@ -2989,7 +3046,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[email-message:to_refs[0].value = 'jdoe@random.org' AND email-message:to_refs[0].display_name = 'John Doe' AND email-message:cc_refs[0].value = 'diana.prince@dc.us' AND email-message:cc_refs[0].display_name = 'Diana Prince' AND email-message:cc_refs[1].value = 'marie.curie@nobel.fr' AND email-message:cc_refs[1].display_name = 'Marie Curie' AND email-message:bcc_refs[0].value = 'jfk@gov.us' AND email-message:bcc_refs[0].display_name = 'John Fitzgerald Kennedy' AND email-message:from_ref.value = 'donald.duck@disney.com' AND email-message:from_ref.display_name = 'Donald Duck' AND email-message:message_id = '25' AND email-message:additional_header_fields.reply_to = 'reply-to@email.test' AND email-message:subject = 'Email test subject' AND email-message:additional_header_fields.x_mailer = 'x-mailer-test' AND email-message:body_multipart[0].body_raw_ref.name = 'attachment1.file' AND email-message:body_multipart[0].content_disposition = 'attachment' AND email-message:body_multipart[1].body_raw_ref.name = 'attachment2.file' AND email-message:body_multipart[1].content_disposition = 'attachment' AND email-message:x_misp_user_agent = 'Test user agent' AND email-message:x_misp_mime_boundary = 'Test mime boundary']",
+        "pattern": "[email-message:to_refs[0].value = 'jdoe@random.org' AND email-message:to_refs[0].display_name = 'John Doe' AND email-message:cc_refs[0].value = 'diana.prince@dc.us' AND email-message:cc_refs[0].display_name = 'Diana Prince' AND email-message:cc_refs[1].value = 'marie.curie@nobel.fr' AND email-message:cc_refs[1].display_name = 'Marie Curie' AND email-message:bcc_refs[0].value = 'jfk@gov.us' AND email-message:bcc_refs[0].display_name = 'John Fitzgerald Kennedy' AND email-message:from_ref.value = 'donald.duck@disney.com' AND email-message:from_ref.display_name = 'Donald Duck' AND email-message:message_id = '25' AND email-message:additional_header_fields.reply_to = 'reply-to@email.test' AND email-message:subject = 'Email test subject' AND email-message:additional_header_fields.x_mailer = 'x-mailer-test' AND email-message:body_multipart[0].body_raw_ref.name = 'attachment1.file' AND email-message:body_multipart[0].content_disposition = 'attachment' AND email-message:body_multipart[1].body_raw_ref.name = 'attachment2.file' AND email-message:body_multipart[1].content_disposition = 'attachment' AND email-message:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.user_agent = 'Test user agent' AND email-message:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.mime_boundary = 'Test mime boundary']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -3243,8 +3300,13 @@ The list of currently supported MISP object templates is available [here](https:
                     "content_disposition": "attachment; filename='attachment2.file'"
                 }
             ],
-            "x_misp_mime_boundary": "Test mime boundary",
-            "x_misp_user_agent": "Test user agent"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "mime_boundary": "Test mime boundary",
+                    "user_agent": "Test user agent"
+                }
+            }
         },
         {
             "type": "email-addr",
@@ -3597,7 +3659,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[user-account:account_type = 'facebook' AND user-account:user_id = '1392781243' AND user-account:account_login = 'octocat' AND user-account:x_misp_link = 'https://facebook.com/octocat' AND user-account:x_misp_user_avatar.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_user_avatar.value = 'octocat.png']",
+        "pattern": "[user-account:account_type = 'facebook' AND user-account:user_id = '1392781243' AND user-account:account_login = 'octocat' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.link = 'https://facebook.com/octocat' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.user_avatar.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.user_avatar.value = 'octocat.png']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -3694,10 +3756,15 @@ The list of currently supported MISP object templates is available [here](https:
             "user_id": "1392781243",
             "account_login": "octocat",
             "account_type": "facebook",
-            "x_misp_link": "https://facebook.com/octocat",
-            "x_misp_user_avatar": {
-                "value": "octocat.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "link": "https://facebook.com/octocat",
+                    "user_avatar": {
+                        "value": "octocat.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    }
+                }
             }
         },
         {
@@ -3799,7 +3866,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND file:name_enc = 'UTF-8' AND file:size = '35' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected') AND (file:content_ref.payload_bin = 'Tm9uLW1hbGljaW91cyBmaWxlCg==' AND file:content_ref.x_misp_filename = 'non')]",
+        "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND file:name_enc = 'UTF-8' AND file:size = '35' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected') AND (file:content_ref.payload_bin = 'Tm9uLW1hbGljaW91cyBmaWxlCg==' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'non')]",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -3954,9 +4021,14 @@ The list of currently supported MISP object templates is available [here](https:
             "mtime": "2022-10-25T16:22:00Z",
             "parent_directory_ref": "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
             "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "x_misp_attachment": {
-                "value": "non",
-                "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "attachment": {
+                        "value": "non",
+                        "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+                    }
+                }
             }
         },
         {
@@ -3976,7 +4048,12 @@ The list of currently supported MISP object templates is available [here](https:
             },
             "encryption_algorithm": "mime-type-indicated",
             "decryption_key": "infected",
-            "x_misp_filename": "oui"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "filename": "oui"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -3985,7 +4062,7 @@ The list of currently supported MISP object templates is available [here](https:
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+            "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -4119,14 +4196,15 @@ The list of currently supported MISP object templates is available [here](https:
             },
             {
                 "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
-                "uuid": "e668d25a-e269-5c1f-b3f4-2ca7cd08c106",
+                "uuid": "c017d1fb-8cbd-5ef7-93ea-8cad07705538",
                 "object_relation": "malware-sample",
                 "value": "oui|8764605c6f388c89096b534d33565802",
                 "type": "malware-sample",
                 "disable_correlation": false,
                 "to_ids": true,
                 "category": "Payload delivery",
-                "malware_filename": "oui"
+                "malware_filename": "oui",
+                "comment": "Indicator ID: indicator--5e384ae7-672c-4250-9cda-3b4da964451a"
             }
         ],
         "distribution": "5",
@@ -4157,8 +4235,13 @@ The list of currently supported MISP object templates is available [here](https:
             "misp:name=\"geolocation\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_altitude": "55",
-        "x_misp_country": "USA"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "altitude": "55",
+                "country": "USA"
+            }
+        }
     }
     ```
   - MISP
@@ -4278,7 +4361,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[user-account:account_type = 'github' AND user-account:user_id = '1' AND user-account:display_name = 'Octo Cat' AND user-account:account_login = 'octocat' AND user-account:x_misp_organisation = 'GitHub' AND user-account:x_misp_profile_image.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_profile_image.value = 'octocat.png']",
+        "pattern": "[user-account:account_type = 'github' AND user-account:user_id = '1' AND user-account:display_name = 'Octo Cat' AND user-account:account_login = 'octocat' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.organisation = 'GitHub' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.profile_image.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.profile_image.value = 'octocat.png']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -4385,10 +4468,15 @@ The list of currently supported MISP object templates is available [here](https:
             "account_login": "octocat",
             "account_type": "github",
             "display_name": "Octo Cat",
-            "x_misp_organisation": "GitHub",
-            "x_misp_profile_image": {
-                "value": "octocat.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "organisation": "GitHub",
+                    "profile_image": {
+                        "value": "octocat.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    }
+                }
             }
         },
         {
@@ -4677,7 +4765,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[file:name = 'oui' AND file:size = '35' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:x_misp_KnownMalicious = 'hashlookup-known-malicious-source' AND file:x_misp_PackageName = 'coreutils' AND file:x_misp_PackageVersion = '8.32' AND file:x_misp_PackageRelease = '4.1ubuntu1' AND file:x_misp_PackageArch = 'amd64' AND file:x_misp_PackageDescription = 'GNU core utilities' AND file:x_misp_PackageMaintainer = 'Ubuntu Developers' AND file:x_misp_source = 'https://www.circl.lu/services/hashlookup']",
+        "pattern": "[file:name = 'oui' AND file:size = '35' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.knownmalicious = 'hashlookup-known-malicious-source' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.packagename = 'coreutils' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.packageversion = '8.32' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.packagerelease = '4.1ubuntu1' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.packagearch = 'amd64' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.packagedescription = 'GNU core utilities' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.packagemaintainer = 'Ubuntu Developers' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.source = 'https://www.circl.lu/services/hashlookup']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -4878,14 +4966,19 @@ The list of currently supported MISP object templates is available [here](https:
             },
             "size": 35,
             "name": "oui",
-            "x_misp_KnownMalicious": "hashlookup-known-malicious-source",
-            "x_misp_PackageArch": "amd64",
-            "x_misp_PackageDescription": "GNU core utilities",
-            "x_misp_PackageMaintainer": "Ubuntu Developers",
-            "x_misp_PackageName": "coreutils",
-            "x_misp_PackageRelease": "4.1ubuntu1",
-            "x_misp_PackageVersion": "8.32",
-            "x_misp_source": "https://www.circl.lu/services/hashlookup"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "knownmalicious": "hashlookup-known-malicious-source",
+                    "packagename": "coreutils",
+                    "packageversion": "8.32",
+                    "packagerelease": "4.1ubuntu1",
+                    "packagearch": "amd64",
+                    "packagedescription": "GNU core utilities",
+                    "packagemaintainer": "Ubuntu Developers",
+                    "source": "https://www.circl.lu/services/hashlookup"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -5112,27 +5205,27 @@ The list of currently supported MISP object templates is available [here](https:
         "uuid": "cfdb71ed-889f-4646-a388-43d936e1e3b9",
         "Attribute": [
             {
-                "uuid": "67584aa7-7f8c-5221-a583-b3d1494f83be",
+                "uuid": "6ace0bbd-0c81-55de-8d42-13d302b90772",
                 "object_relation": "ip-src",
-                "value": "8.8.8.8')",
+                "value": "8.8.8.8",
                 "type": "ip-src",
                 "category": "Network activity",
                 "disable_correlation": false,
                 "to_ids": true
             },
             {
-                "uuid": "abad100c-35cd-539c-98c5-31c7761ffcec",
+                "uuid": "b6d5e599-4210-580e-aca4-25d3a7f50f4e",
                 "object_relation": "ip-dst",
-                "value": "149.13.33.14')",
+                "value": "149.13.33.14",
                 "type": "ip-dst",
                 "category": "Network activity",
                 "disable_correlation": false,
                 "to_ids": true
             },
             {
-                "uuid": "682ebd1e-beb4-566e-9cd1-814ef158afde",
+                "uuid": "3b338f2f-548f-500b-874c-f77570bfbeb9",
                 "object_relation": "host",
-                "value": "circl.lu')",
+                "value": "circl.lu",
                 "type": "hostname",
                 "category": "Network activity",
                 "disable_correlation": false,
@@ -5231,9 +5324,12 @@ The list of currently supported MISP object templates is available [here](https:
                         "Content-Type": "JSON",
                         "User-Agent": "Mozilla Firefox"
                     }
+                },
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "url": "http://circl.lu/projects/internships/"
                 }
-            },
-            "x_misp_url": "http://circl.lu/projects/internships/"
+            }
         },
         {
             "type": "ipv4-addr",
@@ -5479,7 +5575,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[file:name = 'STIX.png' AND file:content_ref.payload_bin = 'iVBORw0KGgoAAAANSUhEUgA[...]gEefQAAAABJRU5ErkJggg==' AND file:content_ref.mime_type = 'image/png' AND file:content_ref.x_misp_filename = 'STIX.png' AND file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png' AND file:x_misp_image_text = 'STIX']",
+        "pattern": "[file:name = 'STIX.png' AND file:content_ref.payload_bin = 'iVBORw0KGgoAAAANSUhEUgA[...]gEefQAAAABJRU5ErkJggg==' AND file:content_ref.mime_type = 'image/png' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'STIX.png' AND file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png' AND file:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.image_text = 'STIX']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -5576,7 +5672,12 @@ The list of currently supported MISP object templates is available [here](https:
             "id": "file--939b2f03-c487-4f62-a90e-cab7acfee294",
             "name": "STIX.png",
             "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "x_misp_image_text": "STIX"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "image_text": "STIX"
+                }
+            }
         },
         {
             "type": "artifact",
@@ -5584,8 +5685,13 @@ The list of currently supported MISP object templates is available [here](https:
             "id": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "mime_type": "image/png",
             "payload_bin": "iVBORw0KGgoAAAANSUhEUgA[...]gEefQAAAABJRU5ErkJggg==",
-            "x_misp_filename": "STIX.png",
-            "x_misp_url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "filename": "STIX.png",
+                    "url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -5594,7 +5700,7 @@ The list of currently supported MISP object templates is available [here](https:
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[file:name = 'STIX.png' AND file:content_ref.payload_bin = 'iVBORw0KGgoAAAANSUhEUgAAAFoAAAAkCAYAAAAJgC2zAAAABHNCSVQICAgIfAhkiAAAABl0RVh0U29mdHdhcmUAZ25vbWUtc2NyZWVuc2hvdO8Dvz4AAAv8SURBVGiB7ZtrcJRVmsd/5+17dxI6IZGRZCEJsGasEAZBAsECNIoFFHgpyNSohUGlYJgECMLiyN0BRDKMMkFdhQK5RAvFVFAHFze6Sml5QWGDoYiELSWEAUkg6XQunb68z35IpiV0OibBjGDNv+r90H3Oc57n/N9znss53UpEBEB0Hb3ZgyD8C1cPhUKzWVGaBoARwPvVUZr+8lc8JysQXf9ZDfylQDMYsAwZjH3RfMwjhqO8pV+L+7cPYRz+G8xTJ6Pstp/bxl8EpKkZ79sH8B/9XyL37kG55+aKfvESkXu2o8zmn9u+XxTE68X90CNofWPQ/GXHMU3M/BfJvQBlNmOamIn/WBlGAjrKZOpUQERwuVycOHGCkydPcu7cOdxuN0opoqKiiI+P56abbiIlJQWHw4FSKmQMn8+Hz+f7ySZhtVrRNI1AIEBLS0tIu6ZpWCwWlFKISGsfXcco7YO9TykMRiMmk6lDu6F1/h6PByXSTl7a5I1GI0op/H4/ZrMZEcFoNAK0cuv1tgbDcBARSktLeemllzhw4ABnzpxBpOOsRNM0kpOTueeee5g7dy6DBw8OtrW0tDB16lROnTrVmbpuYc6cOSxZsoTHHnuMjz76KKTdaDSye/du0tPTqaurY/LkyTReuMB25w0kmVp3r44wv66GUg2efvpppk2bFkK21+tl4cKF/PfBgyyLjGaq1RFs291Yz18bXdx3333k5uby4YcfEhMTg8lkYtKkSe0Nqh0zQZpf2S1Xwuv1yqZNmyQyMlJofXldfmJiYqSwsFB0XRcRkYaGBomNje32OJ09s2bNEp/PJ7fcckvYPm+++aaIiOi6Lps2bRKllEyy2uV8/CC5mDBYLiYMlkM3/JvYlZJ+/frJ2bNn23Gg67rs3LlTABlltsrf45ODckd+NVD6aQZxOp1y7Ngxcblc8u6778rLL78sBw8eDI7R/MpuqR05Vjok2u/3y5o1a8RgMPSYCJPJJDt27LgmiBYRcbvdkp6eLhrI9ph+UtNGdk38IPljVIwAkpWVFVwcIiJVVVWSkJAgDqWk5IaEIMnn4wfJNJtDlFKyceNG0XVdAoGAeDweaWpqEo/HE0K0FrLngC+//JK1a9cSCAQ6au4SfD4fOTk5VFRU9HiMnxIREREUFBRgj4hgeV0N5/XWuSmlmBfhJNVo5o033uCdd94BIBAIsHjxYqqqqlgQGc1vTJbgWPua3LzT3Mj48ePJyclBKRWMCTabDYvFEqI/hGgRoaCgoNPAFRkZyeDBgxk4cCCmTgJpY2Mj27Zt6zobvYyRI0eSl5fH3/UAf3JdJNAWb+yaxsboOIwi5ObmUltbS3FxMa+//jrDTBZ+H+EM+u4LAT8b6i9hczhYv349NlvX6o4Qopuamvj444/DCtx5552Ul5dTWlpKWVkZR44cYcSIEWH77927F13XMRgMXTKoq+jJeEopli5dyrBhw3ijyc1/NTcG20aZrfwhwsnp06eZMWMGCxYswKQL652x2NvK6IAIq+suUhXws3jxYkaPHt1l3SFZh8fjobq6OqzAHXfcQf/+/YOfU1NTyc/PZ+bMmR3uAqfTidFo5NVXX6WysjKkvbi4mP3794fVt3r1agYOHBjy/dixY8PKdAaHw8Fzzz3H3XffzWrXRTIsNqINBpRSPB4VQ1FzA++//z4A8yL6kG62BmXfa25kX7ObESNG8Pjjj4dNBzvElcGwpqZGbDZb2AAzYMAAKSoqEq/X2y46NzQ0iNvtDnmam5tDMprLUVhYGFaX0WiUCxcuhJXtTjC8MpvIy8sTQB5xREn1ZVlIUWx/0UB+bTTLd/2Tgt9/c2OiDDAYxWKxyKFDhzqd0+UIGwwtFguxsbFhX0xlZSXTp0/n5ptvZt68eezfv59z585ht9uJiIgIeaxWa9ixfi4opVi1ahUpKSnsbKznUEtzsG2cxcYsRxTrnLFEaq3uSRfhz/W1VAb8zJ07t0e7KYRoh8NBRkZGp0K6rnPq1ClefPFF7r33XpKTk0lPT2fNmjV89tlnV5Wt/LPQp08f8vPzUUYjy+pqaGo7tVRKsdYZxzjLD0Hu45ZmXml0kZKSwsqVK9G0DpO1ThEioZRi0aJFnWYTV6KlpYXDhw+zevVqxo4dS2pqKq+99lrYKvJawZQpU3j44Ycp93vJr78UtNesVND/uvQAS+qqUWYzBQUFxMTE9EhXh69m5MiRLFu2rEcD6rpOeXk5DzzwANnZ2R2eQ1wrUEqxYcMG4uPjeaGhjlJfe1tFhC3uOk75fWRlZZGZmdljXR0SrWkaK1asYMeOHcTFxfV48F27drFgwYJremX37duX22+/HT9Q2FjfzlaPCPua3ADcf//93csyrkBYZ6NpGtnZ2XzzzTcUFBQwZsyY4IlUd7Bt2za++uqrHhvY2ygrK2Pfvn3EahpLomLakWnTNP4Y1eoqnnnmmavanT/q1aOjo8nJyeGTTz7h5MmT7Ny5k+zsbBISErpEfCAQYNeuXT02sDfh8XiYPXs2LR4PG5xxxGmhRdB99kgmWe188cUXbNmypce7s8vhUylFUlISM2fOZMeOHXz77bccPXqUp556ql0B0xGOHz/eI+N6G5s3b+bzzz/nbqude2wRwdV8xu/D20aoSSnWOeOIVoq1a9dy4sSJHukKWZIVFRVs3bq1wxTN6XSSl5dHREQERqOR1NRUUlNTyc7OZty4cXz33XcdKmlqauqRcb2J8vJyNm7cSLTSWNsnFq2NZK8Iv7/0PdNsEcyOdKKAAQYjK6L6sqiumoULF/LWW291uz4IIfrw4cPk5+eHFYiLi2POnDntfFl8fDwJCQlhiY6KiuqWUb0Nr9dLbm4uly5d4i/OOBKNP6SyL7vr+NTr4bjPy51WO8kmM0opfuuIpKi5gZKSEvbs2cOjjz7areAYQvRtt92G1WrF4/F0KLB06VJcLheZmZk4nU6qq6spLCzk008/DaskNTW1ywb1NkSEbdu28cEHH3CHxcbvHFHtXMZG9yWUUtSLzhN11RTG9sekFBalsb5PLFOqz7JixQoyMzNJSkrqst4QHx0fH8/EiRPDCtTX1/PEE09w6623MmTIEDIyMnj++efDVoMGg4Hp06d32aDexunTp1m1ahUOEf7kjMXcRnJAhLzaCzSKsG7dOiZMmMAHLc3sbnQFZX9tMvMfUdF8f/48eXl53boDDSHaYDCwcuXKLp+z/hjuuusuRo0a9ZOMdbXw+1uPN2tqalgUGcNNxh9u/l9rrOd/WpqZMGECS5YsYfPmzdgdDv5cX8tZfyuhSilmOfow0mTh7bffZu/evV3W3WHWMXz4cJ599tkObwq6g6SkJF544YWf/Cy6pygsLKS4uJgMs5XZEX2CLuO038dq10Xsdjtbt27FaDQydOhQVq1axfd6gGV1NfjbshCrprHeGYdNhOXLl1NVVdUl3WErw9mzZ7Nr1y5uvPHGHk1q/PjxlJSUdMuP9SbOnDnDk08+iVnXWeeMxXbZYf5TrhpqRWfZsmUMGjQIaF29OTk5ZGRkcMDTSHFbhQgw3GxhXtslwfLly/H7/T+qP2zFoWkaWVlZpKens337doqKiigvL+90UKfTyejRo3nwwQeZMWNGl3ZEYmIiaWlpHfr4fv36derCNE1j9OjRHVZsJpOJxMTE4OeSkhKio6N55FfxpEY6gdbVfMTXwv85rcwcMYK8vLz2laHNRkFBAfPnz6fI3cBk5w3YlUIBf9CTKKu7wLFjx6isrCQ5ObnTearaMRPEOudRrA8/1GnH5uZmKioqKC8v5+zZs7hcLnRdx263ExcXR2JiIikpKfTv379baY+IoIf5YeU/Lj17Kn+5y/pHPyXC5dbpbbZqmhbWbl3XEZEeyXp27sGz5T8xYtAQ749HT5vNRlpaGmlpaT/atztQSl2VD++qfLh+XdEc7mV3RVa8PjCb0YxDU/G9V4Jcw8eZ1yukpQXfeyUYhw1Feb8uE3fWQxjThmKeMgl1DV49XY8Qjwfv397Ff+xrIl/fgxIR8R4tpenZAlpOViDXwTXU9QBlMGD59yHY83IxDx/WSjS0/bXC0wLX8CH9dQWl0KyW4F8r/h8rVFb3pgEefQAAAABJRU5ErkJggg==' AND file:content_ref.mime_type = 'image/png' AND file:content_ref.x_misp_filename = 'STIX.png' AND file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png']",
+            "pattern": "[file:name = 'STIX.png' AND file:content_ref.payload_bin = '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' AND file:content_ref.mime_type = 'image/png' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'STIX.png' AND file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -5662,13 +5768,14 @@ The list of currently supported MISP object templates is available [here](https:
                 "comment": "Indicator ID: indicator--939b2f03-c487-4f62-a90e-cab7acfee294"
             },
             {
-                "uuid": "958e2620-a436-505b-acb3-76cdf6cb1745",
+                "uuid": "510dcb5c-b6b0-5354-b906-1a135be93fe2",
                 "object_relation": "url",
                 "value": "https://oasis-open.github.io/cti-documentation/img/STIX.png",
                 "type": "url",
                 "disable_correlation": false,
                 "to_ids": true,
-                "category": "Network activity"
+                "category": "Network activity",
+                "comment": "Indicator ID: indicator--939b2f03-c487-4f62-a90e-cab7acfee294"
             }
         ],
         "distribution": "5",
@@ -5787,7 +5894,12 @@ The list of currently supported MISP object templates is available [here](https:
             "protocols": [
                 "ipv4"
             ],
-            "x_misp_domain": "circl.lu"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "domain": "circl.lu"
+                }
+            }
         },
         {
             "type": "ipv4-addr",
@@ -5904,11 +6016,16 @@ The list of currently supported MISP object templates is available [here](https:
             "misp:name=\"legal-entity\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_logo": {
-            "value": "umbrella_logo",
-            "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC"
-        },
-        "x_misp_registration_number": "11223344556677889900"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "registration_number": "11223344556677889900",
+                "logo": {
+                    "value": "umbrella_logo",
+                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC"
+                }
+            }
+        }
     }
     ```
   - MISP
@@ -5958,6 +6075,16 @@ The list of currently supported MISP object templates is available [here](https:
                 "category": "Other"
             },
             {
+                "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC",
+                "uuid": "d220af83-dcb0-5ec5-abe2-571e470ce9de",
+                "object_relation": "logo",
+                "value": "umbrella_logo",
+                "type": "attachment",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "External analysis"
+            },
+            {
                 "uuid": "0697eb7d-e314-5047-970b-d36ed2061aaa",
                 "object_relation": "phone-number",
                 "value": "1234567890",
@@ -5971,16 +6098,6 @@ The list of currently supported MISP object templates is available [here](https:
                 "object_relation": "website",
                 "value": "https://umbrella.org",
                 "type": "link",
-                "disable_correlation": false,
-                "to_ids": false,
-                "category": "External analysis"
-            },
-            {
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC",
-                "uuid": "df270bb6-d3e2-5f65-ad02-2003d642a03b",
-                "object_relation": "logo",
-                "value": "umbrella_logo",
-                "type": "attachment",
                 "disable_correlation": false,
                 "to_ids": false,
                 "category": "External analysis"
@@ -6002,7 +6119,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[file:atime = '2021-01-01T00:00:00Z' AND file:ctime = '2017-10-01T08:00:00Z' AND file:mtime = '2020-10-25T16:22:00Z' AND file:name = 'oui' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected') AND file:size = '35']",
+        "pattern": "[file:atime = '2021-01-01T00:00:00Z' AND file:ctime = '2017-10-01T08:00:00Z' AND file:mtime = '2020-10-25T16:22:00Z' AND file:name = 'oui' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected') AND file:size = '35']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -6183,7 +6300,12 @@ The list of currently supported MISP object templates is available [here](https:
             },
             "encryption_algorithm": "mime-type-indicated",
             "decryption_key": "infected",
-            "x_misp_filename": "oui"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "filename": "oui"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -6192,7 +6314,7 @@ The list of currently supported MISP object templates is available [here](https:
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
+            "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.'SHA-1' = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.'SHA-256' = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected')]",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -6342,7 +6464,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[mutex:name = 'MutexTest' AND mutex:x_misp_description = 'Test mutex on unix' AND mutex:x_misp_operating_system = 'Unix']",
+        "pattern": "[mutex:name = 'MutexTest' AND mutex:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.description = 'Test mutex on unix' AND mutex:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.operating_system = 'Unix']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -6427,8 +6549,13 @@ The list of currently supported MISP object templates is available [here](https:
             "spec_version": "2.1",
             "id": "mutex--b0f55591-6a63-4fbd-a169-064e64738d95",
             "name": "MutexTest",
-            "x_misp_description": "Test mutex on unix",
-            "x_misp_operating_system": "Unix"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "description": "Test mutex on unix",
+                    "operating_system": "Unix"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -6990,7 +7117,12 @@ The list of currently supported MISP object templates is available [here](https:
                 "tcp",
                 "http"
             ],
-            "x_misp_hostname_dst": "circl.lu"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "hostname_dst": "circl.lu"
+                }
+            }
         },
         {
             "type": "ipv4-addr",
@@ -7140,7 +7272,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '8080' AND network-traffic:src_port = '8080' AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true AND network-traffic:x_misp_domain_family = 'PF_INET']",
+        "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '8080' AND network-traffic:src_port = '8080' AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true AND network-traffic:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.domain_family = 'PF_INET']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -7301,10 +7433,13 @@ The list of currently supported MISP object templates is available [here](https:
                     "address_family": "AF_INET",
                     "is_listening": true,
                     "socket_type": "SOCK_RAW"
+                },
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "domain_family": "PF_INET",
+                    "hostname_dst": "circl.lu"
                 }
-            },
-            "x_misp_domain_family": "PF_INET",
-            "x_misp_hostname_dst": "circl.lu"
+            }
         },
         {
             "type": "ipv4-addr",
@@ -7479,11 +7614,16 @@ The list of currently supported MISP object templates is available [here](https:
             "misp:name=\"news-agency\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_attachment": {
-            "value": "AFP_logo.png",
-            "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg=="
-        },
-        "x_misp_link": "https://www.afp.com/"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "attachment": {
+                    "value": "AFP_logo.png",
+                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg=="
+                },
+                "link": "https://www.afp.com/"
+            }
+        }
     }
     ```
   - MISP
@@ -7504,6 +7644,25 @@ The list of currently supported MISP object templates is available [here](https:
                 "disable_correlation": true,
                 "to_ids": false,
                 "category": "Other"
+            },
+            {
+                "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg==",
+                "uuid": "661b7770-8af5-5198-bcd5-8e94357a9a91",
+                "object_relation": "attachment",
+                "value": "AFP_logo.png",
+                "type": "attachment",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "External analysis"
+            },
+            {
+                "uuid": "57ed3ea5-e92f-5d3e-86dc-b45c8dfba524",
+                "object_relation": "link",
+                "value": "https://www.afp.com/",
+                "type": "link",
+                "disable_correlation": false,
+                "to_ids": false,
+                "category": "External analysis"
             },
             {
                 "uuid": "771c5a1c-043c-52dc-8101-1a284408aa66",
@@ -7531,16 +7690,6 @@ The list of currently supported MISP object templates is available [here](https:
                 "disable_correlation": false,
                 "to_ids": false,
                 "category": "Person"
-            },
-            {
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg==",
-                "uuid": "33f4e49c-5c88-5cbc-8e99-d8f2c77ad16a",
-                "object_relation": "attachment",
-                "value": "AFP_logo.png",
-                "type": "attachment",
-                "disable_correlation": false,
-                "to_ids": false,
-                "category": "External analysis"
             }
         ],
         "distribution": "5",
@@ -7631,7 +7780,12 @@ The list of currently supported MISP object templates is available [here](https:
             "misp:name=\"organization\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_alias": "CIRCL"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "alias": "CIRCL"
+            }
+        }
     }
     ```
   - MISP
@@ -7785,7 +7939,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[user-account:account_type = 'parler' AND user-account:user_id = '42' AND user-account:account_login = 'ParlerOctocat' AND user-account:x_misp_human = 'False' AND user-account:x_misp_profile_photo.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_profile_photo.value = 'octocat.png']",
+        "pattern": "[user-account:account_type = 'parler' AND user-account:user_id = '42' AND user-account:account_login = 'ParlerOctocat' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.human = 'False' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.profile_photo.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.profile_photo.value = 'octocat.png']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -7882,10 +8036,15 @@ The list of currently supported MISP object templates is available [here](https:
             "user_id": "42",
             "account_login": "ParlerOctocat",
             "account_type": "parler",
-            "x_misp_human": false,
-            "x_misp_profile_photo": {
-                "value": "octocat.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "human": false,
+                    "profile_photo": {
+                        "value": "octocat.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    }
+                }
             }
         },
         {
@@ -7997,8 +8156,13 @@ The list of currently supported MISP object templates is available [here](https:
             "misp:name=\"person\"",
             "misp:meta-category=\"misc\""
         ],
-        "x_misp_nationality": "USA",
-        "x_misp_passport_number": "ABA9875413"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "nationality": "USA",
+                "passport_number": "ABA9875413"
+            }
+        }
     }
     ```
   - MISP
@@ -8073,7 +8237,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[process:pid = '2510' AND process:image_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.image_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.x_misp_process_name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:is_hidden = 'True' AND process:x_misp_name = 'TestProcess' AND process:x_misp_port = '1234']",
+        "pattern": "[process:pid = '2510' AND process:image_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.image_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.process_name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:is_hidden = 'True' AND process:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.name = 'TestProcess' AND process:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.port = '1234']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -8231,8 +8395,13 @@ The list of currently supported MISP object templates is available [here](https:
             "child_refs": [
                 "process--518b4bcb-a86b-4783-9457-391d548b605b"
             ],
-            "x_misp_name": "TestProcess",
-            "x_misp_port": "1234"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "name": "TestProcess",
+                    "port": "1234"
+                }
+            }
         },
         {
             "type": "file",
@@ -8247,7 +8416,12 @@ The list of currently supported MISP object templates is available [here](https:
             "pid": 2107,
             "command_line": "grep -nrG iglocska /home/viktor/friends.txt",
             "image_ref": "file--d01ef2c6-3154-4f8a-a3dc-9de1f34dd5d0",
-            "x_misp_process_name": "Friends_From_H"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "process_name": "Friends_From_H"
+                }
+            }
         },
         {
             "type": "process",
@@ -8415,7 +8589,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[user-account:account_type = 'reddit' AND user-account:user_id = '666' AND user-account:account_login = 'RedditOctocat' AND user-account:x_misp_description = 'Reddit account of the OctoCat' AND user-account:x_misp_account_avatar.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_account_avatar.value = 'octocat.png']",
+        "pattern": "[user-account:account_type = 'reddit' AND user-account:user_id = '666' AND user-account:account_login = 'RedditOctocat' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.description = 'Reddit account of the OctoCat' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.account_avatar.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.account_avatar.value = 'octocat.png']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -8512,11 +8686,16 @@ The list of currently supported MISP object templates is available [here](https:
             "user_id": "666",
             "account_login": "RedditOctocat",
             "account_type": "reddit",
-            "x_misp_account_avatar": {
-                "value": "octocat.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
-            },
-            "x_misp_description": "Reddit account of the OctoCat"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "account_avatar": {
+                        "value": "octocat.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    },
+                    "description": "Reddit account of the OctoCat"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -8617,7 +8796,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25T16:22:00Z' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:x_misp_hive = 'hklm']",
+        "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25T16:22:00Z' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.hive = 'hklm']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -8644,9 +8823,9 @@ The list of currently supported MISP object templates is available [here](https:
         "uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
         "Attribute": [
             {
-                "uuid": "14e53210-3f72-5b1c-b831-5a6793fa4feb",
+                "uuid": "f5bbe620-e63f-5ae0-991a-153975c2f3d4",
                 "object_relation": "key",
-                "value": "hkey_local_machine\\\\system\\\\bar\\\\foo",
+                "value": "hkey_local_machine\\system\\bar\\foo",
                 "type": "regkey",
                 "category": "Persistence mechanism",
                 "disable_correlation": false,
@@ -8662,9 +8841,9 @@ The list of currently supported MISP object templates is available [here](https:
                 "to_ids": true
             },
             {
-                "uuid": "bfb7a5b5-51e9-5756-a413-912f5c319385",
+                "uuid": "209d8353-d2f2-5eb0-9b29-7f068825d869",
                 "object_relation": "data",
-                "value": "\\\\%DATA\\\\%\\\\qwertyuiop",
+                "value": "%DATA%\\qwertyuiop",
                 "type": "text",
                 "category": "Persistence mechanism",
                 "disable_correlation": false,
@@ -8737,7 +8916,12 @@ The list of currently supported MISP object templates is available [here](https:
                 }
             ],
             "modified_time": "2020-10-25T16:22:00Z",
-            "x_misp_hive": "hklm"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "hive": "hklm"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -8855,7 +9039,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+        "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.hive = 'hklm']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -8897,9 +9081,9 @@ The list of currently supported MISP object templates is available [here](https:
             ],
             "Attribute": [
                 {
-                    "uuid": "14e53210-3f72-5b1c-b831-5a6793fa4feb",
+                    "uuid": "f5bbe620-e63f-5ae0-991a-153975c2f3d4",
                     "object_relation": "key",
-                    "value": "hkey_local_machine\\\\system\\\\bar\\\\foo",
+                    "value": "hkey_local_machine\\system\\bar\\foo",
                     "type": "regkey",
                     "category": "Persistence mechanism",
                     "disable_correlation": false,
@@ -9049,7 +9233,12 @@ The list of currently supported MISP object templates is available [here](https:
                 }
             ],
             "modified_time": "2020-10-25T16:22:00Z",
-            "x_misp_hive": "hklm"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "hive": "hklm"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -9058,7 +9247,7 @@ The list of currently supported MISP object templates is available [here](https:
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:x_misp_hive = 'hklm']",
+            "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25 16:22:00+00:00' AND windows-registry-key:values[0].data = 'qwerty' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'Foo' AND windows-registry-key:values[1].data = '42' AND windows-registry-key:values[1].data_type = 'REG_DWORD' AND windows-registry-key:values[1].name = 'Bar' AND windows-registry-key:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.hive = 'hklm']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -9446,7 +9635,12 @@ The list of currently supported MISP object templates is available [here](https:
                 "url": "https://www.us-cert.gov/ncas/alerts/TA17-293A"
             }
         ],
-        "x_misp_context": "disk"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "context": "disk"
+            }
+        }
     }
     ```
   - MISP
@@ -9607,7 +9801,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[user-account:account_type = 'telegram' AND user-account:user_id = '1234567890' AND user-account:account_login = 'T3l3gr4mUs3r' AND user-account:x_misp_phone = '0112233445' AND user-account:x_misp_phone = '0556677889']",
+        "pattern": "[user-account:account_type = 'telegram' AND user-account:user_id = '1234567890' AND user-account:account_login = 'T3l3gr4mUs3r' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.phone[*] = '0112233445' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.phone[*] = '0556677889']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -9703,10 +9897,15 @@ The list of currently supported MISP object templates is available [here](https:
             "user_id": "1234567890",
             "account_login": "T3l3gr4mUs3r",
             "account_type": "telegram",
-            "x_misp_phone": [
-                "0112233445",
-                "0556677889"
-            ]
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "phone": [
+                        "0112233445",
+                        "0556677889"
+                    ]
+                }
+            }
         },
         {
             "type": "indicator",
@@ -9806,7 +10005,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[user-account:account_type = 'twitter' AND user-account:display_name = 'Octo Cat' AND user-account:user_id = '1357111317' AND user-account:account_login = 'octocat' AND user-account:x_misp_followers = '666' AND user-account:x_misp_profile_image.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_profile_image.value = 'octocat.png']",
+        "pattern": "[user-account:account_type = 'twitter' AND user-account:display_name = 'Octo Cat' AND user-account:user_id = '1357111317' AND user-account:account_login = 'octocat' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.followers = '666' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.profile_image.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.profile_image.value = 'octocat.png']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -9913,10 +10112,15 @@ The list of currently supported MISP object templates is available [here](https:
             "account_login": "octocat",
             "account_type": "twitter",
             "display_name": "Octo Cat",
-            "x_misp_followers": "666",
-            "x_misp_profile_image": {
-                "value": "octocat.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "followers": "666",
+                    "profile_image": {
+                        "value": "octocat.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    }
+                }
             }
         },
         {
@@ -10027,7 +10231,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[url:value = 'https://www.circl.lu/team' AND url:x_misp_domain = 'circl.lu' AND url:x_misp_host = 'www.circl.lu' AND url:x_misp_ip = '149.13.33.14' AND url:x_misp_port = '443']",
+        "pattern": "[url:value = 'https://www.circl.lu/team' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.domain = 'circl.lu' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.host = 'www.circl.lu' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.misp_ip = '149.13.33.14' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.port = '443']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -10130,10 +10334,15 @@ The list of currently supported MISP object templates is available [here](https:
             "spec_version": "2.1",
             "id": "url--5ac347ca-dac4-4562-9775-04120a00020f",
             "value": "https://www.circl.lu/team",
-            "x_misp_domain": "circl.lu",
-            "x_misp_host": "www.circl.lu",
-            "x_misp_ip": "149.13.33.14",
-            "x_misp_port": "443"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "domain": "circl.lu",
+                    "host": "www.circl.lu",
+                    "misp_ip": "149.13.33.14",
+                    "port": "443"
+                }
+            }
         },
         {
             "type": "indicator",
@@ -10142,7 +10351,7 @@ The list of currently supported MISP object templates is available [here](https:
             "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "pattern": "[url:value = 'https://www.circl.lu/team' AND url:x_misp_domain = 'circl.lu' AND url:x_misp_host = 'www.circl.lu' AND url:x_misp_ip = '149.13.33.14']",
+            "pattern": "[url:value = 'https://www.circl.lu/team' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.domain = 'circl.lu' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.host = 'www.circl.lu' AND url:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.misp_ip = '149.13.33.14']",
             "pattern_type": "stix",
             "pattern_version": "2.1",
             "valid_from": "2020-10-25T16:22:00Z",
@@ -10245,7 +10454,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[user-account:account_type = 'unix' AND user-account:display_name = 'Code Monkey' AND user-account:credential = 'P4ssw0rd1234!' AND user-account:user_id = 'iglocska' AND user-account:account_login = 'iglocska' AND user-account:credential_last_changed = '2020-10-25T16:22:00Z' AND user-account:extensions.'unix-account-ext'.groups = 'viktor-fan' AND user-account:extensions.'unix-account-ext'.groups = 'donald-fan' AND user-account:extensions.'unix-account-ext'.gid = '2004' AND user-account:extensions.'unix-account-ext'.home_dir = '/home/iglocska' AND user-account:x_misp_user_avatar.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_user_avatar.value = 'octocat.png']",
+        "pattern": "[user-account:account_type = 'unix' AND user-account:display_name = 'Code Monkey' AND user-account:credential = 'P4ssw0rd1234!' AND user-account:user_id = 'iglocska' AND user-account:account_login = 'iglocska' AND user-account:credential_last_changed = '2020-10-25T16:22:00Z' AND user-account:extensions.'unix-account-ext'.groups = 'viktor-fan' AND user-account:extensions.'unix-account-ext'.groups = 'donald-fan' AND user-account:extensions.'unix-account-ext'.gid = '2004' AND user-account:extensions.'unix-account-ext'.home_dir = '/home/iglocska' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.user_avatar.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.user_avatar.value = 'octocat.png']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -10416,11 +10625,14 @@ The list of currently supported MISP object templates is available [here](https:
                         "donald-fan"
                     ],
                     "home_dir": "/home/iglocska"
+                },
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "user_avatar": {
+                        "value": "octocat.png",
+                        "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    }
                 }
-            },
-            "x_misp_user_avatar": {
-                "value": "octocat.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
             }
         },
         {
@@ -10606,9 +10818,14 @@ The list of currently supported MISP object templates is available [here](https:
                 "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
             }
         ],
-        "x_misp_created": "2017-10-13T07:29:00Z",
-        "x_misp_cvss_score": "6.8",
-        "x_misp_published": "2017-10-13T07:29:00Z"
+        "extensions": {
+            "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                "extension_type": "property-extension",
+                "created": "2017-10-13T07:29:00Z",
+                "cvss_score": "6.8",
+                "published": "2017-10-13T07:29:00Z"
+            }
+        }
     }
     ```
   - MISP
@@ -10762,7 +10979,7 @@ The list of currently supported MISP object templates is available [here](https:
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00Z' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00Z' AND x509-certificate:x_misp_pem = 'RawCertificateInPEMFormat']",
+        "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.'SHA-1' = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00Z' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00Z' AND x509-certificate:extensions.'extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b'.pem = 'RawCertificateInPEMFormat']",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z",
@@ -10950,7 +11167,12 @@ The list of currently supported MISP object templates is available [here](https:
             "subject_public_key_algorithm": "PublicKeyAlgorithm",
             "subject_public_key_modulus": "C5",
             "subject_public_key_exponent": 2,
-            "x_misp_pem": "RawCertificateInPEMFormat"
+            "extensions": {
+                "extension-definition--5ece67ea-2e8b-4ed0-bb69-26d69053ee0b": {
+                    "extension_type": "property-extension",
+                    "pem": "RawCertificateInPEMFormat"
+                }
+            }
         },
         {
             "type": "indicator",

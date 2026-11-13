@@ -1048,7 +1048,6 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "dropper",
             "remote-access-trojan"
         ],
-        "first_seen": "2020-10-25T16:22:00Z",
         "x_misp_architecture_execution_envs": [
             "x86-64"
         ],
@@ -1056,6 +1055,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "accesses-remote-machines",
             "communicates-with-c2"
         ],
+        "x_misp_first_seen": "2020-10-25T16:22:00Z",
         "x_misp_implementation_languages": [
             "c++"
         ],
@@ -1322,9 +1322,12 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "misp:galaxy-name=\"Threat Actor\"",
             "misp:galaxy-type=\"threat-actor\""
         ],
-        "x_misp_cfr-type-of-incident": [
+        "x_misp_cfr_type_of_incident": [
             "Denial of service"
-        ]
+        ],
+        "x_misp_original_names": {
+            "x_misp_cfr_type_of_incident": "cfr-type-of-incident"
+        }
     }
     ```
 
