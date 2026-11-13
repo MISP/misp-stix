@@ -1124,8 +1124,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             if len(value) == 3:
                 filename, data, uuid = value
                 args = self._create_attachment_args(filename, data)
-                args['id'] = f'artifact--{uuid}'
+                artifact_id = f'artifact--{uuid}'
+                args['id'] = artifact_id
                 objects.append(Artifact(**args))
+                file_args['content_ref'] = artifact_id
             else:
                 # The leftovers write it in the MISP property extension,
                 # next to its further values
