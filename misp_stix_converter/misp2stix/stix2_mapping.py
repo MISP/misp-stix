@@ -438,6 +438,9 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     __credential_single_fields = (
         'username',
     )
+    __artifact_data_fields = (
+        'payload_bin',
+    )
     __artifact_hash_types = (
         'md5', 'sha1', 'sha256', 'sha3-256', 'sha3-512', 'sha512',
         'ssdeep', 'tlsh'
@@ -1049,6 +1052,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def credential_single_fields(cls) -> tuple:
         return cls.__credential_single_fields
+
+    @classmethod
+    def artifact_data_fields(cls) -> tuple:
+        return cls.__artifact_data_fields
 
     @classmethod
     def artifact_hash_types(cls) -> tuple:

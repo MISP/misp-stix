@@ -4,6 +4,7 @@
 from __future__ import annotations
 from ..tools.exceptions import (
     STIXInputSizeError, STIXLoadingError, _reduce_input_path)
+from ..tools.misp_object_templates import _ORIGINAL_NAMES_PROPERTY
 from ..tools.stix2_loading_helpers import load_stix2_file
 from .exceptions import (
     MarkingDefinitionLoadingError, MissingSTIXContentError,
@@ -136,15 +137,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def __init__(self):
         super().__init__()
         self._creators: set = set()
+        self._definition_authors: set = set()
         self._mapping: Union[
             ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping
         ]
 
         self._analyst_data: dict = defaultdict(list)
         self._clusters: dict = {}
+        self._consumed_invalid_ids: set = set()
         self._converter_cache: dict = {}
         self._galaxies: dict = {}
         self._loaded_object_ids: set = set()
+        self._record_uuids: dict = defaultdict(dict)
 
         self._attack_pattern: dict
         self._campaign: dict
@@ -182,6 +186,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._duplicate_invalid_ids = getattr(
             bundle, '_duplicate_invalid_ids', set()
         )
+        # the ids the loader diverted from this document alone - the entries a
+        # caller-prepopulated or reused `invalid_objects` dict carries from an
+        # earlier document are never this parse's losses to report
+        self._document_invalid_ids = getattr(
+            bundle, '_document_invalid_ids', set()
+        )
         self._set_identifier(bundle.id)
         self.__stix_version = getattr(bundle, 'spec_version', '2.1')
         self._load_stix_bundle(bundle)
@@ -208,7 +218,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         object_type = stix_object['type']
         feature = self._mapping.stix_object_loading_mapping(object_type)
         if feature is None:
-            if object_type not in self._mapping.object_type_refs_to_skip():
+            if object_type == 'extension-definition':
+                # Its author is no creator of the content: an identity
+                # authoring nothing else converts to nothing, and the
+                # producer is still read from the content's creators
+                if 'created_by_ref' in stix_object:
+                    self._definition_authors.add(stix_object['created_by_ref'])
+            elif object_type not in self._mapping.object_type_refs_to_skip():
                 self._add_error(
                     f'Unable to load STIX object type: {object_type}'
                 )
@@ -285,16 +301,44 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             str(2 if n_reports >= 2 else n_reports)
         )
         getattr(self, feature)()
+        self._report_unreferenced_invalid_objects()
+
+    def _report_unreferenced_invalid_objects(self):
+        """Report the invalid objects the parse never reached.
+
+        The loader diverts what `stix2` refuses to parse into
+        `invalid_objects` for the parser to report, but the parser only reads
+        that dict when a reference asks: an invalid object nothing references
+        would convert without a signal, indistinguishable from a document
+        that never carried it. Swept here once the parse is done - only the
+        parser knows which entries a reference consumed - and only over the
+        ids diverted from the document just parsed, so losses an earlier load
+        left in a shared dict are never re-reported. Every type is treated
+        alike, Marking Definitions included: `_recover_invalid_object` argues
+        about the cost of recovering an unreferenced marking, not about
+        keeping its loss silent.
+        """
+        unreferenced = self._document_invalid_ids - self._consumed_invalid_ids
+        for object_id in sorted(unreferenced):
+            self._add_error(
+                f'Unreadable STIX object with id {object_id}: the bundle '
+                'carries it, but its content is missing from the converted '
+                'event'
+            )
 
     def _reset_bundle_state(self):
         super()._reset_bundle_state()
         self._parsed_object_refs = set()
         self._creators = set()
+        self._definition_authors = set()
         self._analyst_data = defaultdict(list)
         self._clusters = {}
+        self._consumed_invalid_ids = set()
         self._converter_cache.clear()
+        self._document_invalid_ids = set()
         self._galaxies = {}
         self._loaded_object_ids = set()
+        self._record_uuids = defaultdict(dict)
         for feature in _SDOs:
             if hasattr(self, feature):
                 delattr(self, feature)
@@ -334,7 +378,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 continue
             if isinstance(values, list):
                 for value in values:
-                    if isinstance(value, _EXTENSION_TYPES):
+                    if isinstance(value, (dict, *_EXTENSION_TYPES)):
                         yield from self._fetch_observable_references(value)
                         continue
                     yield value
@@ -399,14 +443,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _load_attack_pattern(
             self,
             attack_pattern: AttackPattern_v20 | AttackPattern_v21 | dict):
-        self._check_uuid(attack_pattern['id'])
+        self._register_uuid(attack_pattern['id'])
         try:
             self._attack_pattern[attack_pattern['id']] = attack_pattern
         except AttributeError:
             self._attack_pattern = {attack_pattern['id']: attack_pattern}
 
     def _load_campaign(self, campaign: Campaign_v20 | Campaign_v21 | dict):
-        self._check_uuid(campaign['id'])
+        self._register_uuid(campaign['id'])
         try:
             self._campaign[campaign['id']] = campaign
         except AttributeError:
@@ -415,28 +459,28 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _load_course_of_action(
             self,
             course_of_action: CourseOfAction_v20 | CourseOfAction_v21 | dict):
-        self._check_uuid(course_of_action['id'])
+        self._register_uuid(course_of_action['id'])
         try:
             self._course_of_action[course_of_action['id']] = course_of_action
         except AttributeError:
             self._course_of_action = {course_of_action['id']: course_of_action}
 
     def _load_grouping(self, grouping: Grouping | dict):
-        self._check_uuid(grouping['id'])
+        self._register_uuid(grouping['id'])
         try:
             self._grouping[grouping['id']] = grouping
         except AttributeError:
             self._grouping = {grouping['id']: grouping}
 
     def _load_identity(self, identity: Identity_v20 | Identity_v21 | dict):
-        self._check_uuid(identity['id'])
+        self._register_uuid(identity['id'])
         try:
             self._identity[identity['id']] = identity
         except AttributeError:
             self._identity = {identity['id']: identity}
 
     def _load_indicator(self, indicator: Indicator_v20 | Indicator_v21 | dict):
-        self._check_uuid(indicator['id'])
+        self._register_uuid(indicator['id'])
         try:
             self._indicator[indicator['id']] = indicator
         except AttributeError:
@@ -444,28 +488,28 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _load_intrusion_set(
             self, intrusion_set: IntrusionSet_v20 | IntrusionSet_v21 | dict):
-        self._check_uuid(intrusion_set['id'])
+        self._register_uuid(intrusion_set['id'])
         try:
             self._intrusion_set[intrusion_set['id']] = intrusion_set
         except AttributeError:
             self._intrusion_set = {intrusion_set['id']: intrusion_set}
 
     def _load_location(self, location: Location | dict):
-        self._check_uuid(location['id'])
+        self._register_uuid(location['id'])
         try:
             self._location[location['id']] = location
         except AttributeError:
             self._location = {location['id']: location}
 
     def _load_malware(self, malware: Malware_v20 | Malware_v21 | dict):
-        self._check_uuid(malware['id'])
+        self._register_uuid(malware['id'])
         try:
             self._malware[malware['id']] = malware
         except AttributeError:
             self._malware = {malware['id']: malware}
 
     def _load_malware_analysis(self, malware_analysis: MalwareAnalysis | dict):
-        self._check_uuid(malware_analysis['id'])
+        self._register_uuid(malware_analysis['id'])
         try:
             self._malware_analysis[malware_analysis['id']] = malware_analysis
         except AttributeError:
@@ -487,7 +531,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _load_observed_data(
             self, observed_data: ObservedData_v20 | ObservedData_v21 | dict):
-        self._check_uuid(observed_data['id'])
+        self._register_uuid(observed_data['id'])
         try:
             self._observed_data[observed_data['id']] = observed_data
         except AttributeError:
@@ -511,7 +555,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._relationship[source_uuid].add(reference)
 
     def _load_report(self, report: _REPORT_TYPING):
-        self._check_uuid(report['id'])
+        self._register_uuid(report['id'])
         try:
             self._report[report['id']] = report
         except AttributeError:
@@ -519,14 +563,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _load_threat_actor(
             self, threat_actor: ThreatActor_v20 | ThreatActor_v21 | dict):
-        self._check_uuid(threat_actor['id'])
+        self._register_uuid(threat_actor['id'])
         try:
             self._threat_actor[threat_actor['id']] = threat_actor
         except AttributeError:
             self._threat_actor = {threat_actor['id']: threat_actor}
 
     def _load_tool(self, tool: Tool_v20 | Tool_v21 | dict):
-        self._check_uuid(tool['id'])
+        self._register_uuid(tool['id'])
         try:
             self._tool[tool['id']] = tool
         except AttributeError:
@@ -535,7 +579,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _load_vulnerability(
             self,
             vulnerability: Vulnerability_v20 | Vulnerability_v21 | dict):
-        self._check_uuid(vulnerability['id'])
+        self._register_uuid(vulnerability['id'])
         try:
             self._vulnerability[vulnerability['id']] = vulnerability
         except AttributeError:
@@ -547,11 +591,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _get_stix_object(self, object_ref: str):
         object_type = object_ref.split('--')[0]
-        if object_type.startswith('x-misp-'):
-            object_type = (
-                'note' if object_type == 'x-misp-event-report'
-                else object_type.replace('x-misp', 'custom')
-            )
+        # The MISP custom types share their stores in both syntaxes: an
+        # `x-misp-*` type and the `misp-*` type standing for the same MISP
+        # record load into the same one
+        if object_type == 'x-misp-event-report':
+            object_type = 'note'
+        elif object_type.startswith(('x-misp-', 'misp-')):
+            object_type = f"custom-{object_type.split('misp-', 1)[1]}"
         feature = f"_{object_type.replace('-', '_')}"
         try:
             return getattr(self, feature)[object_ref]
@@ -559,12 +605,24 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             recovered = self._recover_invalid_object(object_ref, object_type)
             if recovered is not None:
                 return recovered
+            self._consume_invalid_object(object_ref)
             raise ObjectTypeLoadingError(object_type)
         except KeyError:
             recovered = self._recover_invalid_object(object_ref, object_type)
             if recovered is not None:
                 return recovered
+            self._consume_invalid_object(object_ref)
             raise ObjectRefLoadingError(object_ref)
+
+    def _consume_invalid_object(self, object_ref: str):
+        """Mark an invalid object a reference reached.
+
+        The loading error the reference produces already names the loss, so
+        the end-of-parse sweep over what the loader diverted stays silent
+        about it - one invalid object, one message, referenced or not.
+        """
+        if object_ref in self.invalid_objects:
+            self._consumed_invalid_ids.add(object_ref)
 
     def _recover_invalid_object(self, object_ref: str, object_type: str):
         """Recover a referenced object the loader could not parse.
@@ -579,6 +637,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         invalid = self.invalid_objects.get(object_ref)
         if invalid is None:
             return None
+        # consumed whether the recovery holds or raises: applied, the marking
+        # needs no message; too broken to read, the referring object's error
+        # names the loss - either way the end-of-parse sweep has nothing to add
+        self._consumed_invalid_ids.add(object_ref)
         # loading raises on a marking too broken to read, and a marking that
         # governs nothing costs nothing: the duplicate is reported once the
         # survivor is applied, not before
@@ -992,11 +1054,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 continue
             if key != 'extension_type':
                 meta[key] = values
+        cluster_uuid = self._extract_uuid(marking_definition['id'])
+        self._check_record_uuid_collision(
+            'galaxy cluster', cluster_uuid, marking_definition['id']
+        )
         return self._create_misp_galaxy_cluster(
             collection_uuid=self._create_v5_uuid(name),
             meta=meta, type=f'stix-{version}-acs-marking',
             version=''.join(version.split('.')),
-            uuid=marking_definition['id'].split('--')[1],
+            uuid=cluster_uuid,
             value=extension.get(
                 'name',
                 extension.get(
@@ -1017,9 +1083,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if 'definition_type' in marking_definition:
             # The tag a marking is read as is one this library writes out of
             # the two fields below, so it goes through the tag builder like
-            # every other built tag (ADR-0012): a `definition` carrying a `"`
-            # would otherwise decide what else the data it governs is tagged
-            # with. A marking naming its own type keeps the slots it named.
+            # every other built tag: a `definition` carrying a `"` would
+            # otherwise decide what else the data it governs is tagged with.
+            # A marking naming its own type keeps the slots it named.
             definition_type = marking_definition['definition_type']
             definition = str(marking_definition['definition'][definition_type])
             slots = (
@@ -1067,6 +1133,20 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ############################################################################
     #                 MISP GALAXIES & CLUSTERS PARSING METHODS                 #
     ############################################################################
+
+    def _sanitise_cluster_uuid(self, object_id: str) -> str:
+        """The record-uuid sanitation, with the collision check on the uuid
+        it hands out - the one the cluster ends up carrying.
+
+        The type of a galaxy-mapped STIX object never enters the cluster uuid
+        derivation, so 2 objects of different types sharing a uuid part yield
+        2 Galaxy Clusters carrying one uuid.
+        """
+        cluster_uuid = self._sanitise_uuid(object_id)
+        self._check_record_uuid_collision(
+            'galaxy cluster', cluster_uuid, object_id
+        )
+        return cluster_uuid
 
     def _aggregate_galaxy_clusters(self, galaxies: dict):
         for galaxy_type, clusters in galaxies.items():
@@ -1212,7 +1292,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if not self.galaxies_as_tags:
             self._parse_galaxy_relationships()
 
-    def _parse_sighting(self, sighting: _SIGHTING_TYPING) -> MISPSighting:
+    def _create_sighting(
+            self, sighting: _SIGHTING_TYPING,
+            identity: Optional[Identity_v20 | Identity_v21 | dict] = None
+            ) -> MISPSighting:
         misp_sighting = MISPSighting()
         sighting_args = {
             'date_sighting': self._timestamp_from_stix_date(
@@ -1222,17 +1305,21 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         }
         if 'description' in sighting:
             sighting_args['source'] = sighting['description']
-        if 'where_sighted_refs' in sighting:
-            for reference in sighting['where_sighted_refs']:
-                identity = self._identity.get(reference)
-                if identity is None:
-                    continue
-                sighting_args['Organisation'] = {
-                    'uuid': self._sanitise_uuid(identity['id']),
-                    'name': identity['name']
-                }
-                misp_sighting.from_dict(**sighting_args)
-                return misp_sighting
+        if identity is not None:
+            sighting_args['Organisation'] = {
+                'uuid': self._sanitise_uuid(identity['id']),
+                'name': identity['name']
+            }
+        misp_sighting.from_dict(**sighting_args)
+        return misp_sighting
+
+    def _parse_sighting(
+            self, sighting: _SIGHTING_TYPING) -> Optional[MISPSighting]:
+        for reference in sighting.get('where_sighted_refs', []):
+            identity = getattr(self, '_identity', {}).get(reference)
+            if identity is not None:
+                return self._create_sighting(sighting, identity)
+        return None
 
     def _parse_sightings(self):
         for attribute in self.misp_event.attributes:
@@ -1257,20 +1344,20 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _add_analyst_note(self, data_layer: _DATA_LAYER_TYPING, reference: str):
         note = self._note[reference]
-        if note.get('uuid') is None:
-            note['uuid'] = self._create_v5_uuid(
-                f'{reference} - {data_layer.uuid}'
-            )
-        data_layer.add_note(**note)
+        note_uuid = note.get('uuid') or self._derive_analyst_data_uuid(
+            reference, data_layer
+        )
+        self._check_record_uuid_collision('note', note_uuid, reference)
+        data_layer.add_note(**{**note, 'uuid': note_uuid})
 
     def _add_analyst_opinion(
             self, data_layer: _DATA_LAYER_TYPING, reference: str):
         opinion = self._opinion[reference]
-        if opinion.get('uuid') is None:
-            opinion['uuid'] = self._create_v5_uuid(
-                f'{reference} - {data_layer.uuid}'
-            )
-        data_layer.add_opinion(**opinion)
+        opinion_uuid = opinion.get('uuid') or self._derive_analyst_data_uuid(
+            reference, data_layer
+        )
+        self._check_record_uuid_collision('opinion', opinion_uuid, reference)
+        data_layer.add_opinion(**{**opinion, 'uuid': opinion_uuid})
 
     def _add_misp_attribute(
             self, attribute: dict, stix_object: _SDO_TYPING) -> MISPAttribute:
@@ -1288,6 +1375,29 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._add_analyst_data(misp_object, reference)
         self._add_markings_to_misp_object(misp_object, stix_object)
         return self.misp_event.add_object(misp_object)
+
+    def _check_record_uuid_collision(
+            self, record_type: str, record_uuid: str, object_id: str):
+        """Report the **Colliding Record Uuid** 2 STIX ids both produce.
+
+        Keyed on the uuid the record ends up carrying - the sanitised uuid
+        part of the STIX id, or the derivation replacing it - so the warning
+        names what the converted content actually shares. The uuid
+        computation is untouched: re-deriving one of the 2 records would cost
+        it the round-trip, and only the reporting is added.
+
+        Records are tracked per record type because MISP keeps one uuid
+        namespace per table: a note, an opinion and an event report sharing
+        one uuid cost nothing, the way an attribute sharing the uuid of the
+        object holding it does. Two notes carrying one uuid is the collision.
+        """
+        known_id = self._record_uuids[record_type].setdefault(
+            record_uuid, object_id
+        )
+        if known_id != object_id:
+            self._colliding_uuid_warning(
+                record_type, record_uuid, known_id, object_id
+            )
 
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
@@ -1359,6 +1469,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         cluster.parse_meta_as_elements()
         return cluster
 
+    def _derive_analyst_data_uuid(
+            self, reference: str, data_layer: _DATA_LAYER_TYPING) -> str:
+        """The uuid of an analyst data record its loader gave none - one
+        referencing several objects - derived per data layer it lands on, so
+        every layer gets a record of its own. The loaded dict is left as it
+        was: writing the derivation back would hand the next layer this one's
+        uuid."""
+        return str(self._create_v5_uuid(f'{reference} - {data_layer.uuid}'))
+
     ############################################################################
     #                             UTILITY METHODS.                             #
     ############################################################################
@@ -1390,6 +1509,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 title = f'{self.event_title} {title}'
             return title
         return self.generic_info_field
+
+    def _is_author(self, identity_ref: str) -> bool:
+        # An identity authoring the content, or only the extension
+        # definitions the bundle carries, is no content of its own
+        return (
+            identity_ref in self._creators
+            or identity_ref in self._definition_authors
+        )
 
     def _handle_creator(self, reference: str) -> str:
         if reference in getattr(self, '_identity', {}):
@@ -1431,7 +1558,19 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                   ERRORS AND WARNINGS HANDLING METHODS                   #
     ############################################################################
 
+    def _colliding_uuid_warning(self, record_type: str, record_uuid: str,
+                                known_id: str, object_id: str):
+        self._add_warning(
+            f'Colliding MISP {record_type} uuid {record_uuid} - the '
+            f'STIX objects {known_id} and {object_id} both produce it, so '
+            f'the converted content has 2 {record_type}s sharing one uuid'
+        )
+
     def _object_ref_loading_error(self, object_ref: str):
+        # some callers pass the `ObjectRefLoadingError` carrying the id
+        # rather than the id itself
+        object_ref = str(object_ref)
+        self._consume_invalid_object(object_ref)
         self._add_error(f'Error loading the STIX object with id {object_ref}')
 
     def _object_type_loading_error(self, object_type: str):
@@ -1440,6 +1579,75 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _unknown_marking_definition_extension_error(self, identifier: str):
         self._add_error(
             f'Unknown STIX Marking Definition extension: {identifier}'
+        )
+
+    def _custom_syntax_collision_warning(
+            self, object_id: str, field: str, path: str):
+        self._add_warning(
+            f'Both syntaxes carry the MISP value "{field}" on the STIX object '
+            f'with id {object_id}: the value of {path} in the MISP property '
+            'extension is read, the custom property is ignored.'
+        )
+
+    def _opinion_author_error(self, opinion_id: str, author_ref: str):
+        self._add_error(
+            'Unable to import the sighting from the STIX object with id '
+            f'{opinion_id}: the bundle carries no identity with id '
+            f'{author_ref}, its author, and the object names no author either.'
+        )
+
+    def _opinion_author_ref_error(self, opinion_id: str, author_ref: Any):
+        self._add_error(
+            'Unable to import the sighting from the STIX object with id '
+            f'{opinion_id}: its author reference, {author_ref!r}, is not an '
+            'identity id.'
+        )
+
+    def _opinion_author_warning(
+            self, opinion_id: str, author_ref: str, author: str):
+        self._add_warning(
+            f'The bundle carries no identity with id {author_ref}, the author '
+            f'of the STIX object with id {opinion_id}: the organisation of '
+            'its sighting takes the uuid of that id and the name '
+            f'"{author}" the object carries.'
+        )
+
+    def _sighting_identity_error(self, sighting_id: str, references: list):
+        self._add_error(
+            'Unable to import the sighting from the STIX object with id '
+            f'{sighting_id}: the bundle carries none of the identities it is '
+            f"sighted where ({', '.join(references)}), so the sighting has no "
+            'organisation.'
+        )
+
+    def _unknown_custom_property_warning(
+            self, name: str, object_id: str, field: str, relation: str):
+        self._add_warning(
+            f'Unknown custom property "{field}" on the MISP object "{name}" '
+            f'converted from {object_id}: neither the object template nor '
+            'the import mapping knows the object relation it carries, so it '
+            'is imported as a text attribute with the object relation '
+            f'"{relation}".'
+        )
+
+    def _unknown_hash_type_warning(
+            self, hash_type: str, object_id: str, relation: str):
+        self._add_warning(
+            f'Unknown hash type "{hash_type}" read from {object_id}: '
+            'the import mapping knows no attribute type for it, so it is '
+            'imported as a text attribute with the object relation '
+            f'"{relation}".'
+        )
+
+    def _unknown_original_names_warning(
+            self, object_id: str, names: list,
+            path: str = _ORIGINAL_NAMES_PROPERTY):
+        quoted = ', '.join(f'"{name}"' for name in names)
+        self._add_warning(
+            f'Ignored the {path} '
+            f"{'entries' if len(names) > 1 else 'entry'} {quoted} of "
+            f'{object_id}: the object carries no such property or meta key '
+            'to spell.'
         )
 
     def _unknown_network_protocol_warning(

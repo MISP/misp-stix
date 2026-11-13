@@ -5481,7 +5481,7 @@ For externally-generated STIX bundles, STIX objects are mapped to the closest MI
     {
         "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "type": "regkey",
-        "value": "HKLM\\\\Software\\\\mthjk",
+        "value": "HKLM\\Software\\mthjk",
         "category": "Persistence mechanism",
         "to_ids": true,
         "timestamp": "1603642920",
@@ -5596,7 +5596,7 @@ For externally-generated STIX bundles, STIX objects are mapped to the closest MI
     {
         "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "type": "regkey|value",
-        "value": "HKLM\\\\Software\\\\mthjk|\\\\%DATA\\\\%\\\\1234567890",
+        "value": "HKLM\\Software\\mthjk|%DATA%\\1234567890",
         "category": "Persistence mechanism",
         "to_ids": true,
         "timestamp": "1603642920",

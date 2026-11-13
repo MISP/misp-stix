@@ -2,12 +2,12 @@
 
 <img src="https://raw.githubusercontent.com/MISP/misp-stix/main/documentation/logos/misp-stix.png" width="125" height="125">
 
-[![Python version](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![Python version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/release/python-3110/)
 [![MISP-STIX version](https://badge.fury.io/gh/MISP%2Fmisp-stix.svg)](https://badge.fury.io/gh/MISP%2Fmisp-stix)
 [![Github Actions](https://github.com/MISP/misp-stix/workflows/misp-stix/badge.svg)](https://github.com/MISP/misp-stix/actions?query=workflow%3Amisp-stix)
 [![License](https://img.shields.io/github/license/MISP/misp-stix.svg)](#License)
 
-MISP-STIX-converter is a Python library (>=3.10) to handle all the conversions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
+MISP-STIX-converter is a Python library (>=3.11) to handle all the conversions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
 
 The package is available as [misp-stix](https://pypi.org/project/misp-stix/) in PyPI.
 
@@ -19,7 +19,7 @@ The package is available as [misp-stix](https://pypi.org/project/misp-stix/) in 
 - **Broad object type coverage** — [MISP Objects](https://github.com/MISP/misp-objects) and [MISP Galaxies](https://github.com/misp/misp-galaxy) are mapped to [semantically similar STIX objects](https://github.com/MISP/misp-stix/tree/main/documentation), including artifact, malware, malware-analysis, http-request, network traffic, and more.
 - **ACS Marking support** — Round-trip conversion of ACS (Access Control System) marking definitions between STIX 2.1 Marking Definitions and MISP Galaxy Clusters.
 - **Comprehensive pattern parsing** — Parses STIX 2.x indicator patterns covering x509 certificates, processes, Windows registry keys, email messages, domain-IP pairs, AS numbers, network traffic, PE extensions, and other object types.
-- **Internal vs External import** — Higher fidelity reconstruction for MISP-generated STIX content (recognises `x-misp-*` custom objects), with heuristic matching for third-party STIX data.
+- **Internal vs External import** — Higher fidelity reconstruction for MISP-generated STIX content (recognises the [MISP Extensions](./data/misp-extensions/extension-definition-specifications/misp-5ec/README.md) of STIX 2.1, and the `x-misp-*` custom objects and `x_misp_*` custom properties of STIX 2.0 and of the STIX 2.1 bundles written up to version 2026.10.12), with heuristic matching for third-party STIX data.
 - **Extendable mapping library** — Provides a modular mapping architecture to facilitate extension and customisation.
 
 This library is used by the [MISP core software](https://github.com/MISP/MISP) to perform STIX conversion and serving as a useful tool for anyone looking for a clean way of converting between the MISP standard format and various STIX versions (1.1.1, 1.2, 2.0, 2.1).
@@ -124,7 +124,7 @@ Convert MISP <-> STIX
 
 options:
   -h, --help       show this help message and exit
-  --debug          Show the full list of errors - errors and warnings are reported either way, this only controls the errors level of detail
+  --debug          Show the full lists of errors and warnings - both are reported either way, this only lifts the cap on how many are shown
 
 Main feature:
   {export,import}
@@ -251,12 +251,47 @@ A MISP object names the template that describes it, and that name is resolved ag
 template directories on disk. A name a document supplied that is not a plain template name -
 one holding a path separator, a `..`, or any character a template directory does not use - is
 never resolved: the object is converted under the name **`unknown-template`**, keeping the
-name the document sent in the object's `comment`. This applies on import, to an
-`x-misp-object`'s `x_misp_name`, and on export to the events and objects handed in as JSON,
-where a name stored earlier would otherwise be resolved when the event is exported. Names
-that do resolve - the templates pymisp ships and custom ones alike - are unaffected.
+name the document sent in the object's `comment`. This applies on import, to a
+`misp-object`'s `name` and an `x-misp-object`'s `x_misp_name`, and on export to the events and
+objects handed in as JSON, where a name stored earlier would otherwise be resolved when the
+event is exported. Names that do resolve - the templates pymisp ships and custom ones alike -
+are unaffected.
 
 ### In Python scripts
+
+#### Public surface
+
+Two modules are supported places to import from: the package itself, and
+`misp_stix_converter.tools`. Each declares what it holds in an `__all__`, and
+everything below them - `misp2stix`, `stix2misp`, the per-converter modules -
+is internal: reachable, but free to move from one release to the next.
+
+The package holds the conversion functions, the parser and mapping classes of
+both directions, the exceptions they raise, `__version__`, and the `main` the
+`misp_stix_converter` command runs:
+
+```python
+from misp_stix_converter import misp_to_stix1, misp_to_stix2, misp_collection_to_stix2
+from misp_stix_converter import stix_1_to_misp, stix_2_to_misp
+from misp_stix_converter import MISPtoSTIX1EventsParser, MISPtoSTIX20Parser, MISPtoSTIX21Parser
+from misp_stix_converter import ExternalSTIX1toMISPParser, InternalSTIX1toMISPParser
+from misp_stix_converter import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser
+from misp_stix_converter import MISPtoSTIX21Mapping, InternalSTIX2toMISPMapping
+from misp_stix_converter import InvalidMISPInputError, MissingSTIXContentError
+from misp_stix_converter import STIXInputSizeError, STIXLoadingError
+```
+
+`misp_stix_converter.tools` holds the steps a caller drives itself rather than
+through a conversion function - loading a document, deciding whether it came
+from MISP, and writing a STIX 1 Package by parts (the `write_*` helpers, one
+per collection type, with their headers and footers):
+
+```python
+from misp_stix_converter.tools import load_stix1_package, load_stix2_content, load_stix2_file
+from misp_stix_converter.tools import is_stix1_from_misp, is_stix2_from_misp
+from misp_stix_converter.tools import stix1_framing, stix1_attributes_framing
+from misp_stix_converter.tools import stix20_framing, stix21_framing
+```
 
 Given a MISP Event (with its metadata fields, attributes, objects, galaxies and tags), declared in an `event` variable in Python dict format, you can get the result of a conversion into one of the supported STIX versions:
 
@@ -281,12 +316,14 @@ from misp_stix_converter import misp_to_stix1
 
 response = misp_to_stix1(
     filename, # file name of the file containing a MISP Event
-    'xml', # return format (XML or JSON)
-    '1.1.1' # STIX1 version (1.1.1 or 1.2)
+    return_format='xml', # return format (XML or JSON)
+    version='1.1.1' # STIX1 version (1.1.1 or 1.2)
 )
 # if everything went well, response is a dictionary where `success` = 1
 ```
 The resulting STIX1 Package is then available in a `filename.out` file
+
+STIX 1 is an XML standard: the JSON return format is python-stix's dictionary form of the STIX Package, which `stix.core.STIXPackage.from_json` reads back and other STIX 1 tools do not. `stix_1_to_misp` reads XML only, so export a STIX Package as XML if it is to come back into MISP.
 
 **STIX 1 export is not thread-safe.** The identifier namespace an exported STIX 1
 Package uses lives in a module-level generator inside `mixbox`, so it is process-wide.
@@ -361,7 +398,7 @@ bundle21 = parser21.bundle
 But in order to parse multiple data collections, you can also use the following helpers:
 
 ```python
-from misp_stix_converter import misp_event_collection_to_stix1, misp_event_collection_to_stix2
+from misp_stix_converter import misp_event_collection_to_stix1, misp_collection_to_stix2
 
 input_filenames = [filename for filename in Path(_PATH_TO_YOUR_MISP_FILES_).glob('*.json')]
 
@@ -372,12 +409,12 @@ stix1_response = misp_event_collection_to_stix1(
     version='1.1.1' # STIX1 version (1.1.1 or 1.2)
 )
 
-stix20_response = misp_event_collection_to_stix2(
+stix20_response = misp_collection_to_stix2(
     *input_filenames,
     version='2.0' # STIX 2 version
 )
 
-stix21_response = misp_event_collection_to_stix2_1(
+stix21_response = misp_collection_to_stix2(
     *input_filenames,
     version='2.1',
     single_output=True, # For a single resulting file
@@ -387,7 +424,9 @@ stix21_response = misp_event_collection_to_stix2_1(
 ```
 Again, all the responses should have a `success` field equal to 1 and the resulting STIX1 Package and STIX 2.0 & 2.1 Bundles are available in the specific output file names.
 
-Note that `success` = 1 only tells you the conversion wrote its output: a conversion that dropped part of the content says so as well. Any response - from the conversion functions in both directions - may therefore carry an `errors` field, and a `warnings` one, next to `success`, both keyed by the event or bundle identifier the messages belong to. The `debug` argument controls how detailed the `errors` field is, never whether failures are reported: by default each distinct message appears once with the number of times it happened, capped at ten messages per identifier, and `debug=True` returns the full list instead.
+Note that `success` = 1 only tells you the conversion wrote its output: a conversion that dropped part of the content says so as well. Any response - from the conversion functions in both directions - may therefore carry an `errors` field, and a `warnings` one, next to `success`, both keyed by the event or bundle identifier the messages belong to. The `debug` argument controls how detailed both fields are, never whether they are reported: by default each distinct message appears once - errors with the number of times each happened - capped at ten messages per identifier with a trailing entry naming how many were left out, and `debug=True` returns the full lists instead. When driving the parser classes in memory rather than through these functions, `parser.diagnostics()` returns the same default summary as a dict, plus a `counts` entry giving the number of distinct warnings and of error occurrences taken before the cap. The two warnings about the import classification - the Internal parser chosen from the document content, or a detection result the `classification` parameter overruled - are recorded through `parser.record_classification(detected, overridden=...)`, which the conversion functions call once the document is loaded; an in-memory consumer running the detection itself (`is_stix2_from_misp`, `is_stix1_from_misp`) calls it the same way to get them.
+
+A STIX 1 conversion that yields an event with no attribute, object or galaxy is not a success either: the parser raises `MissingSTIXContentError` - naming the number of errors recorded on the way, when the content was there but could not be read - and the conversion functions report it in `errors` instead of writing an empty event.
 
 ### Samples and examples
 

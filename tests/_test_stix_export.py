@@ -4,9 +4,11 @@
 import json
 import misp_stix_converter
 import os
+import re
 import unittest
 from base64 import b64encode
 from collections import defaultdict
+from copy import deepcopy
 from datetime import datetime, timezone
 from misp_stix_converter.misp2stix.exportparser import MISPtoSTIXParser
 from pathlib import Path
@@ -15,9 +17,17 @@ from shutil import copyfile
 from stix.core import STIXPackage
 from stix2patterns.validator import validate
 from tempfile import TemporaryDirectory
+from typing import Optional
 from unittest.mock import patch
 from uuid import uuid5, UUID
-from ._test_stix import PLANTED_TEMPLATE, TestSTIX
+from misp_stix_converter.tools.misp_object_templates import (
+    _custom_property_name, _extension_property_name)
+from ._test_stix import (
+    MISP_ATTRIBUTE_EXTENSION_ID, MISP_GALAXY_CLUSTER_EXTENSION_ID,
+    MISP_EXTENSION_IDS, MISP_EXTENSION_OBJECT_IDS, MISP_OBJECT_EXTENSION_ID,
+    MISP_PROJECT_IDENTITY_ID, MISP_PROPERTY_EXTENSION_ID, PLANTED_TEMPLATE,
+    TestSTIX,
+    append_further_values, packaged_misp_extension, spell_non_pattern_value)
 
 _DEFAULT_ORGNAME = 'MISP'
 _ATTRIBUTE_EXCLUSION_LIST = ('disable_correlation', 'to_ids')
@@ -29,6 +39,35 @@ _MISP_OBJECT_EXCLUSION_LIST = (
 _PRESERVED_OUTPUT = 'IMPORTANT PRE-EXISTING CONTENT'
 _parse_json_file = MISPtoSTIXParser.parse_json_file
 
+# An `anonymised` attribute is unmapped in every export direction: parsing it
+# records the one warning a failing export must still report
+_RECORDED_EXPORT_WARNING = 'MISP Attribute type anonymised not mapped.'
+_UNMAPPED_ATTRIBUTE = {
+    'uuid': '91ae0a21-b7b6-4b16-b34c-5a1a04e39856',
+    'type': 'anonymised', 'category': 'Other',
+    'value': 'ffbb51e2-4166-4b98-a714-be5a0e6f77e1',
+    'timestamp': '1756425600', 'to_ids': False
+}
+# Three attributes failing validation the same way: the message pymisp raises
+# for a missing value names no type, and with no uuid there is no record to
+# name either, so they are one distinct error recorded three times
+_VALUELESS_ATTRIBUTES = [{'type': 'ip-src'} for _ in range(3)]
+# A second unmapped type that passes validation: with the `anonymised` one
+# above, two warnings the Diagnostics list in the order they were recorded
+_UNMAPPED_PDB_ATTRIBUTE = {
+    'uuid': '6e3e7f2f-1e9b-4d4c-8f80-000000000001',
+    'type': 'pdb', 'category': 'Artifacts dropped', 'value': 'malware.pdb',
+    'timestamp': '1756425600', 'to_ids': False
+}
+_UNMAPPED_PDB_WARNING = 'MISP Attribute type pdb not mapped.'
+# On a `to_ids` file object, an invalid TLSH value is recorded as an error and
+# dropped on the STIX 2 side - the hash validation STIX 1 export has no
+# equivalent of
+_INVALID_TLSH_ATTRIBUTE = {
+    'type': 'tlsh', 'object_relation': 'tlsh',
+    'value': 'T1' + 'a1b2c3d4e5' * 7, 'to_ids': True
+}
+
 # Object relations reaching a pattern property-name position, paired with the
 # pattern segment each one must produce. An unquoted metacharacter segment
 # either breaks the pattern - the object is then reported instead of converted
@@ -36,14 +75,39 @@ _parse_json_file = MISPtoSTIXParser.parse_json_file
 # last pair is the benign control: a relation needing no quotes keeps the bare
 # segment it always had. Segments are spelled out rather than computed, so the
 # expectations do not restate the escaping they guard.
+# The custom property name rule folds every character outside
+# [a-z0-9_] to `_`, so a metacharacter relation always reaches the pattern as
+# a bare keyword segment - pattern syntax in a relation cannot escape it.
+_DICTIONARY_META_KEYS = {
+    'Odd Key (1)': 'Odd_Key__1_',
+    'kept-Case_ok': 'kept-Case_ok',
+    'origin:Storm-0558': 'origin_Storm-0558'
+}
 _PATTERN_SEGMENT_RELATIONS = (
-    ("rel' OR file:name = 'x", r"'x_misp_rel\' OR file:name = \'x'"),
-    ('rel]', "'x_misp_rel]'"),
-    ('rel=1', "'x_misp_rel=1'"),
-    ('weird relation', "'x_misp_weird relation'"),
-    ("x'", r"'x_misp_x\''"),
-    ('a.b', "'x_misp_a.b'"),
+    ("rel' OR file:name = 'x", 'x_misp_rel__or_file_name____x'),
+    ('rel]', 'x_misp_rel_'),
+    ('rel=1', 'x_misp_rel_1'),
+    ('weird relation', 'x_misp_weird_relation'),
+    ("x'", 'x_misp_x_'),
+    ('a.b', 'x_misp_a_b'),
+    ('Odd.Case/Relation', 'x_misp_odd_case_relation'),
     ('rel-with-dash', 'x_misp_rel_with_dash')
+)
+# The same relations in the MISP property extension, whose names fold them as
+# the custom property names do: the extension id is the segment the quotes
+# keep whole
+_EXTENSION_PATTERN_SEGMENT_RELATIONS = tuple(
+    (relation, f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.{name}")
+    for relation, name in (
+        ("rel' OR file:name = 'x", 'rel__or_file_name____x'),
+        ('rel]', 'rel_'),
+        ('rel=1', 'rel_1'),
+        ('weird relation', 'weird_relation'),
+        ("x'", 'misp_x_'),
+        ('a.b', 'a_b'),
+        ('Odd.Case/Relation', 'odd_case_relation'),
+        ('rel-with-dash', 'rel_with_dash')
+    )
 )
 
 
@@ -281,11 +345,96 @@ class TestCollectionSTIXExport(unittest.TestCase):
                     output_name.read_text(encoding='utf-8'), _PRESERVED_OUTPUT
                 )
 
+    def _check_collection_export_reports_recorded_messages(
+            self, collection, json_content: dict,
+            expected_error: Optional[str] = None, **kwargs):
+        # A collection only merges the parser's recorded messages into its
+        # result once something was written: with every input file failing
+        # after it was parsed, the failure lines used to stand alone. The
+        # crash is planted after the parsing, where a write refusal or any
+        # later conversion step raises from inside the per-input `try`
+        def _crash_after_parsing(parser, filename):
+            _parse_json_file(parser, filename)
+            raise RuntimeError('Crash after the parser recorded its messages')
+
+        for arguments in (
+                {}, {'single_output': True},
+                {'single_output': True, 'in_memory': True}):
+            with TemporaryDirectory() as tmp_dir:
+                copies = self._write_json_inputs(tmp_dir, json_content)
+                with patch.object(
+                        MISPtoSTIXParser, 'parse_json_file',
+                        _crash_after_parsing):
+                    results = collection(*copies, **arguments, **kwargs)
+                self.assertNotIn('success', results)
+                self.assertEqual(len(results['fails']), len(copies))
+                self._check_recorded_messages_reported(results, expected_error)
+
+    def _check_single_export_reports_recorded_messages(
+            self, conversion, json_content: dict,
+            expected_error: Optional[str] = None, **kwargs):
+        # The crash every single-input path carries natively: the refused
+        # write sits inside the same `try` as the conversion, after the
+        # parser recorded its messages
+        with TemporaryDirectory() as tmp_dir:
+            filename = self._write_json_inputs(
+                tmp_dir, json_content, count=1
+            )[0]
+            output_name = self._preserved_output(tmp_dir)
+            results = conversion(filename, output_name=output_name, **kwargs)
+            self.assertNotIn('success', results)
+            self.assertEqual(len(results['fails']), 1)
+            self._check_recorded_messages_reported(results, expected_error)
+
+    def _check_recorded_messages_reported(
+            self, results: dict, expected_error: Optional[str] = None):
+        self.assertIn('warnings', results)
+        self.assertIn(
+            _RECORDED_EXPORT_WARNING,
+            [
+                warning for warnings in results['warnings'].values()
+                for warning in warnings
+            ]
+        )
+        if expected_error is not None:
+            self.assertIn('errors', results)
+            self.assertTrue(
+                any(
+                    expected_error in error
+                    for errors in results['errors'].values()
+                    for error in errors
+                ),
+                results['errors']
+            )
+
     def _check_reduced_input_fails(self, results: dict, *filenames):
         self.assertEqual(len(results['fails']), len(filenames))
         for fail, filename in zip(results['fails'], filenames):
             self.assertTrue(fail.startswith(f'{filename.name} - '), fail)
             self.assertNotIn(str(filename.parent), fail)
+
+    def _event_with_recorded_messages(self) -> dict:
+        # One event recording on its way through any export parser: a warning
+        # for the unmapped attribute, and - on the STIX 2 side, where hashes
+        # are validated - an error for the invalid TLSH value of a `to_ids`
+        # file object
+        from .test_events import get_event_with_file_object
+        event = get_event_with_file_object()
+        event['Event']['Object'][0]['Attribute'].append(
+            dict(_INVALID_TLSH_ATTRIBUTE)
+        )
+        event['Event']['Attribute'] = [dict(_UNMAPPED_ATTRIBUTE)]
+        return event
+
+    def _write_json_inputs(
+            self, tmp_dir: str, json_content: dict, count: int = 2) -> list:
+        input_files = []
+        for n in range(1, count + 1):
+            input_file = Path(tmp_dir) / f'recorded_messages_{n}.json'
+            with open(input_file, 'wt', encoding='utf-8') as f:
+                json.dump(json_content, f)
+            input_files.append(input_file)
+        return input_files
 
     def _collection_files(self, name: str) -> list:
         return [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
@@ -364,10 +513,7 @@ class TestCollectionSTIX2Export(TestCollectionSTIXExport):
         from .test_events import get_event_with_file_object
         event = get_event_with_file_object()
         event['Event']['Object'][0]['Attribute'].append(
-            {
-                'type': 'tlsh', 'object_relation': 'tlsh',
-                'value': 'T1' + 'a1b2c3d4e5' * 7, 'to_ids': True
-            }
+            dict(_INVALID_TLSH_ATTRIBUTE)
         )
         with TemporaryDirectory() as tmp_dir:
             filename = Path(tmp_dir) / 'event_with_invalid_hash.json'
@@ -422,6 +568,268 @@ class TestSTIX2Export(TestSTIX):
     def _add_object_ids_flag(event):
         for misp_object in event['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
+
+    # Spellings stix2 reads with `int()` as another number or refuses with the
+    # whole record, and the ones pymisp lets through for a relation it
+    # validates as a number
+    _NON_CANONICAL_TEXT = ('0x1f', '+5', '1_000', '007', '٣')
+    _NON_CANONICAL_VALIDATED = ('007', '٣')
+    # The spellings pymisp lets through for a `float` relation that stix2
+    # reads as another number, or as a nan or an infinity no JSON holds
+    _NON_CANONICAL_FLOAT = ('nan', 'inf', '1e400', '1_000', '٣')
+
+    def _non_canonical_number_warning(
+            self, relation, value, record, kind='decimal integer'):
+        return (
+            f'{relation!r} in the {record} is not a canonical {kind}: '
+            f'{value!r} written {self._misp_value_location}.'
+        )
+
+    @staticmethod
+    def _object_record(misp_object):
+        return f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
+
+    @staticmethod
+    def _spell_object_relations(event, name, values, *extra):
+        # The event's object named `name`, each relation of `values` holding
+        # the value given, and one more attribute per `(type, relation,
+        # value)` of `extra`
+        misp_object = next(
+            misp_object for misp_object in event['Event']['Object']
+            if misp_object['name'] == name
+        )
+        for attribute in misp_object['Attribute']:
+            if attribute['object_relation'] in values:
+                attribute['value'] = values[attribute['object_relation']]
+        misp_object['Attribute'].extend(
+            {'type': attribute_type, 'object_relation': relation,
+             'value': value}
+            for attribute_type, relation, value in extra
+        )
+        return misp_object
+
+    # A relation the export writes one value of natively keeps every value
+    # its MISP object repeats it with: the first one stays in the native
+    # property, each other one is carried as a MISP value of the relation,
+    # the rest of the record as it was written without the repeat. Its
+    # pattern keeps every comparison and compares the repeat too
+
+    def _test_repeated_single_value_relations(self, parser_class):
+        for fixture, name, relation, values in self._REPEATED_RELATIONS:
+            if not isinstance(values, tuple):
+                values = (values,)
+            for to_ids in (False, True):
+                with self.subTest(name=name, relation=relation, to_ids=to_ids):
+                    event = fixture()
+                    misp_object = next(
+                        misp_object for misp_object in event['Event']['Object']
+                        if misp_object['name'] == name
+                    )
+                    for attribute in misp_object['Attribute']:
+                        attribute['to_ids'] = to_ids
+                    base = self._export_event(parser_class, event)
+                    append_further_values(misp_object, relation, values, to_ids)
+                    repeated = self._export_event(parser_class, event)
+                    self.assertEqual(repeated.errors, base.errors)
+                    self.assertEqual(repeated.warnings, base.warnings)
+                    self.assertEqual(
+                        self._without_misp_values(repeated.stix_objects),
+                        self._without_misp_values(base.stix_objects)
+                    )
+                    misp_values = self._misp_values(
+                        repeated.stix_objects, relation
+                    )
+                    for value in values:
+                        self.assertIn(value, misp_values)
+                    indicator_id = f"indicator--{misp_object['uuid']}"
+                    patterns = [
+                        self._pattern_comparisons(parser, indicator_id)
+                        for parser in (base, repeated)
+                    ]
+                    if patterns[0] is None:
+                        continue
+                    # A comparison stays the same one when the repeat makes
+                    # the MISP value it compares a list, reached through `[*]`
+                    patterns = [
+                        {
+                            self._comparison_at_any_count(comparison)
+                            for comparison in comparisons
+                        }
+                        for comparisons in patterns
+                    ]
+                    if not to_ids:
+                        self.assertEqual(*patterns)
+                        continue
+                    self.assertLessEqual(*patterns)
+                    # A further value with data compares its data too, on the
+                    # path its value is compared on
+                    added = patterns[1] - patterns[0]
+                    paths = {comparison.split(' = ')[0] for comparison in added}
+                    self.assertEqual(
+                        {
+                            self._comparable(self._compared_value(comparison))
+                            for comparison in added
+                            if not self._is_data_comparison(
+                                comparison.split(' = ')[0], paths
+                            )
+                        },
+                        {self._comparable(value) for value in values}
+                    )
+
+    @staticmethod
+    def _comparison_at_any_count(comparison):
+        path, value = comparison.split(' = ', 1)
+        return f"{path.replace('[*]', '')} = {value}"
+
+    @staticmethod
+    def _is_data_comparison(path, paths):
+        # The data of a value with data, next to the value: not a relation
+        # named `data`
+        return (
+            path.endswith('.data')
+            and f"{path.removesuffix('.data')}.value" in paths
+        )
+
+    # A value holding a quote or a backslash goes out as MISP gave it in
+    # every property that is no pattern: only a pattern escapes them, a
+    # native property or a custom one carries the value itself
+
+    def _test_non_pattern_values_as_given(self, parser_class):
+        value = "it's c:\\tmp"
+        escaped = "it\\'s c:\\\\tmp"
+        for fixture, name, relations in self._NON_PATTERN_RELATIONS:
+            for relation in relations:
+                with self.subTest(name=name, relation=relation):
+                    event = spell_non_pattern_value(
+                        fixture(), name, relation, value
+                    )
+                    parser = self._export_event(parser_class, event)
+                    self.assertEqual(parser.errors, {})
+                    values = self._string_values(parser.stix_objects)
+                    self.assertIn(value, values)
+                    self.assertFalse(
+                        any(escaped in string for string in values)
+                    )
+
+    @staticmethod
+    def _string_values(stix_objects):
+        # Every string a STIX object holds, at any depth
+        values = []
+        def collect(content):
+            if isinstance(content, dict):
+                for value in content.values():
+                    collect(value)
+            elif isinstance(content, list):
+                for value in content:
+                    collect(value)
+            elif isinstance(content, str):
+                values.append(content)
+        for stix_object in stix_objects:
+            collect(json.loads(stix_object.serialize()))
+        return values
+
+    # A netflow object's ICMP type goes out as a MISP value of the network
+    # traffic: the ICMP extension requires a code the netflow
+    # template has no relation for. The protocols stay the ones the TCP
+    # flags and the object's own protocol name, and the pattern compares
+    # the type of the extension still
+
+    def _test_netflow_object_with_icmp_type(self, parser_class):
+        from .test_events import get_event_with_netflow_object
+        for to_ids in (False, True):
+            with self.subTest(to_ids=to_ids):
+                event = get_event_with_netflow_object()
+                misp_object = self._spell_object_relations(
+                    event, 'netflow', {}, ('text', 'icmp-type', '08')
+                )
+                for attribute in misp_object['Attribute']:
+                    attribute['to_ids'] = to_ids
+                self.parser = self._export_event(parser_class, event)
+                self.assertEqual(self.parser.errors, {})
+                self.assertEqual(self.parser.warnings, {})
+                network_traffic, = (
+                    observable
+                    for observable in self._record_observables().values()
+                    if observable.type == 'network-traffic'
+                )
+                self.assertEqual(network_traffic.protocols, ['tcp', 'ip'])
+                self._check_icmp_type_misp_value(network_traffic)
+                comparisons = self._pattern_comparisons(
+                    self.parser, f"indicator--{misp_object['uuid']}"
+                )
+                if not to_ids:
+                    self.assertIsNone(comparisons)
+                    continue
+                self.assertIn(
+                    "network-traffic:extensions.'icmp-ext'.icmp_type_hex = '08'",
+                    comparisons
+                )
+
+    # A stix2-pattern object goes out as an Indicator holding its pattern,
+    # its version as the pattern version and its comment as the description.
+    # A further version is carried as a MISP value of the relation. Not
+    # one of the repeated relations: the pattern is the object's own value,
+    # which a further version adds no comparison to
+
+    def _test_stix2_pattern_object(self, parser_class):
+        from .test_events import get_event_with_stix2_pattern_object
+        for further_versions in ((), ('stix 2.0',)):
+            with self.subTest(further_versions=further_versions):
+                event = get_event_with_stix2_pattern_object()
+                misp_object = self._spell_object_relations(
+                    event, 'stix2-pattern', {},
+                    *(('text', 'version', value) for value in further_versions)
+                )
+                self.parser = self._export_event(parser_class, event)
+                self.assertEqual(self.parser.errors, {})
+                self.assertEqual(self.parser.warnings, {})
+                indicator, = (
+                    stix_object for stix_object in self.parser.stix_objects
+                    if stix_object.id == f"indicator--{misp_object['uuid']}"
+                )
+                self.assertEqual(
+                    indicator.pattern,
+                    "[network-traffic:dst_port = '443' AND "
+                    "network-traffic:dst_ref.value = '8.8.8.8']"
+                )
+                self.assertEqual(indicator.pattern_version, '2.1')
+                self.assertEqual(
+                    indicator.description,
+                    'HTTPS traffic to the Google public DNS'
+                )
+                self._check_stix2_pattern_misp_values(
+                    indicator, further_versions
+                )
+
+    def _export_event(self, parser_class, event):
+        parser = parser_class()
+        parser.parse_misp_event(self._parser_input(event))
+        return parser
+
+    @staticmethod
+    def _pattern_comparisons(parser, indicator_id):
+        # The comparisons of an indicator's STIX pattern, when there is one
+        for stix_object in parser.stix_objects:
+            if stix_object.id == indicator_id:
+                if stix_object.get('pattern_type', 'stix') != 'stix':
+                    return None
+                return set(stix_object.pattern.strip('[]').split(' AND '))
+
+    @staticmethod
+    def _compared_value(comparison):
+        # The value a pattern comparison is made with, as written
+        value, = re.findall(r"= '((?:[^'\\]|\\.)*)'\)?$", comparison)
+        return value
+
+    @staticmethod
+    def _comparable(value):
+        # A value without the escapes a pattern adds, a date as the date it
+        # names whichever way it is written
+        value = value.replace('\\', '')
+        try:
+            return datetime.fromisoformat(value.replace('Z', '+00:00'))
+        except ValueError:
+            return value
 
     def _add_metacharacter_relation(self, event, relation, value):
         misp_object = event['Event']['Object'][0]
@@ -508,9 +916,9 @@ class TestSTIX2Export(TestSTIX):
         self._check_external_reference(
             attack_pattern.external_references[0], 'capec', f'CAPEC-{id_}'
         )
-        self.assertEqual(attack_pattern.x_misp_related_weakness, [weakness1, weakness2])
-        self.assertEqual(attack_pattern.x_misp_prerequisites, prerequisite)
-        self.assertEqual(attack_pattern.x_misp_solutions, solution)
+        self._check_attack_pattern_misp_values(
+            attack_pattern, weakness1, weakness2, prerequisite, solution
+        )
 
     def _check_attribute_campaign_features(self, campaign, attribute, identity_id, object_ref):
         self._assert_multiple_equal(
@@ -577,29 +985,7 @@ class TestSTIX2Export(TestSTIX):
         name, description, *attributes = misp_object['Attribute']
         self.assertEqual(course_of_action.name, name['value'])
         self.assertEqual(course_of_action.description, description['value'])
-        for attribute in attributes:
-            self.assertEqual(
-                getattr(
-                    course_of_action, f"x_misp_{attribute['object_relation']}"
-                ),
-                attribute['value']
-            )
-
-    def _check_custom_galaxy_features(self, stix_object, galaxy, timestamp):
-        cluster = galaxy['GalaxyCluster'][0]
-        self.assertEqual(stix_object.type, 'x-misp-galaxy-cluster')
-        self.assertEqual(stix_object.id, f"x-misp-galaxy-cluster--{cluster['uuid']}")
-        self.assertEqual(stix_object.created, timestamp)
-        self.assertEqual(stix_object.modified, timestamp)
-        self.assertEqual(stix_object.x_misp_name, galaxy['name'])
-        self.assertEqual(stix_object.x_misp_type, cluster['type'])
-        self.assertEqual(stix_object.x_misp_value, cluster['value'])
-        self.assertEqual(
-            stix_object.x_misp_description,
-            f"{galaxy['description']} | {cluster['description']}"
-        )
-        self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
-        self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
+        self._check_course_of_action_misp_values(course_of_action, attributes)
 
     def _check_email_address(self, address_object, address, display_name=None):
         self.assertEqual(address_object.type, 'email-addr')
@@ -636,7 +1022,13 @@ class TestSTIX2Export(TestSTIX):
          invalid_size, _, _, invalid_x509_md5) = initial_attributes
         (_, _, domain_ip, _, _, ip_port, _, network_connection,
          network_socket, *_) = misp_objects
-        validation_errors = self.parser.warnings.get('misp event', [])
+        # Filed under the event they come from, never under 'misp event',
+        # next to the conversion warnings of that event.
+        validation_errors = [
+            warning for warning in self.parser.warnings.get(
+                self.parser._misp_event['uuid'], []
+            ) if warning.startswith('Failed validation')
+        ]
         self.assertEqual(len(validation_errors), 17)
         connection_src_ip, connection_dst_ip = network_connection['Attribute']
         error_messages = list(
@@ -856,15 +1248,9 @@ class TestSTIX2Export(TestSTIX):
             legal_entity.contact_information,
             f"{phone['object_relation']}: {phone['value']} / {website['object_relation']}: {website['value']}"
         )
-        self.assertEqual(
-            legal_entity.x_misp_registration_number,
-            registration_number['value']
+        self._check_legal_entity_misp_values(
+            legal_entity, registration_number, logo
         )
-        self.assertEqual(legal_entity.x_misp_logo['value'], logo['value'])
-        data = logo['data']
-        if not isinstance(data, str):
-            data = b64encode(data.getvalue()).decode()
-        self.assertEqual(legal_entity.x_misp_logo['data'], data)
 
     def _check_malware_meta_fields(self, stix_object, meta):
         aliases = [
@@ -882,11 +1268,8 @@ class TestSTIX2Export(TestSTIX):
             self.assertEqual(external_ref.external_id, meta['external_id'])
             for external_ref, ref in zip(external_refs, meta['refs']):
                 self.assertEqual(external_ref.url, ref)
-        if meta.get('mitre_platform') is not None:
-            self.assertEqual(
-                stix_object.x_misp_mitre_platforms,
-                meta['mitre_platforms']
-            )
+        if meta.get('mitre_platforms') is not None:
+            self._check_malware_misp_values(stix_object, meta)
 
     def _check_object_indicator_features(self, indicator, misp_object, identity_id, object_ref):
         self._check_indicator_features(indicator, identity_id, object_ref, misp_object['uuid'])
@@ -932,9 +1315,9 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(url1.url, references1)
         self.assertEqual(url2.source_name, 'url')
         self.assertEqual(url2.url, references2)
-        self.assertEqual(vulnerability.x_misp_created, created)
-        self.assertEqual(vulnerability.x_misp_cvss_score, cvss)
-        self.assertEqual(vulnerability.x_misp_published, published)
+        self._check_vulnerability_misp_values(
+            vulnerability, created, cvss, published
+        )
 
     def _check_observable_features(self, observed_data, identity_id, object_ref, object_uuid):
         self._assert_multiple_equal(
@@ -956,7 +1339,7 @@ class TestSTIX2Export(TestSTIX):
 
     def _check_pattern_metacharacter_relations(self, event_getter, prefix):
         value = 'metacharacter value'
-        for relation, segment in _PATTERN_SEGMENT_RELATIONS:
+        for relation, segment in self._pattern_segment_relations:
             with self.subTest(object_relation=relation):
                 self.setUp()
                 event = event_getter()
@@ -986,13 +1369,11 @@ class TestSTIX2Export(TestSTIX):
         event = event_getter()
         self._add_object_ids_flag(event['Event'])
         misp_object = self._add_metacharacter_relation(event, 'rel]', 'V')
-        with patch.object(
-                self.parser, '_quote_custom_property',
-                lambda relation: f'x_misp_{relation}'):
+        with self._unquoted_misp_value_paths():
             self.parser.parse_misp_event(event['Event'])
         self.assertEqual(self._get_indicators(), [])
         self.assertIn(
-            'x-misp-object',
+            self._custom_object_type,
             [stix_object['type'] for stix_object in self.parser.stix_objects]
         )
         object_errors = self._object_errors(misp_object)
@@ -1003,62 +1384,6 @@ class TestSTIX2Export(TestSTIX):
                 f"(uuid: {misp_object['uuid']}):"
             )
         )
-
-    def _check_pe_and_section_observable(self, extension, pe, section):
-        (_type, compilation, entrypoint, original, internal, desc, version,
-         lang, prod_name, prod_version, company, _copyright, sections, imphash,
-         impfuzzy) = (attribute['value'] for attribute in pe['Attribute'])
-        self.assertEqual(extension.pe_type, _type)
-        self.assertEqual(extension.imphash, imphash)
-        self.assertEqual(extension.number_of_sections, int(sections))
-        self.assertEqual(extension.optional_header['address_of_entry_point'], int(entrypoint))
-        self.assertEqual(extension.x_misp_company_name, company)
-        self.assertEqual(extension.x_misp_compilation_timestamp, compilation)
-        self.assertEqual(extension.x_misp_file_description, desc)
-        self.assertEqual(extension.x_misp_file_version, version)
-        self.assertEqual(extension.x_misp_impfuzzy, impfuzzy)
-        self.assertEqual(extension.x_misp_internal_filename, internal)
-        self.assertEqual(extension.x_misp_lang_id, lang)
-        self.assertEqual(extension.x_misp_legal_copyright, _copyright)
-        self.assertEqual(extension.x_misp_original_filename, original)
-        self.assertEqual(extension.x_misp_product_name, prod_name)
-        self.assertEqual(extension.x_misp_product_version, prod_version)
-        name, size, entropy, md5, sha1, sha256, sha512, ssdeep = (
-            attribute['value'] for attribute in section['Attribute']
-        )
-        section = extension.sections[0]
-        self.assertEqual(section.name, name)
-        self.assertEqual(section.size, int(size))
-        self.assertEqual(section.entropy, float(entropy))
-        hashes = section.hashes
-        self.assertEqual(hashes['MD5'], md5)
-        self.assertEqual(hashes['SHA-1'], sha1)
-        self.assertEqual(hashes['SHA-256'], sha256)
-        self.assertEqual(hashes['SHA-512'], sha512)
-        self.assertEqual(hashes['ssdeep' if 'ssdeep' in hashes else 'SSDEEP'], ssdeep)
-
-    def _check_pe_and_section_pattern(self, pattern, pe, section):
-        _type, _, _, _original, _internal, *_, _imphash, _impfuzzy = (
-            attribute['value'] for attribute in pe['Attribute']
-        )
-        (imphash_, type_, original_, internal_, impfuzzy_,
-         name_, md5_, sha1_, sha256_, sha512_, ssdeep_) = pattern
-        prefix = "file:extensions.'windows-pebinary-ext'"
-        self.assertEqual(imphash_, f"{prefix}.imphash = '{_imphash}'")
-        self.assertEqual(type_, f"{prefix}.pe_type = '{_type}'")
-        self.assertEqual(original_, f"{prefix}.x_misp_original_filename = '{_original}'")
-        self.assertEqual(internal_, f"{prefix}.x_misp_internal_filename = '{_internal}'")
-        self.assertEqual(impfuzzy_, f"{prefix}.x_misp_impfuzzy = '{_impfuzzy}'")
-        _name, *_, _md5, _sha1, _sha256, _sha512, _ssdeep = (
-            attribute['value'] for attribute in section['Attribute']
-        )
-        prefix = f"{prefix}.sections[0]"
-        self.assertEqual(name_, f"{prefix}.name = '{_name}'")
-        self.assertEqual(md5_, f"{prefix}.hashes.MD5 = '{_md5}'")
-        self.assertEqual(sha1_, f"{prefix}.hashes.'SHA-1' = '{_sha1}'")
-        self.assertEqual(sha256_, f"{prefix}.hashes.'SHA-256' = '{_sha256}'")
-        self.assertEqual(sha512_, f"{prefix}.hashes.'SHA-512' = '{_sha512}'")
-        self.assertEqual(ssdeep_, f"{prefix}.hashes.SSDEEP = '{_ssdeep}'")
 
     def _check_person_object(self, identity, misp_object, person_ref, identity_id):
         self.assertEqual(identity.type, 'identity')
@@ -1080,8 +1405,7 @@ class TestSTIX2Export(TestSTIX):
             identity.contact_information,
             f"{phone['object_relation']}: {phone['value']}"
         )
-        self.assertEqual(identity.x_misp_nationality, nationality['value'])
-        self.assertEqual(identity.x_misp_passport_number, passport['value'])
+        self._check_person_misp_values(identity, nationality, passport)
         return role['value']
 
     def _check_relationship_features(self, relationship, source_id, target_id, relationship_type, timestamp):
@@ -1126,6 +1450,8 @@ class TestSTIX2Export(TestSTIX):
         for field in ('primary_motivation', 'resource_level', 'roles'):
             if field in meta:
                 self.assertEqual(getattr(stix_object, field), meta[field])
+        if 'cfr-type-of-incident' in meta:
+            self._check_threat_actor_misp_values(stix_object, meta)
 
     def _check_tool_meta_fields(self, stix_object, meta):
         aliases = [
@@ -1145,9 +1471,7 @@ class TestSTIX2Export(TestSTIX):
         for external_ref, ref in zip(external_refs, meta['refs']):
             self.assertEqual(external_ref.url, ref)
         if meta.get('mitre_platforms') is not None:
-            self.assertEqual(
-                stix_object.x_misp_mitre_platforms, meta['mitre_platforms']
-            )
+            self._check_tool_misp_values(stix_object, meta)
         if meta.get('tool_version') is not None:
             self.assertEqual(stix_object.tool_version, meta['tool_version'])
         if meta.get('kill_chain') is not None:
@@ -1253,25 +1577,6 @@ class TestSTIX2Export(TestSTIX):
             for attribute in misp_object['Attribute']:
                 attribute['to_ids'] = False
 
-    def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
-        attribute_type = attribute['type']
-        category = attribute['category']
-        custom_type = 'x-misp-attribute'
-        self.assertEqual(custom_object.type, custom_type)
-        self._assert_multiple_equal(
-            custom_object.id,
-            f"{custom_type}--{attribute['uuid']}",
-            object_ref
-        )
-        self.assertEqual(custom_object.created_by_ref, identity_id)
-        self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
-        self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
-        self.assertEqual(custom_object.x_misp_type, attribute_type)
-        self.assertEqual(custom_object.x_misp_category, category)
-        if attribute.get('comment'):
-            self.assertEqual(custom_object.x_misp_comment, attribute['comment'])
-        self.assertEqual(custom_object.x_misp_value, attribute['value'])
-
     def _run_invalid_object_name_tests(self, event, rejected_name):
         self.parser.parse_misp_event(event)
         misp_object = self.parser._misp_event.objects[0]
@@ -1284,12 +1589,11 @@ class TestSTIX2Export(TestSTIX):
             getattr(misp_object, 'meta-category', None),
             PLANTED_TEMPLATE['meta-category']
         )
-        self.assertEqual(custom_object.x_misp_name, 'unknown-template')
         self.assertEqual(
             custom_object.labels[0], 'misp:name="unknown-template"'
         )
         # Nothing is lost: the rejected name is kept as data.
-        self.assertIn(rejected_name, custom_object.x_misp_comment)
+        self._check_rejected_name_custom_object(custom_object, rejected_name)
         self.assertIn(event['uuid'], self.parser.warnings)
         name_warnings = [
             warning for warning in self.parser.warnings[event['uuid']]
@@ -1299,9 +1603,9 @@ class TestSTIX2Export(TestSTIX):
         self.assertIn(rejected_name, name_warnings[0])
 
     def _check_invalid_object_name_collection(self, parser, rejected_name):
-        custom_object = parser.stix_objects[-1]
-        self.assertEqual(custom_object.x_misp_name, 'unknown-template')
-        self.assertIn(rejected_name, custom_object.x_misp_comment)
+        self._check_rejected_name_custom_object(
+            parser.stix_objects[-1], rejected_name
+        )
         name_warnings = [
             warning for warning in parser.warnings['objects collection']
             if 'Invalid MISP object template name' in warning
@@ -1309,38 +1613,65 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(len(name_warnings), 1)
         self.assertIn(rejected_name, name_warnings[0])
 
-    def _run_custom_object_tests(self, misp_object, custom_object, object_ref, identity_id):
-        name = misp_object['name']
-        category = misp_object['meta-category']
-        custom_type = 'x-misp-object'
-        self.assertEqual(custom_object.type, custom_type)
-        self._assert_multiple_equal(
-            custom_object.id,
-            f"{custom_type}--{misp_object['uuid']}",
-            object_ref
+    def _check_diagnostics_count_error_occurrences(self):
+        # Three attributes with nothing to tell them apart failing the same
+        # way are one distinct message: how many times it happened is the
+        # volume signal, and the total counts every occurrence.
+        self.parser.parse_json_content(
+            {'Attribute': deepcopy(_VALUELESS_ATTRIBUTES)}
         )
-        self.assertEqual(custom_object.created_by_ref, identity_id)
-        self.assertEqual(custom_object.labels[0], f'misp:name="{name}"')
-        self.assertEqual(custom_object.labels[1], f'misp:meta-category="{category}"')
-        self.assertEqual(custom_object.x_misp_name, name)
-        self.assertEqual(custom_object.x_misp_meta_category, category)
-        if misp_object.get('comment'):
-            self.assertEqual(custom_object.x_misp_comment, misp_object['comment'])
-        for custom_attribute, attribute in zip(custom_object.x_misp_attributes, misp_object['Attribute']):
-            for feature in ('type', 'object_relation', 'value'):
-                try:
-                    self.assertEqual(custom_attribute[feature], attribute[feature])
-                except AssertionError:
-                    if '(s)' in attribute[feature]:
-                        self.assertEqual(custom_attribute[feature], attribute[feature].replace('(s)', ''))
-            for feature in ('category', 'comment', 'to_ids', 'uuid'):
-                if attribute.get(feature):
-                    self.assertEqual(custom_attribute[feature], attribute[feature])
-            if attribute.get('data'):
-                data = attribute['data']
-                if not isinstance(data, str):
-                    data = b64encode(data.getvalue()).decode()
-                self.assertEqual(custom_attribute['data'], data)
+        recorded = self.parser.errors['attributes collection']
+        self.assertEqual(len(recorded), 3)
+        self.assertEqual(len(set(recorded)), 1)
+        diagnostics = self.parser.diagnostics()
+        self.assertEqual(
+            diagnostics['errors'],
+            {'attributes collection': [f'{recorded[0]} (3 times)']}
+        )
+        self.assertEqual(diagnostics['warnings'], {})
+        self.assertEqual(diagnostics['counts'], {'warnings': 0, 'errors': 3})
+
+    def _check_diagnostics_keep_recording_order(self):
+        # The same two warnings recorded one way round, then the other: the
+        # Diagnostics follow the recording, not the hash of the messages, so
+        # they read the same across runs.
+        for attributes, expected in (
+                ((_UNMAPPED_PDB_ATTRIBUTE, _UNMAPPED_ATTRIBUTE),
+                 [_UNMAPPED_PDB_WARNING, _RECORDED_EXPORT_WARNING]),
+                ((_UNMAPPED_ATTRIBUTE, _UNMAPPED_PDB_ATTRIBUTE),
+                 [_RECORDED_EXPORT_WARNING, _UNMAPPED_PDB_WARNING])):
+            parser = type(self.parser)()
+            parser.parse_json_content({'Attribute': deepcopy(list(attributes))})
+            diagnostics = parser.diagnostics()
+            self.assertEqual(
+                diagnostics['warnings'], {'attributes collection': expected}
+            )
+            self.assertEqual(
+                parser.warnings, {'attributes collection': expected}
+            )
+            self.assertEqual(diagnostics['counts'], {'warnings': 2, 'errors': 0})
+
+    def _check_entry_result_carries_no_counts(self, version: str):
+        # The entry functions keep their result shape: what they merge is the
+        # parser's Diagnostics minus the totals, so a caller reading `errors`
+        # and `warnings` back gets the capped lists and nothing new next to
+        # them.
+        content = {'Attribute': [*_VALUELESS_ATTRIBUTES, _UNMAPPED_ATTRIBUTE]}
+        with TemporaryDirectory() as tmp_dir:
+            filename = Path(tmp_dir) / 'attributes.json'
+            with open(filename, 'wt', encoding='utf-8') as f:
+                json.dump(content, f)
+            results = misp_stix_converter.misp_to_stix2(
+                filename, version=version, output_dir=Path(tmp_dir)
+            )
+        self.assertEqual(results['success'], 1)
+        [error] = results['errors']['attributes collection']
+        self.assertTrue(error.endswith(' (3 times)'), error)
+        self.assertEqual(
+            results['warnings'],
+            {'attributes collection': [_RECORDED_EXPORT_WARNING]}
+        )
+        self.assertNotIn('counts', results)
 
     def _sanitise_pattern_value(self, value):
         sanitised = self._sanitise_registry_key_value(value)
@@ -1364,6 +1695,9 @@ class TestSTIX2Export(TestSTIX):
 
 
 class TestSTIX20Export(TestSTIX2Export):
+    _custom_object_type = 'x-misp-object'
+    _misp_value_location = 'as a custom property'
+    _pattern_segment_relations = _PATTERN_SEGMENT_RELATIONS
     _attributes_v20 = defaultdict(lambda: defaultdict(dict))
     _objects_v20 = defaultdict(lambda: defaultdict(dict))
     _galaxies_v20 = defaultdict(lambda: defaultdict(dict))
@@ -1407,11 +1741,710 @@ class TestSTIX20Export(TestSTIX2Export):
             return
         self._objects_v20[name]['STIX'] = json.loads(stix_objects.serialize())
 
+    def _check_custom_galaxy_features(self, stix_object, galaxy, timestamp):
+        cluster = galaxy['GalaxyCluster'][0]
+        self.assertEqual(stix_object.type, 'x-misp-galaxy-cluster')
+        self.assertEqual(stix_object.id, f"x-misp-galaxy-cluster--{cluster['uuid']}")
+        self.assertEqual(stix_object.created, timestamp)
+        self.assertEqual(stix_object.modified, timestamp)
+        self.assertEqual(stix_object.x_misp_name, galaxy['name'])
+        self.assertEqual(stix_object.x_misp_type, cluster['type'])
+        self.assertEqual(stix_object.x_misp_value, cluster['value'])
+        self.assertEqual(
+            stix_object.x_misp_description,
+            f"{galaxy['description']} | {cluster['description']}"
+        )
+        self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
+        self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
+        if 'meta' in cluster:
+            # `x_misp_meta` is a dictionary: keys keep case and `-` (STIX §2.3),
+            # every other character outside the dictionary charset folds to `_`
+            self.assertEqual(
+                stix_object.x_misp_meta,
+                {
+                    _DICTIONARY_META_KEYS[key]: value
+                    for key, value in cluster['meta'].items()
+                }
+            )
+            self._check_original_names(
+                stix_object,
+                {
+                    _DICTIONARY_META_KEYS[key]: key
+                    for key in cluster['meta']
+                    if _DICTIONARY_META_KEYS[key] != key
+                }
+            )
+
+    def _test_pe_object_falling_back_keeps_its_sections(self, parser_class):
+        # A pe the export fails to build goes out as the custom object, with
+        # an Error, and its sections go out as theirs: nothing of the pe
+        # sections is left behind, whether a file carries the pe or not, and
+        # the file stays a file, with or without custom properties of its own
+        from .test_events import (
+            get_event_with_file_and_pe_objects, get_event_with_pe_objects)
+
+        def get_event_with_native_file_and_pe_objects():
+            event = get_event_with_file_and_pe_objects()
+            file_object = event['Event']['Object'][0]
+            file_object['Attribute'] = [
+                attribute for attribute in file_object['Attribute']
+                if attribute['object_relation'] != 'entropy'
+            ]
+            return event
+
+        for fixture in (get_event_with_file_and_pe_objects,
+                        get_event_with_native_file_and_pe_objects,
+                        get_event_with_pe_objects):
+            for to_ids in (False, True):
+                with self.subTest(fixture=fixture.__name__, to_ids=to_ids):
+                    event = fixture()
+                    for misp_object in event['Event']['Object']:
+                        for attribute in misp_object['Attribute']:
+                            attribute['to_ids'] = to_ids
+                    pe, section = (
+                        next(
+                            misp_object
+                            for misp_object in event['Event']['Object']
+                            if misp_object['name'] == name
+                        ) for name in ('pe', 'pe-section')
+                    )
+                    self.parser = parser_class()
+                    with patch.object(
+                            self.parser, '_create_PE_extension',
+                            side_effect=RuntimeError('PE extension')):
+                        self.parser.parse_misp_event(
+                            self._parser_input(event)
+                        )
+                    self.assertEqual(len(self._object_errors(pe)), 1)
+                    custom_objects = {
+                        stix_object.x_misp_name: stix_object
+                        for stix_object in self.parser.stix_objects
+                        if stix_object.type == 'x-misp-object'
+                    }
+                    self.assertEqual(
+                        sorted(custom_objects), ['pe', 'pe-section']
+                    )
+                    custom_section = custom_objects['pe-section']
+                    self.assertEqual(
+                        custom_section.id, f"x-misp-object--{section['uuid']}"
+                    )
+                    self.assertEqual(
+                        [
+                            attribute['value'] for attribute
+                            in custom_section.x_misp_attributes
+                        ],
+                        [
+                            attribute['value']
+                            for attribute in section['Attribute']
+                        ]
+                    )
+
+    def _check_rejected_name_custom_object(self, custom_object, rejected_name):
+        self.assertEqual(custom_object.x_misp_name, 'unknown-template')
+        self.assertIn(rejected_name, custom_object.x_misp_comment)
+
+    def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
+        attribute_type = attribute['type']
+        category = attribute['category']
+        custom_type = 'x-misp-attribute'
+        self.assertEqual(custom_object.type, custom_type)
+        self._assert_multiple_equal(
+            custom_object.id,
+            f"{custom_type}--{attribute['uuid']}",
+            object_ref
+        )
+        self.assertEqual(custom_object.created_by_ref, identity_id)
+        self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
+        self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
+        self.assertEqual(custom_object.x_misp_type, attribute_type)
+        self.assertEqual(custom_object.x_misp_category, category)
+        if attribute.get('comment'):
+            self.assertEqual(custom_object.x_misp_comment, attribute['comment'])
+        self.assertEqual(custom_object.x_misp_value, attribute['value'])
+
+    def _run_custom_object_tests(self, misp_object, custom_object, object_ref, identity_id):
+        name = misp_object['name']
+        category = misp_object['meta-category']
+        custom_type = 'x-misp-object'
+        self.assertEqual(custom_object.type, custom_type)
+        self._assert_multiple_equal(
+            custom_object.id,
+            f"{custom_type}--{misp_object['uuid']}",
+            object_ref
+        )
+        self.assertEqual(custom_object.created_by_ref, identity_id)
+        self.assertEqual(custom_object.labels[0], f'misp:name="{name}"')
+        self.assertEqual(custom_object.labels[1], f'misp:meta-category="{category}"')
+        self.assertEqual(custom_object.x_misp_name, name)
+        self.assertEqual(custom_object.x_misp_meta_category, category)
+        if misp_object.get('comment'):
+            self.assertEqual(custom_object.x_misp_comment, misp_object['comment'])
+        for custom_attribute, attribute in zip(custom_object.x_misp_attributes, misp_object['Attribute']):
+            for feature in ('type', 'object_relation', 'value'):
+                try:
+                    self.assertEqual(custom_attribute[feature], attribute[feature])
+                except AssertionError:
+                    if '(s)' in attribute[feature]:
+                        self.assertEqual(custom_attribute[feature], attribute[feature].replace('(s)', ''))
+            for feature in ('category', 'comment', 'to_ids', 'uuid'):
+                if attribute.get(feature):
+                    self.assertEqual(custom_attribute[feature], attribute[feature])
+            if attribute.get('data'):
+                data = attribute['data']
+                if not isinstance(data, str):
+                    data = b64encode(data.getvalue()).decode()
+                self.assertEqual(custom_attribute['data'], data)
+
+    def _check_custom_property_names(self, stix_object):
+        # STIX 2.0 §7.1 / STIX 2.1 §11.1.1: custom property names are ASCII,
+        # limited to a-z, 0-9 and `_`, 3 to 250 characters long - the prefix
+        # already guarantees the minimum.
+        custom_properties = [
+            key for key in stix_object if key.startswith('x_misp_')
+        ]
+        self.assertTrue(custom_properties)
+        for key in custom_properties:
+            self.assertRegex(key, r'^x_misp_[a-z0-9_]+$')
+            self.assertLessEqual(len(key), 250)
+
+    def _check_original_names(self, stix_object, expected):
+        # `x_misp_original_names` maps a wire name the fold changed - a custom
+        # property name, or an `x_misp_meta` key - to the MISP spelling, and
+        # lists nothing the fold left alone. Its keys are dictionary keys:
+        # STIX 2.0 / 2.1 §2.3, `A-Z`, `a-z`, `0-9`, `-` and `_`; a custom
+        # property name is always one.
+        if not expected:
+            self.assertFalse(hasattr(stix_object, 'x_misp_original_names'))
+            return
+        original_names = stix_object.x_misp_original_names
+        self.assertEqual(original_names, expected)
+        carried = set(stix_object) | set(getattr(stix_object, 'x_misp_meta', ()))
+        for name, original in original_names.items():
+            self.assertRegex(name, r'^[A-Za-z0-9_-]+$')
+            self.assertIn(name, carried)
+            self.assertNotEqual(name, original)
+            self.assertNotEqual(name, f'x_misp_{original}')
+
+    # The MISP values a STIX 2.0 object carries, as custom properties
+
+    def _check_attack_pattern_misp_values(
+            self, attack_pattern, weakness1, weakness2, prerequisite,
+            solution):
+        self.assertEqual(attack_pattern.x_misp_related_weakness, [weakness1, weakness2])
+        self.assertEqual(attack_pattern.x_misp_prerequisites, prerequisite)
+        self.assertEqual(attack_pattern.x_misp_solutions, solution)
+
+    def _check_course_of_action_misp_values(
+            self, course_of_action, attributes):
+        for attribute in attributes:
+            self.assertEqual(
+                getattr(
+                    course_of_action, f"x_misp_{attribute['object_relation']}"
+                ),
+                attribute['value']
+            )
+
+    def _check_icmp_type_misp_value(self, network_traffic):
+        self.assertEqual(network_traffic.x_misp_icmp_type, '08')
+        self.assertEqual(list(network_traffic.extensions), ['tcp-ext'])
+
+    def _check_legal_entity_misp_values(
+            self, legal_entity, registration_number, logo):
+        self.assertEqual(
+            legal_entity.x_misp_registration_number,
+            registration_number['value']
+        )
+        self.assertEqual(legal_entity.x_misp_logo['value'], logo['value'])
+        data = logo['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
+        self.assertEqual(legal_entity.x_misp_logo['data'], data)
+
+    def _check_malware_misp_values(self, stix_object, meta):
+        self.assertEqual(
+            stix_object.x_misp_mitre_platforms,
+            meta['mitre_platforms']
+        )
+
+    def _check_pe_and_section_observable(self, extension, pe, section):
+        (_type, compilation, entrypoint, original, internal, desc, version,
+         lang, prod_name, prod_version, company, _copyright, sections, imphash,
+         impfuzzy) = (attribute['value'] for attribute in pe['Attribute'])
+        self.assertEqual(extension.pe_type, _type)
+        self.assertEqual(extension.imphash, imphash)
+        self.assertEqual(extension.number_of_sections, int(sections))
+        self.assertEqual(extension.optional_header['address_of_entry_point'], int(entrypoint))
+        self.assertEqual(extension.x_misp_company_name, company)
+        self.assertEqual(extension.x_misp_compilation_timestamp, compilation)
+        self.assertEqual(extension.x_misp_file_description, desc)
+        self.assertEqual(extension.x_misp_file_version, version)
+        self.assertEqual(extension.x_misp_impfuzzy, impfuzzy)
+        self.assertEqual(extension.x_misp_internal_filename, internal)
+        self.assertEqual(extension.x_misp_lang_id, lang)
+        self.assertEqual(extension.x_misp_legal_copyright, _copyright)
+        self.assertEqual(extension.x_misp_original_filename, original)
+        self.assertEqual(extension.x_misp_product_name, prod_name)
+        self.assertEqual(extension.x_misp_product_version, prod_version)
+        name, size, entropy, md5, sha1, sha256, sha512, ssdeep = (
+            attribute['value'] for attribute in section['Attribute']
+        )
+        section = extension.sections[0]
+        self.assertEqual(section.name, name)
+        self.assertEqual(section.size, int(size))
+        self.assertEqual(section.entropy, float(entropy))
+        hashes = section.hashes
+        self.assertEqual(hashes['MD5'], md5)
+        self.assertEqual(hashes['SHA-1'], sha1)
+        self.assertEqual(hashes['SHA-256'], sha256)
+        self.assertEqual(hashes['SHA-512'], sha512)
+        self.assertEqual(hashes['ssdeep' if 'ssdeep' in hashes else 'SSDEEP'], ssdeep)
+
+    def _check_pe_and_section_pattern(self, pattern, pe, section):
+        _type, _, _, _original, _internal, *_, _imphash, _impfuzzy = (
+            attribute['value'] for attribute in pe['Attribute']
+        )
+        (imphash_, type_, original_, internal_, impfuzzy_,
+         name_, md5_, sha1_, sha256_, sha512_, ssdeep_) = pattern
+        prefix = "file:extensions.'windows-pebinary-ext'"
+        self.assertEqual(imphash_, f"{prefix}.imphash = '{_imphash}'")
+        self.assertEqual(type_, f"{prefix}.pe_type = '{_type}'")
+        self.assertEqual(original_, f"{prefix}.x_misp_original_filename = '{_original}'")
+        self.assertEqual(internal_, f"{prefix}.x_misp_internal_filename = '{_internal}'")
+        self.assertEqual(impfuzzy_, f"{prefix}.x_misp_impfuzzy = '{_impfuzzy}'")
+        _name, *_, _md5, _sha1, _sha256, _sha512, _ssdeep = (
+            attribute['value'] for attribute in section['Attribute']
+        )
+        prefix = f"{prefix}.sections[0]"
+        self.assertEqual(name_, f"{prefix}.name = '{_name}'")
+        self.assertEqual(md5_, f"{prefix}.hashes.MD5 = '{_md5}'")
+        self.assertEqual(sha1_, f"{prefix}.hashes.'SHA-1' = '{_sha1}'")
+        self.assertEqual(sha256_, f"{prefix}.hashes.'SHA-256' = '{_sha256}'")
+        self.assertEqual(sha512_, f"{prefix}.hashes.'SHA-512' = '{_sha512}'")
+        self.assertEqual(ssdeep_, f"{prefix}.hashes.SSDEEP = '{_ssdeep}'")
+
+    def _check_person_misp_values(self, identity, nationality, passport):
+        self.assertEqual(identity.x_misp_nationality, nationality['value'])
+        self.assertEqual(identity.x_misp_passport_number, passport['value'])
+
+    def _check_stix2_pattern_misp_values(self, indicator, further_versions):
+        self.assertEqual(
+            {
+                key: value for key, value in indicator.items()
+                if key.startswith('x_misp_')
+            },
+            {'x_misp_version': value for value in further_versions}
+        )
+
+    def _check_threat_actor_misp_values(self, stix_object, meta):
+        # unmapped meta key with a dash: folded custom property name, its
+        # spelling carried on the channel
+        self.assertEqual(
+            stix_object.x_misp_cfr_type_of_incident,
+            meta['cfr-type-of-incident']
+        )
+        self.assertFalse(hasattr(stix_object, 'x_misp_cfr-type-of-incident'))
+        self._check_custom_property_names(stix_object)
+        self.assertEqual(
+            stix_object.x_misp_original_names['x_misp_cfr_type_of_incident'],
+            'cfr-type-of-incident'
+        )
+
+    def _check_tool_misp_values(self, stix_object, meta):
+        self.assertEqual(
+            stix_object.x_misp_mitre_platforms, meta['mitre_platforms']
+        )
+        # The fold leaves every leftover key of this cluster as it is, so
+        # there is no spelling to carry and no channel
+        self.assertFalse(hasattr(stix_object, 'x_misp_original_names'))
+
+    def _check_vulnerability_misp_values(
+            self, vulnerability, created, cvss, published):
+        self.assertEqual(vulnerability.x_misp_created, created)
+        self.assertEqual(vulnerability.x_misp_cvss_score, cvss)
+        self.assertEqual(vulnerability.x_misp_published, published)
+
+    @staticmethod
+    def _misp_values(stix_objects, relation):
+        feature = _custom_property_name(relation)
+        # Every value a custom property carries, on any STIX object or any
+        # dictionary in it - the value of a value carried with its data
+        values = []
+        def collect(content):
+            if isinstance(content, dict):
+                for key, value in content.items():
+                    if key != feature:
+                        collect(value)
+                        continue
+                    for item in value if isinstance(value, list) else [value]:
+                        values.append(
+                            item['value'] if isinstance(item, dict) else item
+                        )
+            elif isinstance(content, list):
+                for value in content:
+                    collect(value)
+        for stix_object in stix_objects:
+            collect(json.loads(stix_object.serialize()))
+        return values
+
+    def _unquoted_misp_value_paths(self):
+        # The custom property names spelled as the relations, unquoted
+        return patch.object(
+            self.parser, '_quote_custom_property',
+            lambda relation: f'x_misp_{relation}'
+        )
+
+    @staticmethod
+    def _without_misp_values(stix_objects):
+        # The STIX objects as written, without their custom properties nor
+        # their pattern
+        def strip(content):
+            if isinstance(content, dict):
+                return {
+                    key: strip(value) for key, value in content.items()
+                    if not key.startswith('x_misp_')
+                }
+            if isinstance(content, list):
+                return [strip(value) for value in content]
+            return content
+        stripped = []
+        for stix_object in stix_objects:
+            content = strip(json.loads(stix_object.serialize()))
+            content.pop('pattern', None)
+            stripped.append(content)
+        return stripped
+
 
 class TestSTIX21Export(TestSTIX2Export):
+    _custom_object_type = 'misp-object'
+    _misp_value_location = 'in the MISP property extension'
+    _pattern_segment_relations = _EXTENSION_PATTERN_SEGMENT_RELATIONS
     _attributes_v21 = defaultdict(lambda: defaultdict(dict))
     _objects_v21 = defaultdict(lambda: defaultdict(dict))
     _galaxies_v21 = defaultdict(lambda: defaultdict(dict))
+    _custom_attributes_v21 = {}
+    _custom_objects_v21 = {}
+
+    def _check_extension_property_names(self, stix_object):
+        # The base schema of an extension body binds a name to a-z, 0-9 and
+        # `_`, starting with a letter, 3 to 250 characters long, and types
+        # the `_hex` / `_bin` endings; no MISP value is left a custom property
+        names = [
+            name for name in self._misp_extension(stix_object)
+            if name != 'extension_type'
+        ]
+        self.assertTrue(names)
+        for name in names:
+            self.assertRegex(name, r'^[a-z][a-z0-9_]{2,249}$')
+            self.assertFalse(name.endswith(('_hex', '_bin')))
+        self.assertFalse(
+            [key for key in stix_object if key.startswith('x_misp_')]
+        )
+
+    def _misp_extension(self, stix_object) -> dict:
+        # The MISP values of a standard object, as the property extension
+        # body holds them
+        body = stix_object['extensions'][MISP_PROPERTY_EXTENSION_ID]
+        self.assertEqual(body['extension_type'], 'property-extension')
+        return body
+
+    def _check_misp_extension_object(self, stix_object, identifier):
+        # As the package holds it
+        self.assertEqual(stix_object.id, identifier)
+        self.assertEqual(
+            json.loads(stix_object.serialize()),
+            packaged_misp_extension(identifier)
+        )
+
+    def _strip_misp_extensions(self) -> list:
+        # The MISP Extensions the bundle carries, and the MISP Project
+        # identity authoring them, checked then taken out of the parser's
+        # objects, which the tests read as the MISP content gave them. The
+        # bundle carries each definition one of its objects names, once: the
+        # identity first, then the definitions in the order of their first
+        # use, each ahead of it
+        stix_objects = self.parser.stix_objects
+        carried = {
+            index: stix_object.id
+            for index, stix_object in enumerate(stix_objects)
+            if stix_object.id in MISP_EXTENSION_OBJECT_IDS
+        }
+        first_uses = {}
+        for index, stix_object in enumerate(stix_objects):
+            if index in carried:
+                continue
+            content = stix_object.serialize()
+            for identifier in MISP_EXTENSION_IDS:
+                if identifier in content:
+                    first_uses.setdefault(identifier, index)
+        used = sorted(first_uses, key=first_uses.get)
+        self.assertEqual(
+            list(carried.values()),
+            [MISP_PROJECT_IDENTITY_ID, *used] if used else []
+        )
+        for index, identifier in carried.items():
+            self._check_misp_extension_object(stix_objects[index], identifier)
+            if identifier in first_uses:
+                self.assertLess(index, first_uses[identifier])
+        stix_objects[:] = [
+            stix_object for index, stix_object in enumerate(stix_objects)
+            if index not in carried
+        ]
+        return stix_objects
+
+    def _check_original_names(self, stix_object, expected):
+        # The channel maps a wire name the fold or the escape changed to the
+        # MISP spelling, and lists nothing the two left alone. A standard
+        # object carries it in its MISP property extension, keyed by the
+        # names the body holds; a custom galaxy cluster as a property of its
+        # own, keyed by `meta` key. Its keys are dictionary keys: STIX 2.1
+        # §2.3, `A-Z`, `a-z`, `0-9`, `-` and `_`.
+        if stix_object.type == 'misp-galaxy-cluster':
+            holder, channel = stix_object, 'original_names'
+            carried = set(stix_object.get('meta', ()))
+        else:
+            holder = stix_object.get('extensions', {}).get(
+                MISP_PROPERTY_EXTENSION_ID, {}
+            )
+            channel, carried = 'original_names', set(holder)
+            self.assertNotIn('x_misp_original_names', stix_object)
+        if not expected:
+            self.assertNotIn(channel, holder)
+            return
+        original_names = holder[channel]
+        self.assertEqual(original_names, expected)
+        for name, original in original_names.items():
+            self.assertRegex(name, r'^[A-Za-z0-9_-]+$')
+            self.assertIn(name, carried)
+            self.assertNotEqual(name, original)
+
+    def _check_custom_galaxy_features(self, stix_object, galaxy, timestamp):
+        cluster = galaxy['GalaxyCluster'][0]
+        self.assertEqual(stix_object.type, 'misp-galaxy-cluster')
+        self.assertEqual(stix_object.id, f"misp-galaxy-cluster--{cluster['uuid']}")
+        self._check_misp_type_extension(
+            stix_object, MISP_GALAXY_CLUSTER_EXTENSION_ID
+        )
+        self.assertEqual(stix_object.created, timestamp)
+        self.assertEqual(stix_object.modified, timestamp)
+        # A cluster is not authored by the exporting organisation
+        self.assertNotIn('created_by_ref', stix_object)
+        self.assertEqual(stix_object.galaxy_name, galaxy['name'])
+        self.assertEqual(stix_object.galaxy_type, cluster['type'])
+        self.assertEqual(stix_object.galaxy_description, galaxy['description'])
+        self.assertEqual(stix_object.value, cluster['value'])
+        # The cluster's own description, apart from its galaxy's
+        self.assertEqual(stix_object.description, cluster['description'])
+        self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
+        self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
+        for field in ('source', 'authors', 'version'):
+            self.assertNotIn(field, stix_object)
+        if 'meta' in cluster:
+            # `meta` is a dictionary: keys keep case and `-` (STIX §2.3),
+            # every other character outside the dictionary charset folds to
+            # `_`. A value of one item goes as the item
+            self.assertEqual(
+                stix_object.meta,
+                {
+                    _DICTIONARY_META_KEYS[key]: (
+                        value[0] if isinstance(value, list) and len(value) == 1
+                        else value
+                    )
+                    for key, value in cluster['meta'].items()
+                }
+            )
+            self._check_original_names(
+                stix_object,
+                {
+                    _DICTIONARY_META_KEYS[key]: key
+                    for key in cluster['meta']
+                    if _DICTIONARY_META_KEYS[key] != key
+                }
+            )
+
+    def _check_misp_type_extension(self, stix_object, extension_id):
+        # A `misp-*` object names its own definition, and no other
+        self.assertEqual(list(stix_object.extensions), [extension_id])
+        self.assertEqual(
+            stix_object.extensions[extension_id].extension_type, 'new-sdo'
+        )
+
+    def _check_misp_seen_fields(self, stix_object, data_layer):
+        # Written whenever set
+        for field in ('first_seen', 'last_seen'):
+            if data_layer.get(field):
+                self.assertEqual(
+                    stix_object[field], self._datetime_from_str(data_layer[field])
+                )
+            else:
+                self.assertNotIn(field, stix_object)
+
+    def _check_rejected_name_custom_object(self, custom_object, rejected_name):
+        self.assertEqual(custom_object.name, 'unknown-template')
+        self.assertIn(rejected_name, custom_object.comment)
+
+    def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
+        attribute_type = attribute['type']
+        category = attribute['category']
+        custom_type = 'misp-attribute'
+        self.assertEqual(custom_object.type, custom_type)
+        self._assert_multiple_equal(
+            custom_object.id,
+            f"{custom_type}--{attribute['uuid']}",
+            object_ref
+        )
+        self._check_misp_type_extension(
+            custom_object, MISP_ATTRIBUTE_EXTENSION_ID
+        )
+        self.assertEqual(custom_object.created_by_ref, identity_id)
+        self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
+        self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
+        self.assertEqual(custom_object.attribute_type, attribute_type)
+        self.assertEqual(custom_object.category, category)
+        if attribute.get('comment'):
+            self.assertEqual(custom_object.comment, attribute['comment'])
+        self.assertEqual(custom_object.value, attribute['value'])
+        # Written whether true or false
+        self.assertIs(custom_object.to_ids, attribute['to_ids'])
+        self._check_misp_seen_fields(custom_object, attribute)
+        if attribute.get('data'):
+            data = attribute['data']
+            if not isinstance(data, str):
+                data = b64encode(data.getvalue()).decode()
+            self.assertEqual(custom_object.data, data)
+        else:
+            self.assertNotIn('data', custom_object)
+        # The id carries the uuid
+        for field in ('uuid', 'distribution', 'disable_correlation'):
+            self.assertNotIn(field, custom_object)
+
+    def _run_custom_object_tests(self, misp_object, custom_object, object_ref, identity_id):
+        name = misp_object['name']
+        category = misp_object['meta-category']
+        custom_type = 'misp-object'
+        self.assertEqual(custom_object.type, custom_type)
+        self._assert_multiple_equal(
+            custom_object.id,
+            f"{custom_type}--{misp_object['uuid']}",
+            object_ref
+        )
+        self._check_misp_type_extension(
+            custom_object, MISP_OBJECT_EXTENSION_ID
+        )
+        self.assertEqual(custom_object.created_by_ref, identity_id)
+        self.assertEqual(custom_object.labels[0], f'misp:name="{name}"')
+        self.assertEqual(custom_object.labels[1], f'misp:meta-category="{category}"')
+        self.assertEqual(custom_object.name, name)
+        self.assertEqual(custom_object.meta_category, category)
+        if misp_object.get('comment'):
+            self.assertEqual(custom_object.comment, misp_object['comment'])
+        self._check_misp_seen_fields(custom_object, misp_object)
+        for field in ('uuid', 'distribution', 'template_uuid', 'template_version'):
+            self.assertNotIn(field, custom_object)
+        self.assertEqual(
+            len(custom_object.attributes), len(misp_object['Attribute'])
+        )
+        for custom_attribute, attribute in zip(custom_object.attributes, misp_object['Attribute']):
+            # Each item keeps MISP's own keys
+            self.assertEqual(custom_attribute['type'], attribute['type'])
+            self.assertEqual(
+                custom_attribute['object_relation'],
+                attribute['object_relation'].replace('(s)', '')
+            )
+            self.assertEqual(custom_attribute['value'], attribute['value'])
+            # Written whether true or false
+            self.assertIs(custom_attribute['to_ids'], attribute['to_ids'])
+            for feature in ('category', 'comment', 'uuid'):
+                if attribute.get(feature):
+                    self.assertEqual(custom_attribute[feature], attribute[feature])
+            for feature in ('first_seen', 'last_seen'):
+                if attribute.get(feature):
+                    self.assertEqual(
+                        self._datetime_from_str(custom_attribute[feature]),
+                        self._datetime_from_str(attribute[feature])
+                    )
+            if attribute.get('data'):
+                data = attribute['data']
+                if not isinstance(data, str):
+                    data = b64encode(data.getvalue()).decode()
+                self.assertEqual(custom_attribute['data'], data)
+            self.assertLessEqual(
+                set(custom_attribute),
+                {
+                    'type', 'object_relation', 'value', 'category', 'comment',
+                    'to_ids', 'uuid', 'data', 'first_seen', 'last_seen'
+                }
+            )
+
+    def _test_pe_object_falling_back_keeps_its_sections(self, parser_class):
+        # A pe the export fails to build goes out as the custom object, with
+        # an Error, and its sections go out as theirs: nothing of the pe
+        # sections is left behind, whether a file carries the pe or not, and
+        # the file stays a file, with or without MISP values of its own
+        from .test_events import (
+            get_event_with_file_and_pe_objects, get_event_with_pe_objects)
+
+        def get_event_with_native_file_and_pe_objects():
+            event = get_event_with_file_and_pe_objects()
+            file_object = event['Event']['Object'][0]
+            file_object['Attribute'] = [
+                attribute for attribute in file_object['Attribute']
+                if attribute['object_relation'] != 'entropy'
+            ]
+            return event
+
+        for fixture in (get_event_with_file_and_pe_objects,
+                        get_event_with_native_file_and_pe_objects,
+                        get_event_with_pe_objects):
+            for to_ids in (False, True):
+                with self.subTest(fixture=fixture.__name__, to_ids=to_ids):
+                    event = fixture()
+                    for misp_object in event['Event']['Object']:
+                        for attribute in misp_object['Attribute']:
+                            attribute['to_ids'] = to_ids
+                    pe, section = (
+                        next(
+                            misp_object
+                            for misp_object in event['Event']['Object']
+                            if misp_object['name'] == name
+                        ) for name in ('pe', 'pe-section')
+                    )
+                    self.parser = parser_class()
+                    with patch.object(
+                            self.parser, '_create_PE_extension',
+                            side_effect=RuntimeError('PE extension')):
+                        self.parser.parse_misp_event(
+                            self._parser_input(event)
+                        )
+                    self.assertEqual(len(self._object_errors(pe)), 1)
+                    custom_objects = {
+                        stix_object.name: stix_object
+                        for stix_object in self.parser.stix_objects
+                        if stix_object.type == 'misp-object'
+                    }
+                    self.assertEqual(
+                        sorted(custom_objects), ['pe', 'pe-section']
+                    )
+                    custom_section = custom_objects['pe-section']
+                    self.assertEqual(
+                        custom_section.id, f"misp-object--{section['uuid']}"
+                    )
+                    self.assertEqual(
+                        [
+                            attribute['value'] for attribute
+                            in custom_section.attributes
+                        ],
+                        [
+                            attribute['value']
+                            for attribute in section['Attribute']
+                        ]
+                    )
+                    self.assertFalse(
+                        [
+                            stix_object for stix_object
+                            in self.parser.stix_objects
+                            if stix_object.type.startswith('x-misp-')
+                        ]
+                    )
 
     def _populate_attributes_documentation(self, attribute, **kwargs):
         feature = attribute['type']
@@ -1425,6 +2458,19 @@ class TestSTIX21Export(TestSTIX2Export):
             ]
             return
         self._attributes_v21[feature]['STIX'] = json.loads(stix_objects.serialize())
+
+    def _populate_custom_attributes_documentation(self, attribute, stix_object):
+        # A custom attribute carries its `to_ids`, so the MISP side shows it
+        self._custom_attributes_v21[attribute['type']] = {
+            'MISP': dict(self._populate_attribute(attribute)),
+            'STIX': json.loads(stix_object.serialize())
+        }
+
+    def _populate_custom_objects_documentation(self, misp_object, stix_object):
+        self._custom_objects_v21[misp_object['name']] = {
+            'MISP': dict(self._populate_object(misp_object)),
+            'STIX': json.loads(stix_object.serialize())
+        }
 
     def _populate_galaxies_documentation(self, galaxy, name=None, summary=None, **kwargs):
         if name is None:
@@ -1451,3 +2497,248 @@ class TestSTIX21Export(TestSTIX2Export):
             ]
             return
         self._objects_v21[name]['STIX'] = json.loads(stix_objects.serialize())
+
+    # The MISP values a STIX 2.1 object carries: in its MISP property
+    # extension, or as custom properties on the parts still holding theirs
+
+    def _check_attack_pattern_misp_values(
+            self, attack_pattern, weakness1, weakness2, prerequisite,
+            solution):
+        extension = self._misp_extension(attack_pattern)
+        self.assertEqual(extension['related_weakness'], [weakness1, weakness2])
+        self.assertEqual(extension['prerequisites'], prerequisite)
+        self.assertEqual(extension['solutions'], solution)
+
+    def _check_course_of_action_misp_values(
+            self, course_of_action, attributes):
+        extension = self._misp_extension(course_of_action)
+        for attribute in attributes:
+            self.assertEqual(
+                extension[attribute['object_relation']], attribute['value']
+            )
+
+    def _check_icmp_type_misp_value(self, network_traffic):
+        self.assertEqual(
+            self._misp_extension(network_traffic)['icmp_type'], '08'
+        )
+        self.assertEqual(
+            set(network_traffic.extensions),
+            {'tcp-ext', MISP_PROPERTY_EXTENSION_ID}
+        )
+
+    def _check_legal_entity_misp_values(
+            self, legal_entity, registration_number, logo):
+        extension = self._misp_extension(legal_entity)
+        self.assertEqual(
+            extension['registration_number'], registration_number['value']
+        )
+        self.assertEqual(extension['logo']['value'], logo['value'])
+        data = logo['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
+        self.assertEqual(extension['logo']['data'], data)
+
+    def _check_malware_misp_values(self, stix_object, meta):
+        # One value as a scalar
+        self.assertEqual(
+            self._misp_extension(stix_object)['mitre_platforms'],
+            meta['mitre_platforms'][0]
+        )
+
+    def _check_pe_and_section_observable(self, observable, pe, section):
+        (_type, compilation, entrypoint, original, internal, desc, version,
+         lang, prod_name, prod_version, company, _copyright, sections, imphash,
+         impfuzzy) = (attribute['value'] for attribute in pe['Attribute'])
+        extension = observable.extensions['windows-pebinary-ext']
+        self.assertEqual(extension.pe_type, _type)
+        self.assertEqual(extension.imphash, imphash)
+        self.assertEqual(extension.number_of_sections, int(sections))
+        self.assertEqual(extension.optional_header['address_of_entry_point'], int(entrypoint))
+        # The PE values sit in their room of the file's MISP property
+        # extension, the section left none, and the predefined extension
+        # holds STIX properties only
+        self.assertEqual(
+            self._misp_extension(observable)['windows_pebinary_ext'],
+            {
+                'compilation_timestamp': f'{compilation:%Y-%m-%dT%H:%M:%SZ}',
+                'original_filename': original,
+                'internal_filename': internal,
+                'file_description': desc,
+                'file_version': version,
+                'lang_id': lang,
+                'product_name': prod_name,
+                'product_version': prod_version,
+                'company_name': company,
+                'legal_copyright': _copyright,
+                'impfuzzy': impfuzzy
+            }
+        )
+        self.assertFalse(
+            [key for key in extension if key.startswith('x_misp_')]
+        )
+        name, size, entropy, md5, sha1, sha256, sha512, ssdeep = (
+            attribute['value'] for attribute in section['Attribute']
+        )
+        section = extension.sections[0]
+        self.assertEqual(section.name, name)
+        self.assertEqual(section.size, int(size))
+        self.assertEqual(section.entropy, float(entropy))
+        hashes = section.hashes
+        self.assertEqual(hashes['MD5'], md5)
+        self.assertEqual(hashes['SHA-1'], sha1)
+        self.assertEqual(hashes['SHA-256'], sha256)
+        self.assertEqual(hashes['SHA-512'], sha512)
+        self.assertEqual(hashes['SSDEEP'], ssdeep)
+        self.assertFalse(
+            [key for key in section if key.startswith('x_misp_')]
+        )
+
+    def _check_pe_and_section_pattern(self, pattern, pe, section):
+        _type, _, _, _original, _internal, *_, _imphash, _impfuzzy = (
+            attribute['value'] for attribute in pe['Attribute']
+        )
+        (imphash_, type_, original_, internal_, impfuzzy_,
+         name_, md5_, sha1_, sha256_, sha512_, ssdeep_) = pattern
+        prefix = "file:extensions.'windows-pebinary-ext'"
+        self.assertEqual(imphash_, f"{prefix}.imphash = '{_imphash}'")
+        self.assertEqual(type_, f"{prefix}.pe_type = '{_type}'")
+        # The PE values the extension leaves over sit in their Nested Room
+        room = (
+            f"file:extensions.'{MISP_PROPERTY_EXTENSION_ID}'"
+            '.windows_pebinary_ext'
+        )
+        self.assertEqual(original_, f"{room}.original_filename = '{_original}'")
+        self.assertEqual(internal_, f"{room}.internal_filename = '{_internal}'")
+        self.assertEqual(impfuzzy_, f"{room}.impfuzzy = '{_impfuzzy}'")
+        _name, *_, _md5, _sha1, _sha256, _sha512, _ssdeep = (
+            attribute['value'] for attribute in section['Attribute']
+        )
+        prefix = f"{prefix}.sections[0]"
+        self.assertEqual(name_, f"{prefix}.name = '{_name}'")
+        self.assertEqual(md5_, f"{prefix}.hashes.MD5 = '{_md5}'")
+        self.assertEqual(sha1_, f"{prefix}.hashes.'SHA-1' = '{_sha1}'")
+        self.assertEqual(sha256_, f"{prefix}.hashes.'SHA-256' = '{_sha256}'")
+        self.assertEqual(sha512_, f"{prefix}.hashes.'SHA-512' = '{_sha512}'")
+        self.assertEqual(ssdeep_, f"{prefix}.hashes.SSDEEP = '{_ssdeep}'")
+
+    def _check_person_misp_values(self, identity, nationality, passport):
+        extension = self._misp_extension(identity)
+        self.assertEqual(extension['nationality'], nationality['value'])
+        self.assertEqual(extension['passport_number'], passport['value'])
+
+    def _check_stix2_pattern_misp_values(self, indicator, further_versions):
+        # With no further version, the Indicator carries no extension body
+        self.assertEqual(
+            dict(indicator.get('extensions', {})),
+            {
+                MISP_PROPERTY_EXTENSION_ID: {
+                    'extension_type': 'property-extension', 'version': value
+                }
+                for value in further_versions
+            }
+        )
+        self.assertFalse(any(key.startswith('x_misp_') for key in indicator))
+
+    def _check_threat_actor_misp_values(self, stix_object, meta):
+        # unmapped meta key with a dash: folded name in the MISP property
+        # extension, its spelling carried on the channel
+        extension = self._misp_extension(stix_object)
+        self.assertEqual(
+            extension['cfr_type_of_incident'], meta['cfr-type-of-incident'][0]
+        )
+        self.assertNotIn('cfr-type-of-incident', extension)
+        self._check_extension_property_names(stix_object)
+        self.assertEqual(
+            extension['original_names']['cfr_type_of_incident'],
+            'cfr-type-of-incident'
+        )
+
+    def _check_tool_misp_values(self, stix_object, meta):
+        extension = self._misp_extension(stix_object)
+        self.assertEqual(
+            extension['mitre_platforms'], meta['mitre_platforms'][0]
+        )
+        # The fold leaves every leftover key of this cluster as it is, so
+        # there is no spelling to carry and no channel
+        self.assertNotIn('original_names', extension)
+
+    def _check_vulnerability_misp_values(
+            self, vulnerability, created, cvss, published):
+        # A datetime goes as the timestamp a bundle writes
+        extension = self._misp_extension(vulnerability)
+        self.assertEqual(extension['created'], f'{created:%Y-%m-%dT%H:%M:%SZ}')
+        self.assertEqual(extension['cvss_score'], cvss)
+        self.assertEqual(
+            extension['published'], f'{published:%Y-%m-%dT%H:%M:%SZ}'
+        )
+
+    @staticmethod
+    def _misp_values(stix_objects, relation):
+        # Every value of a relation the MISP property extension carries, for
+        # the object or in the Nested Room of one of its parts, on any STIX
+        # object - the value of a value carried with its data
+        extension_name = _extension_property_name(relation)
+        values = []
+        def add(value):
+            for item in value if isinstance(value, list) else [value]:
+                values.append(item['value'] if isinstance(item, dict) else item)
+        def collect_body(body):
+            # A room holds the values of its part as the body holds the
+            # object's; the escape keeps any relation off the room names
+            for key, value in body.items():
+                if key == extension_name:
+                    add(value)
+                elif key == 'windows_pebinary_ext':
+                    collect_body(value)
+                elif key in ('sections', 'values'):
+                    for room in value.values():
+                        collect_body(room)
+        def collect(content):
+            if isinstance(content, dict):
+                for key, value in content.items():
+                    if key == MISP_PROPERTY_EXTENSION_ID:
+                        collect_body(value)
+                    else:
+                        collect(value)
+            elif isinstance(content, list):
+                for value in content:
+                    collect(value)
+        for stix_object in stix_objects:
+            collect(json.loads(stix_object.serialize()))
+        return values
+
+    def _unquoted_misp_value_paths(self):
+        # The extension paths ending on the relations as spelled, unquoted
+        return patch.object(
+            self.parser, '_misp_value_pattern_path',
+            lambda location, name: (
+                f"{location.stix_type}:"
+                f"extensions.'{MISP_PROPERTY_EXTENSION_ID}'.{name}"
+            )
+        )
+
+    @staticmethod
+    def _without_misp_values(stix_objects):
+        # The STIX objects as written, without their MISP values nor their
+        # pattern: no MISP property extension, nor the extensions it was the
+        # only one of, nor the MISP Extensions the bundle carries for them
+        def strip(content):
+            if isinstance(content, dict):
+                stripped = {
+                    key: strip(value) for key, value in content.items()
+                    if key != MISP_PROPERTY_EXTENSION_ID
+                }
+                if stripped.get('extensions') == {}:
+                    del stripped['extensions']
+                return stripped
+            if isinstance(content, list):
+                return [strip(value) for value in content]
+            return content
+        stripped = []
+        for stix_object in stix_objects:
+            if stix_object.id in MISP_EXTENSION_OBJECT_IDS:
+                continue
+            content = strip(json.loads(stix_object.serialize()))
+            content.pop('pattern', None)
+            stripped.append(content)
+        return stripped

@@ -7,6 +7,7 @@ from pathlib import Path
 from uuid import UUID, uuid5
 
 from misp_stix_converter.abstract import _UUIDv4
+from ._test_stix import MISP_PROPERTY_EXTENSION_ID
 
 _ROOT_PATH = Path(__file__).parents[1].resolve()
 _UUID_RE = re.compile(
@@ -246,7 +247,8 @@ class DocumentationUpdater:
                 )
             )
         return ' / '.join(
-            f'**{object_type.capitalize()}**' for object_type in object_types
+            f'**{object_type.capitalize()}**'
+            for object_type in sorted(object_types)
         )
 
     def _define_import_summary(self, stix_mapping):
@@ -527,7 +529,16 @@ class ObjectsDocumentationUpdater(DocumentationUpdater):
         for feature, value in mapping.items():
             if feature.startswith('x_misp_') and isinstance(value, dict):
                 value['data'] = short_data
-                break
+                return
+        # The same value in the MISP property extension, under a name with no
+        # prefix
+        extension = mapping.get('extensions', {}).get(
+            MISP_PROPERTY_EXTENSION_ID, {}
+        )
+        for value in extension.values():
+            if isinstance(value, dict) and 'data' in value:
+                value['data'] = short_data
+                return
 
     def _replace_export_identity_data(self, mapping, _, short_data):
         self._replace_custom_field(mapping, short_data)

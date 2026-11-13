@@ -129,18 +129,4 @@ class InternalSTIX2ToolConverter(InternalSTIX2Converter):
         misp_object = self._create_misp_object('script', tool)
         for attribute in self._generic_parser(tool, feature='script'):
             misp_object.add_attribute(**attribute)
-        if hasattr(tool, 'x_misp_script_as_attachment'):
-            attribute = {
-                'type': 'attachment',
-                'object_relation': 'script-as-attachment'
-            }
-            if isinstance(tool.x_misp_script_as_attachment, dict):
-                attribute.update(tool.x_misp_script_as_attachment)
-            else:
-                attribute['value'] = tool.x_misp_script_as_attachment
-            attribute['uuid'] = self.main_parser._create_v5_uuid(
-                f"{tool.id} - {attribute['object_relation']}"
-                f" - {attribute['value']}"
-            )
-            misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, tool)

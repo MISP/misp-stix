@@ -5851,12 +5851,12 @@ For the rest of this documentation, we will then, in order to keep the content c
 ### Unmapped attribute types
 
 You may have noticed we are very far from having all the attribute types supported. This is due to the various use cases that MISP can be used for.  
-Nonetheless, every attribute whose type is not in the list, is exported as `Custom` object.  
+Nonetheless, every attribute whose type is not in the list, is exported as a `misp-attribute` object, which the MISP Attribute Extension defines.  
 With the following examples, `btc` and `iban` are attribute types that are not mapped, where the other ones:
 - are already mentioned above and giving valid STIX 2.1 pattern expressions when their `to_ids` flag is set to `True`.
-- are not providing enough information to produce Observable objects and are then exported as `Custom` objects when their `to_ids` flag is unset.
+- are not providing enough information to produce Observable objects and are then exported as `misp-attribute` objects when their `to_ids` flag is unset.
 
-Let us see those examples of custom objects exported from attributes:
+Let us see those examples of `misp-attribute` objects exported from attributes:
 - btc
   - MISP
     ```json
@@ -5873,20 +5873,26 @@ Let us see those examples of custom objects exported from attributes:
   - STIX
     ```json
     {
-        "type": "x-misp-object-btc",
+        "type": "misp-attribute",
         "spec_version": "2.1",
-        "id": "x-misp-object-btc--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "id": "misp-attribute--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2021-03-11T13:59:57.000Z",
-        "modified": "2021-03-11T13:59:57.000Z",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "attribute_type": "btc",
+        "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+        "category": "Financial fraud",
+        "comment": "Btc test attribute",
+        "to_ids": true,
         "labels": [
             "misp:type=\"btc\"",
-            "misp:category=\"Financial fraud\"",
-            "misp:to_ids=\"True\""
+            "misp:category=\"Financial fraud\""
         ],
-        "x_misp_category": "Financial fraud",
-        "x_misp_comment": "Btc test attribute",
-        "x_misp_value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE"
+        "extensions": {
+            "extension-definition--c1f2c0fa-3786-4f27-bf57-cf050ecfc104": {
+                "extension_type": "new-sdo"
+            }
+        }
     }
     ```
 
@@ -5894,29 +5900,36 @@ Let us see those examples of custom objects exported from attributes:
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "uuid": "d94bdd2c-3603-4044-8b70-20090e7526ad",
         "type": "http-method",
-        "category": "Network activity",
         "value": "POST",
-        "timestamp": "1603642920",
-        "to_ids": false
+        "category": "Network activity",
+        "to_ids": false,
+        "timestamp": "1603642920"
     }
     ```
   - STIX
     ```json
     {
-        "type": "x-misp-object-http-method",
+        "type": "misp-attribute",
         "spec_version": "2.1",
-        "id": "x-misp-object-http-method--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "id": "misp-attribute--d94bdd2c-3603-4044-8b70-20090e7526ad",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2021-03-11T13:59:57.000Z",
-        "modified": "2021-03-11T13:59:57.000Z",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "attribute_type": "http-method",
+        "value": "POST",
+        "category": "Network activity",
+        "to_ids": false,
         "labels": [
             "misp:type=\"http-method\"",
             "misp:category=\"Network activity\""
         ],
-        "x_misp_category": "Network activity",
-        "x_misp_value": "POST"
+        "extensions": {
+            "extension-definition--c1f2c0fa-3786-4f27-bf57-cf050ecfc104": {
+                "extension_type": "new-sdo"
+            }
+        }
     }
     ```
 
@@ -5924,32 +5937,38 @@ Let us see those examples of custom objects exported from attributes:
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
         "type": "iban",
-        "category": "Financial fraud",
         "value": "LU1234567890ABCDEF1234567890",
+        "category": "Financial fraud",
+        "to_ids": true,
         "timestamp": "1603642920",
-        "comment": "IBAN test attribute",
-        "to_ids": true
+        "comment": "IBAN test attribute"
     }
     ```
   - STIX
     ```json
     {
-        "type": "x-misp-object-iban",
+        "type": "misp-attribute",
         "spec_version": "2.1",
-        "id": "x-misp-object-iban--518b4bcb-a86b-4783-9457-391d548b605b",
+        "id": "misp-attribute--518b4bcb-a86b-4783-9457-391d548b605b",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2021-03-11T13:59:57.000Z",
-        "modified": "2021-03-11T13:59:57.000Z",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "attribute_type": "iban",
+        "value": "LU1234567890ABCDEF1234567890",
+        "category": "Financial fraud",
+        "comment": "IBAN test attribute",
+        "to_ids": true,
         "labels": [
             "misp:type=\"iban\"",
-            "misp:category=\"Financial fraud\"",
-            "misp:to_ids=\"True\""
+            "misp:category=\"Financial fraud\""
         ],
-        "x_misp_category": "Financial fraud",
-        "x_misp_comment": "IBAN test attribute",
-        "x_misp_value": "LU1234567890ABCDEF1234567890"
+        "extensions": {
+            "extension-definition--c1f2c0fa-3786-4f27-bf57-cf050ecfc104": {
+                "extension_type": "new-sdo"
+            }
+        }
     }
     ```
 
@@ -5957,29 +5976,36 @@ Let us see those examples of custom objects exported from attributes:
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "uuid": "1af096a0-efa1-4331-9300-a6b5eb4df2e6",
         "type": "port",
-        "category": "Network activity",
         "value": "8443",
-        "timestamp": "1603642920",
-        "to_ids": false
+        "category": "Network activity",
+        "to_ids": false,
+        "timestamp": "1603642920"
     }
     ```
   - STIX
     ```json
     {
-        "type": "x-misp-object-port",
+        "type": "misp-attribute",
         "spec_version": "2.1",
-        "id": "x-misp-object-port--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "id": "misp-attribute--1af096a0-efa1-4331-9300-a6b5eb4df2e6",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2021-03-11T13:59:57.000Z",
-        "modified": "2021-03-11T13:59:57.000Z",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "attribute_type": "port",
+        "value": "8443",
+        "category": "Network activity",
+        "to_ids": false,
         "labels": [
             "misp:type=\"port\"",
             "misp:category=\"Network activity\""
         ],
-        "x_misp_category": "Network activity",
-        "x_misp_value": "8443"
+        "extensions": {
+            "extension-definition--c1f2c0fa-3786-4f27-bf57-cf050ecfc104": {
+                "extension_type": "new-sdo"
+            }
+        }
     }
     ```
 
@@ -5987,29 +6013,36 @@ Let us see those examples of custom objects exported from attributes:
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "uuid": "8be8065b-ca71-4210-976e-2804665a502d",
         "type": "size-in-bytes",
         "value": "1234",
         "category": "Other",
-        "timestamp": "1603642920",
-        "to_ids": false
+        "to_ids": false,
+        "timestamp": "1603642920"
     }
     ```
   - STIX
     ```json
     {
-        "type": "x-misp-object-size-in-bytes",
+        "type": "misp-attribute",
         "spec_version": "2.1",
-        "id": "x-misp-object-size-in-bytes--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "id": "misp-attribute--8be8065b-ca71-4210-976e-2804665a502d",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2021-03-11T13:59:57.000Z",
-        "modified": "2021-03-11T13:59:57.000Z",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "attribute_type": "size-in-bytes",
+        "value": "1234",
+        "category": "Other",
+        "to_ids": false,
         "labels": [
             "misp:type=\"size-in-bytes\"",
             "misp:category=\"Other\""
         ],
-        "x_misp_category": "Other",
-        "x_misp_value": "1234"
+        "extensions": {
+            "extension-definition--c1f2c0fa-3786-4f27-bf57-cf050ecfc104": {
+                "extension_type": "new-sdo"
+            }
+        }
     }
     ```
 
@@ -6017,31 +6050,38 @@ Let us see those examples of custom objects exported from attributes:
   - MISP
     ```json
     {
-        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "uuid": "f0b5b638-81b4-4509-bd40-1e114955caf4",
         "type": "user-agent",
-        "category": "Network activity",
         "value": "Mozilla Firefox",
+        "category": "Network activity",
+        "to_ids": false,
         "timestamp": "1603642920",
-        "comment": "User-agent test attribute",
-        "to_ids": false
+        "comment": "User-agent test attribute"
     }
     ```
   - STIX
     ```json
     {
-        "type": "x-misp-object-user-agent",
+        "type": "misp-attribute",
         "spec_version": "2.1",
-        "id": "x-misp-object-user-agent--518b4bcb-a86b-4783-9457-391d548b605b",
+        "id": "misp-attribute--f0b5b638-81b4-4509-bd40-1e114955caf4",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2021-03-11T13:59:57.000Z",
-        "modified": "2021-03-11T13:59:57.000Z",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "attribute_type": "user-agent",
+        "value": "Mozilla Firefox",
+        "category": "Network activity",
+        "comment": "User-agent test attribute",
+        "to_ids": false,
         "labels": [
             "misp:type=\"user-agent\"",
             "misp:category=\"Network activity\""
         ],
-        "x_misp_category": "Network activity",
-        "x_misp_comment": "User-agent test attribute",
-        "x_misp_value": "Mozilla Firefox"
+        "extensions": {
+            "extension-definition--c1f2c0fa-3786-4f27-bf57-cf050ecfc104": {
+                "extension_type": "new-sdo"
+            }
+        }
     }
     ```
 
