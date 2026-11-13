@@ -5444,6 +5444,18 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
+    def test_stix21_bundle_with_email_observable_object_malformed_content_disposition(self):
+        # A `Content-Disposition` value with no `;` separator (e.g. a bare
+        # `attachment` with no filename param) must not crash the parser.
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_observable_object_malformed_content_disposition()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        email = self._check_misp_event_features_from_grouping(
+            event, bundle.objects[1]
+        )[0]
+        self.assertEqual(email.name, 'email')
+
     def _check_bundle_with_email_observable_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
