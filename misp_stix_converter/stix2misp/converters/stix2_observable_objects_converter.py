@@ -324,6 +324,11 @@ class STIX2ObservableObjectConverter(
                     )
                     continue
                 resolved_ip = self.main_parser._fetch_observable(reference)
+                if resolved_ip is None:
+                    self._missing_observable_object_error(
+                        domain_name.id, reference
+                    )
+                    continue
                 ip_address = resolved_ip['observable']
                 misp_object.add_attribute(
                     **self._parse_ip_observable(
@@ -335,7 +340,14 @@ class STIX2ObservableObjectConverter(
                 resolved_ip['misp_object'] = misp_object
                 if hasattr(ip_address, 'resolves_to_refs'):
                     for referenced_mac in ip_address.resolves_to_refs:
-                        resolved_mac = self.main_parser._fetch_observable(referenced_mac)
+                        resolved_mac = self.main_parser._fetch_observable(
+                            referenced_mac
+                        )
+                        if resolved_mac is None:
+                            self._missing_observable_object_error(
+                                ip_address.id, referenced_mac
+                            )
+                            continue
                         mac_address = resolved_mac['observable']
                         indicator_ref = resolved_mac.get('indicator_ref')
                         misp_attribute = self.main_parser._add_misp_attribute(
@@ -636,9 +648,13 @@ class STIX2ObservableObjectConverter(
         observable['misp_object'] = misp_object
         for asset, field in self.network_assets.items():
             if hasattr(network_traffic, f'{asset}_ref'):
-                referenced = self.main_parser._fetch_observable(
-                    getattr(network_traffic, f'{asset}_ref')
-                )
+                asset_ref = getattr(network_traffic, f'{asset}_ref')
+                referenced = self.main_parser._fetch_observable(asset_ref)
+                if referenced is None:
+                    self._missing_observable_object_error(
+                        network_traffic.id, asset_ref
+                    )
+                    continue
                 referenced_observable = referenced['observable']
                 attributes = self._parse_network_traffic_reference_observable(
                     asset, referenced_observable,
