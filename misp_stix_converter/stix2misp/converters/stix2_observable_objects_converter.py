@@ -643,6 +643,7 @@ class STIX2ObservableObjectConverter(
                 attributes = self._parse_network_traffic_reference_observable(
                     asset, referenced_observable,
                     f'{network_traffic.id} - {referenced_observable.id}',
+                    name.replace('-', '_'),
                     indicator_ref=referenced.get('indicator_ref')
                 )
                 for attribute in attributes:
