@@ -3502,6 +3502,34 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data=[observed_data, indicator, relationship]
         )
 
+    def _check_bundle_with_email_observable_object_without_filename(
+            self, bundle, attachment_type):
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data, _, _ = bundle.objects
+        email = self._check_misp_event_features(event, report)[0]
+        self.assertEqual(email.name, 'email')
+        *_, attachment1, attachment2 = email.attributes
+        self.assertEqual(attachment1.type, attachment_type)
+        self.assertEqual(attachment1.object_relation, 'attachment')
+        self.assertEqual(attachment1.value, observed_data.objects['6'].name)
+        self.assertEqual(attachment2.type, 'email-attachment')
+        self.assertEqual(attachment2.object_relation, 'attachment')
+        self.assertEqual(attachment2.value, observed_data.objects['7'].name)
+
+    def test_stix20_bundle_with_email_observable_object_bare_content_disposition(self):
+        self._check_bundle_with_email_observable_object_without_filename(
+            TestInternalSTIX20Bundles.get_bundle_with_email_observable_object_bare_content_disposition(),
+            'email-attachment'
+        )
+
+    def test_stix20_bundle_with_email_observable_object_without_content_disposition(self):
+        self._check_bundle_with_email_observable_object_without_filename(
+            TestInternalSTIX20Bundles.get_bundle_with_email_observable_object_without_content_disposition(),
+            'attachment'
+        )
+
     def test_stix20_bundle_with_employee_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_employee_object()
         self.parser.load_stix_bundle(bundle)

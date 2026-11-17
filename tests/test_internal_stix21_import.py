@@ -5473,17 +5473,35 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
-    def test_stix21_bundle_with_email_observable_object_malformed_content_disposition(self):
-        # A `Content-Disposition` value with no `;` separator (e.g. a bare
-        # `attachment` with no filename param) must not crash the parser.
-        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_observable_object_malformed_content_disposition()
+    def _check_bundle_with_email_observable_object_without_filename(
+            self, bundle, attachment_type):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        email = self._check_misp_event_features_from_grouping(
-            event, bundle.objects[1]
-        )[0]
+        _, grouping, *_, file1, file2, _, _ = self._bundle_objects(bundle)
+        email = self._check_misp_event_features_from_grouping(event, grouping)[0]
         self.assertEqual(email.name, 'email')
+        *_, attachment1, attachment2 = email.attributes
+        self.assertEqual(attachment1.type, attachment_type)
+        self.assertEqual(attachment1.object_relation, 'attachment')
+        self.assertEqual(attachment1.value, file1.name)
+        self.assertEqual(attachment2.type, 'email-attachment')
+        self.assertEqual(attachment2.object_relation, 'attachment')
+        self.assertEqual(attachment2.value, file2.name)
+
+    def test_stix21_bundle_with_email_observable_object_bare_content_disposition(self):
+        # A `Content-Disposition` value with no `;` separator (e.g. a bare
+        # `attachment` with no filename param) must not crash the parser.
+        self._check_bundle_with_email_observable_object_without_filename(
+            TestInternalSTIX21Bundles.get_bundle_with_email_observable_object_bare_content_disposition(),
+            'email-attachment'
+        )
+
+    def test_stix21_bundle_with_email_observable_object_without_content_disposition(self):
+        self._check_bundle_with_email_observable_object_without_filename(
+            TestInternalSTIX21Bundles.get_bundle_with_email_observable_object_without_content_disposition(),
+            'attachment'
+        )
 
     def _check_bundle_with_email_observable_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)

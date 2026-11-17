@@ -16175,11 +16175,17 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_OBJECT)
 
     @classmethod
-    def get_bundle_with_email_observable_object_malformed_content_disposition(cls):
+    def get_bundle_with_email_observable_object_bare_content_disposition(cls):
         stix_objects = deepcopy(_EMAIL_OBSERVABLE_OBJECT)
         # No `;` separator and no filename param - a bare `Content-Disposition`
         # value, which is valid per RFC 2183 but previously crashed the parser.
         stix_objects[1]['body_multipart'][0]['content_disposition'] = 'attachment'
+        return cls.__assemble_bundle(*stix_objects)
+
+    @classmethod
+    def get_bundle_with_email_observable_object_without_content_disposition(cls):
+        stix_objects = deepcopy(_EMAIL_OBSERVABLE_OBJECT)
+        del stix_objects[1]['body_multipart'][0]['content_disposition']
         return cls.__assemble_bundle(*stix_objects)
 
     @classmethod

@@ -9070,6 +9070,20 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_OBJECT)
 
     @classmethod
+    def get_bundle_with_email_observable_object_bare_content_disposition(cls):
+        stix_objects = deepcopy(_EMAIL_OBSERVABLE_OBJECT)
+        body_part = stix_objects[0]['objects']['0']['body_multipart'][0]
+        body_part['content_disposition'] = 'attachment'
+        return cls.__assemble_bundle(*stix_objects)
+
+    @classmethod
+    def get_bundle_with_email_observable_object_without_content_disposition(cls):
+        stix_objects = deepcopy(_EMAIL_OBSERVABLE_OBJECT)
+        body_part = stix_objects[0]['objects']['0']['body_multipart'][0]
+        del body_part['content_disposition']
+        return cls.__assemble_bundle(*stix_objects)
+
+    @classmethod
     def get_bundle_with_employee_object(cls):
         return cls.__assemble_bundle(_EMPLOYEE_OBJECT)
 
