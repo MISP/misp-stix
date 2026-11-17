@@ -2704,6 +2704,20 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         self._assert_multiple_equal(len(observables), len(object_refs), 1)
         self._check_regkey_value_observable_attribute(attribute, observables[0], object_refs[0])
 
+    def _test_event_with_regkey_value_attribute_no_separator(self, event):
+        attribute_value, pattern = self._run_indicator_tests(event, indicator_only=True)
+        self.assertEqual(
+            pattern.replace('\\\\', '\\'),
+            f"[windows-registry-key:key = '{attribute_value}']"
+        )
+        self.assertEqual(
+            self.parser.warnings[event['uuid']],
+            [
+                'The regkey|value MISP Attribute should have a composite '
+                f'value: {attribute_value}.'
+            ]
+        )
+
     def _test_event_with_size_in_bytes_indicator_attribute(self, event):
         attribute_value, pattern = self._run_indicator_tests(event, indicator_only=True)
         self.assertEqual(pattern, f"[file:size = '{attribute_value}']")
@@ -3170,6 +3184,10 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
     def test_event_with_regkey_value_observable_attribute(self):
         event = get_event_with_regkey_value_attribute()
         self._test_event_with_regkey_value_observable_attribute(event['Event'])
+
+    def test_event_with_regkey_value_attribute_no_separator(self):
+        event = get_event_with_regkey_value_attribute_no_separator()
+        self._test_event_with_regkey_value_attribute_no_separator(event['Event'])
 
     def test_event_with_size_in_bytes_indicator_attribute(self):
         event = get_event_with_size_in_bytes_attribute()
@@ -3650,6 +3668,12 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_regkey_value_observable_attribute(misp_event)
+
+    def test_event_with_regkey_value_attribute_no_separator(self):
+        event = get_event_with_regkey_value_attribute_no_separator()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_regkey_value_attribute_no_separator(misp_event)
 
     def test_event_with_size_in_bytes_indicator_attribute(self):
         event = get_event_with_size_in_bytes_attribute()

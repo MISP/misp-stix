@@ -7344,6 +7344,12 @@ class TestSTIX11MISPExport(TestSTIX11Export):
         misp_event.from_dict(**event)
         self._test_event_with_regkey_value_attribute(misp_event)
 
+    def test_event_with_regkey_value_attribute_no_separator(self):
+        event = get_event_with_regkey_value_attribute_no_separator()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_regkey_value_attribute_no_separator(misp_event)
+
     def test_event_with_size_in_bytes_attribute(self):
         event = get_event_with_size_in_bytes_attribute()
         misp_event = MISPEvent()
@@ -7908,6 +7914,10 @@ class TestSTIX12JSONExport(TestSTIX12Export):
         event = get_event_with_regkey_value_attribute()
         self._test_event_with_regkey_value_attribute(event['Event'])
 
+    def test_event_with_regkey_value_attribute_no_separator(self):
+        event = get_event_with_regkey_value_attribute_no_separator()
+        self._test_event_with_regkey_value_attribute_no_separator(event['Event'])
+
     def test_event_with_size_in_bytes_attribute(self):
         event = get_event_with_size_in_bytes_attribute()
         self._test_event_with_size_in_bytes_attribute(event['Event'])
@@ -8423,6 +8433,12 @@ class TestSTIX12MISPExport(TestSTIX12Export):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_regkey_value_attribute(misp_event)
+
+    def test_event_with_regkey_value_attribute_no_separator(self):
+        event = get_event_with_regkey_value_attribute_no_separator()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_regkey_value_attribute_no_separator(misp_event)
 
     def test_event_with_size_in_bytes_attribute(self):
         event = get_event_with_size_in_bytes_attribute()
