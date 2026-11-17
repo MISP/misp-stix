@@ -1578,6 +1578,29 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertFalse(attribute.to_ids)
 
+    def test_stix21_bundle_with_email_object_with_screenshot_observable_object_extension_syntax(self):
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_email_object_with_screenshot_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, _, _, file_observable, artifact = self._bundle_objects(bundle)
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self.assertEqual(misp_object.name, 'email')
+        _, attachment, screenshot = misp_object.attributes
+        self.assertEqual(attachment.uuid, file_observable.id.split('--')[1])
+        self.assertEqual(attachment.type, 'email-attachment')
+        self.assertEqual(attachment.object_relation, 'attachment')
+        self.assertEqual(attachment.value, file_observable.name)
+        self.assertEqual(screenshot.uuid, artifact.id.split('--')[1])
+        self.assertEqual(screenshot.type, 'attachment')
+        self.assertEqual(screenshot.object_relation, 'screenshot')
+        self.assertEqual(
+            screenshot.value, self._custom_value(artifact, 'x_misp_filename')
+        )
+        self.assertEqual(
+            self._get_data_value(screenshot.data), artifact.payload_bin
+        )
+
     def test_stix21_bundle_with_email_attribute(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_email_attribute()
         self.parser.load_stix_bundle(bundle)

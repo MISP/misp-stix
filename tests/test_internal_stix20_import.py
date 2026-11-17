@@ -768,6 +768,26 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self._get_data_value(attachment.data), artifact_object.payload_bin
         )
 
+    def test_stix20_bundle_with_email_object_with_screenshot_observable_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_email_object_with_screenshot_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        _, file_object, artifact_object = observed_data.objects.values()
+        self.assertEqual(misp_object.name, 'email')
+        _, attachment, screenshot = misp_object.attributes
+        self.assertEqual(attachment.type, 'email-attachment')
+        self.assertEqual(attachment.object_relation, 'attachment')
+        self.assertEqual(attachment.value, file_object.name)
+        self.assertEqual(screenshot.type, 'attachment')
+        self.assertEqual(screenshot.object_relation, 'screenshot')
+        self.assertEqual(screenshot.value, artifact_object.x_misp_filename)
+        self.assertEqual(
+            self._get_data_value(screenshot.data), artifact_object.payload_bin
+        )
+
     def test_stix20_bundle_with_email_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_email_attribute()
         self.parser.load_stix_bundle(bundle)
