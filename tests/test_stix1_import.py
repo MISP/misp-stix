@@ -194,7 +194,14 @@ _MULTILINE_YARA_RULE = (
 # object: its name, the object relations that do not come back, the ones that
 # come back under a name the MISP object never had, and why. Every object
 # attribute survives; a row lands here, with its cause, when one stops.
-_CORPUS_ROUND_TRIP_LOSSES = {}
+_CORPUS_ROUND_TRIP_LOSSES = {
+    ('get_event_with_file_object_with_attachment_only', 0): (
+        'file', ('filename', 'md5'), ('filename|md5',),
+        'A File carrying one file name and one hash reads back as the '
+        '`filename|<hash>` composite it cannot be told apart from on the '
+        'wire (`_handle_filename_object`)'
+    )
+}
 
 # A `cdhash` is 40 hexadecimal characters, the length of a sha1; an `impfuzzy`
 # has the `blocksize:hash:hash` shape of an ssdeep. Neither is in the fixture
