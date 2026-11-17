@@ -2623,6 +2623,12 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             parser.errors[b_dict['id']]
         )
 
+    def test_stix20_reused_parser_does_not_leak_indicator_references(self):
+        from misp_stix_converter import MISPtoSTIX20Parser
+        self._check_reused_parser_does_not_leak_indicator_references(
+            MISPtoSTIX20Parser
+        )
+
     def test_stix20_bundle_with_stix_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_stix_galaxy()
         self.parser.load_stix_bundle(bundle)

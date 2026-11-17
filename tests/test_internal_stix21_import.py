@@ -4023,6 +4023,12 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_custom_galaxy()
         )
 
+    def test_stix21_reused_parser_does_not_leak_indicator_references(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._check_reused_parser_does_not_leak_indicator_references(
+            MISPtoSTIX21Parser
+        )
+
     def test_stix21_parser_handles_objectless_bundle(self):
         # a direct API consumer (e.g. MISP core) can hand the parser a bundle
         # whose objects all failed validation - STIX 2.1 then omits `objects`
