@@ -166,16 +166,16 @@ class InternalSTIX2AttackPatternConverter(InternalSTIX2Converter):
 
     def _parse_attack_pattern_reference(
             self, reference: _EXTERNAL_REFERENCE_TYPING) -> Optional[dict]:
-        if reference.source_name == 'url':
+        external_id = getattr(reference, 'external_id', None)
+        if external_id is not None:
+            return {
+                'value': external_id.split('-')[1]
+                if external_id.startswith('CAPEC-') else external_id,
+                **self._mapping.attack_pattern_id_attribute()
+            }
+        if hasattr(reference, 'url'):
             return {
                 'value': reference.url,
                 **self._mapping.references_attribute()
             }
-        external_id = getattr(reference, 'external_id', None)
-        if external_id is None:
-            return None
-        return {
-            'value': external_id.split('-')[1]
-            if external_id.startswith('CAPEC-') else external_id,
-            **self._mapping.attack_pattern_id_attribute()
-        }
+        return None
