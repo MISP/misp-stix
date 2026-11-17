@@ -3518,6 +3518,16 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_DIRECTORY_OBJECTS[-3:-1])
 
     @classmethod
+    def get_bundle_with_directory_dangling_content(cls):
+        # The directory contains a directory the bundle never carries, then
+        # one it carries.
+        directory, contained = deepcopy(_DIRECTORY_OBJECTS[-3:-1])
+        directory['contains_refs'].insert(
+            0, 'directory--00000000-0000-4000-8000-000000000000'
+        )
+        return cls.__assemble_bundle(directory, contained)
+
+    @classmethod
     def get_bundle_with_domain_attributes(cls):
         return cls.__assemble_bundle(*_DOMAIN_ATTRIBUTES[:-1])
 
@@ -3532,6 +3542,59 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_domain_ip_observables(cls):
         return cls.__assemble_bundle(*_DOMAIN_IP_OBJECTS[-5:-1])
+
+    @classmethod
+    def get_bundle_with_domain_ip_dangling_alias(cls):
+        # The domain-name resolves to a domain-name the bundle never carries,
+        # then to one it carries.
+        domain_name = {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--a606208a-f0f2-404c-98ff-9f3aac466a21",
+            "value": "alias.example.com",
+            "resolves_to_refs": [
+                "domain-name--00000000-0000-4000-8000-000000000000",
+                "domain-name--6894b07d-0d19-4337-ab97-f15e71564133"
+            ]
+        }
+        alias = {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--6894b07d-0d19-4337-ab97-f15e71564133",
+            "value": "example.com"
+        }
+        return cls.__assemble_bundle(domain_name, alias)
+
+    @classmethod
+    def get_bundle_with_domain_ip_dangling_mac_resolution(cls):
+        # The ip-addr resolves to a mac-addr the bundle never carries, then
+        # to one it carries.
+        domain_name = {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--ba16a811-3d22-4142-9926-9cb28566f183",
+            "value": "example.com",
+            "resolves_to_refs": [
+                "ipv4-addr--65f699a9-0811-45eb-b010-d141a76d15e0"
+            ]
+        }
+        ip_address = {
+            "type": "ipv4-addr",
+            "spec_version": "2.1",
+            "id": "ipv4-addr--65f699a9-0811-45eb-b010-d141a76d15e0",
+            "value": "198.51.100.3",
+            "resolves_to_refs": [
+                "mac-addr--00000000-0000-4000-8000-000000000000",
+                "mac-addr--207b5120-83db-4c84-bed0-55afe39f279a"
+            ]
+        }
+        mac_address = {
+            "type": "mac-addr",
+            "spec_version": "2.1",
+            "id": "mac-addr--207b5120-83db-4c84-bed0-55afe39f279a",
+            "value": "d2:fb:49:24:37:18"
+        }
+        return cls.__assemble_bundle(domain_name, ip_address, mac_address)
 
     @classmethod
     def get_bundle_with_domain_ip_dangling_resolution(cls):
@@ -3581,6 +3644,32 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             observables[2]['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(*observables)
+
+    @classmethod
+    def get_bundle_with_file_archive_dangling_content(cls):
+        # The archive contains a file the bundle never carries, then one it
+        # carries.
+        archive = {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--f6f571fd-9fb7-4327-aab5-53c7fea90c1b",
+            "name": "oui.zip",
+            "extensions": {
+                "archive-ext": {
+                    "contains_refs": [
+                        "file--00000000-0000-4000-8000-000000000000",
+                        "file--8aa2940f-7ed7-48f8-ab9f-1382f870a18e"
+                    ]
+                }
+            }
+        }
+        contained = {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--8aa2940f-7ed7-48f8-ab9f-1382f870a18e",
+            "name": "oui"
+        }
+        return cls.__assemble_bundle(archive, contained)
 
     @classmethod
     def get_bundle_with_file_object_with_unmapped_hashes(cls):
@@ -3649,6 +3738,36 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     def get_bundle_with_network_traffic_observables(cls):
         _, _, _, ip, _, _, _, *observables = deepcopy(_NETWORK_TRAFFIC_OBJECTS[:-1])
         return cls.__assemble_bundle(ip, *observables)
+
+    @classmethod
+    def get_bundle_with_network_traffic_dangling_source(cls):
+        # The source is an ipv4-addr the bundle never carries; its payload
+        # and the destination are objects it carries.
+        network_traffic = {
+            "type": "network-traffic",
+            "spec_version": "2.1",
+            "id": "network-traffic--4f86e1ea-0208-4a65-856f-e1756132158b",
+            "src_ref": "ipv4-addr--00000000-0000-4000-8000-000000000000",
+            "dst_ref": "ipv4-addr--85184a78-e179-4cb7-8ced-2031e18d6c74",
+            "src_port": 2487,
+            "dst_port": 80,
+            "protocols": ["tcp"],
+            "src_payload_ref": "artifact--83587479-a018-4c7b-987b-6552f21c7dae"
+        }
+        ip_address = {
+            "type": "ipv4-addr",
+            "spec_version": "2.1",
+            "id": "ipv4-addr--85184a78-e179-4cb7-8ced-2031e18d6c74",
+            "value": "198.51.100.3"
+        }
+        artifact = {
+            "type": "artifact",
+            "spec_version": "2.1",
+            "id": "artifact--83587479-a018-4c7b-987b-6552f21c7dae",
+            "mime_type": "text/plain",
+            "payload_bin": "aGVsbG8="
+        }
+        return cls.__assemble_bundle(network_traffic, ip_address, artifact)
 
     @classmethod
     def get_bundle_with_network_traffic_mac_address_objects(cls):
