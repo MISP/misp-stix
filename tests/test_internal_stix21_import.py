@@ -5125,6 +5125,19 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
+    def test_stix21_bundle_with_attack_pattern_object_with_references_extension_syntax(self):
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_attack_pattern_object_with_references()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(self.parser.errors, {})
+        event = self.parser.misp_event
+        _, grouping, attack_pattern = self._bundle_objects(bundle)
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        _, mitre_reference, other_reference = attack_pattern.external_references
+        self._check_attack_pattern_object(
+            misp_object, attack_pattern, mitre_reference, other_reference
+        )
+
     def _check_bundle_with_course_of_action_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()

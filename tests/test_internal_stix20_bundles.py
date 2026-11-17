@@ -894,6 +894,33 @@ _ATTACK_PATTERN_OBJECT_WITH_INCOMPLETE_REFERENCE = {
     "x_misp_related_weakness": ["CWE-118", "CWE-120"],
     "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
 }
+_ATTACK_PATTERN_OBJECT_WITH_REFERENCES = {
+    "type": "attack-pattern",
+    "id": "attack-pattern--7205da54-70de-4fa7-9b34-e14e63fe6787",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Buffer Overflow in Local Command-Line Utilities",
+    "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "vulnerability"}
+    ],
+    "labels": ['misp:name="attack-pattern"', 'misp:meta-category="vulnerability"'],
+    "external_references": [
+        {"source_name": "capec", "external_id": "CAPEC-9"},
+        {
+            "source_name": "mitre-attack",
+            "url": "https://capec.mitre.org/data/definitions/9.html"
+        },
+        {
+            "source_name": "external_url",
+            "url": "https://owasp.org/www-community/attacks/Buffer_overflow_attack"
+        }
+    ],
+    "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+    "x_misp_related_weakness": ["CWE-118", "CWE-120"],
+    "x_misp_solutions": "Carefully review the service's implementation before making it available to users."
+}
 _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
     _ATTACK_PATTERN_GALAXY,
     {
@@ -9092,6 +9119,10 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_attack_pattern_object_with_incomplete_reference(cls):
         return cls.__assemble_bundle(_ATTACK_PATTERN_OBJECT_WITH_INCOMPLETE_REFERENCE)
+
+    @classmethod
+    def get_bundle_with_attack_pattern_object_with_references(cls):
+        return cls.__assemble_bundle(_ATTACK_PATTERN_OBJECT_WITH_REFERENCES)
 
     @classmethod
     def get_bundle_with_course_of_action_object(cls):

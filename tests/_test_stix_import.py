@@ -5044,14 +5044,14 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self.assertEqual(attribute.object_relation, 'subnet-announced')
             self.assertEqual(attribute.value, subnet)
 
-    def _check_attack_pattern_object(self, misp_object, attack_pattern):
+    def _check_attack_pattern_object(self, misp_object, attack_pattern, *url_references):
         self.assertEqual(misp_object.uuid, attack_pattern.id.split('--')[1])
         self.assertEqual(misp_object.name, attack_pattern.type)
         self._assert_multiple_equal(
             misp_object.timestamp, attack_pattern.created, attack_pattern.modified
         )
         self._check_object_labels(misp_object, attack_pattern.labels)
-        summary, name, prerequisites, weakness1, weakness2, solution, capec_id = misp_object.attributes
+        summary, name, prerequisites, weakness1, weakness2, solution, capec_id, *references = misp_object.attributes
         self.assertEqual(summary.value, attack_pattern.description)
         self.assertEqual(name.value, attack_pattern.name)
         self.assertEqual(
@@ -5071,6 +5071,12 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             attack_pattern.external_references[0].external_id
         )
         self._check_object_attribute_uuid(capec_id, attack_pattern.id)
+        self.assertEqual(len(references), len(url_references))
+        for attribute, reference in zip(references, url_references):
+            self.assertEqual(attribute.type, 'link')
+            self.assertEqual(attribute.object_relation, 'references')
+            self.assertEqual(attribute.value, reference.url)
+            self._check_object_attribute_uuid(attribute, attack_pattern.id)
 
     def _check_attributes_ids_flag(self, feature, pattern, *attributes):
         pattern_values = [value[-1] for value in pattern[feature]]
