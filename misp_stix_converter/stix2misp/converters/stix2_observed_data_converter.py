@@ -1218,39 +1218,39 @@ class ExternalSTIX2ObservedDataConverter(
             observable['misp_object'] = misp_object
             if hasattr(email_message, 'from_ref'):
                 from_ref = email_message.from_ref
-                observable = self.main_parser._fetch_observable(from_ref)
-                if observable is None:
+                address = self.main_parser._fetch_observable(from_ref)
+                if address is None:
                     self._missing_observable_object_error(
                         observed_data.id, from_ref
                     )
                 else:
                     attributes = self._observables._parse_email_reference_observable(
-                        observable['observable'], 'from',
+                        address['observable'], 'from',
                         object_id=f'{object_ref} - {from_ref}',
-                        indicator_ref=observable.get('indicator_ref')
+                        indicator_ref=address.get('indicator_ref')
                     )
                     for attribute in attributes:
                         misp_object.add_attribute(**attribute)
-                    self._handle_misp_object_storage(observable, misp_object)
+                    self._handle_misp_object_storage(address, misp_object)
             for feature in ('to', 'cc', 'bcc'):
                 field = f'{feature}_refs'
                 if hasattr(email_message, field):
                     for reference in getattr(email_message, field):
-                        observable = self.main_parser._fetch_observable(reference)
-                        if observable is None:
+                        address = self.main_parser._fetch_observable(reference)
+                        if address is None:
                             self._missing_observable_object_error(
                                 observed_data.id, reference
                             )
                             continue
                         attributes = self._observables._parse_email_reference_observable(
-                            observable['observable'], feature,
+                            address['observable'], feature,
                             object_id=f'{object_ref} - {reference}',
-                            indicator_ref=observable.get('indicator_ref')
+                            indicator_ref=address.get('indicator_ref')
                         )
                         for attribute in attributes:
                             misp_object.add_attribute(**attribute)
                         self._handle_misp_object_storage(
-                            observable, misp_object
+                            address, misp_object
                         )
             if hasattr(email_message, 'body_multipart'):
                 for index, multipart in enumerate(email_message.body_multipart):
@@ -1258,7 +1258,7 @@ class ExternalSTIX2ObservedDataConverter(
                         misp_object.add_attribute(
                             'email-body', multipart.body,
                             **self._observables._handle_object_id(
-                                observable.get(object_ref),
+                                observable.get('indicator_ref'),
                                 'email-message', multipart.body,
                                 f'{object_ref} - body_multipart - '
                                 f'{index} - email-body'
@@ -1266,14 +1266,14 @@ class ExternalSTIX2ObservedDataConverter(
                         )
                         continue
                     body_raw_ref = multipart.body_raw_ref
-                    observable = self.main_parser._fetch_observable(body_raw_ref)
-                    if observable is None:
+                    content = self.main_parser._fetch_observable(body_raw_ref)
+                    if content is None:
                         self._missing_observable_object_error(
                             observed_data.id, body_raw_ref
                         )
                         continue
-                    if observable['used'].get(self.event_uuid, False):
-                        referenced_object = observable['misp_object']
+                    if content['used'].get(self.event_uuid, False):
+                        referenced_object = content['misp_object']
                         self._handle_misp_object_fields(
                             referenced_object, observed_data
                         )
@@ -1281,21 +1281,21 @@ class ExternalSTIX2ObservedDataConverter(
                             referenced_object.uuid, 'contains'
                         )
                         continue
-                    observable_object = observable['observable']
+                    observable_object = content['observable']
                     if observable_object.type == 'artifact':
                         artifact = self._parse_generic_observable_object_ref(
                             observable_object, observed_data, 'artifact', False
                         )
                         misp_object.add_reference(artifact.uuid, 'contains')
-                        observable['misp_object'] = artifact
-                        observable['used'][self.event_uuid] = True
+                        content['misp_object'] = artifact
+                        content['used'][self.event_uuid] = True
                         continue
                     file_object = self._parse_generic_observable_object_ref(
                         observable_object, observed_data, 'file', False
                     )
                     misp_object.add_reference(file_object.uuid, 'contains')
-                    observable['misp_object'] = file_object
-                    observable['used'][self.event_uuid] = True
+                    content['misp_object'] = file_object
+                    content['used'][self.event_uuid] = True
                     self._parse_file_observable_object_ref_references(
                         file_object, observable_object, observed_data
                     )
@@ -3305,9 +3305,12 @@ class InternalSTIX2ObservedDataConverter(
                 misp_object.add_attribute(**attribute)
             if hasattr(observable, 'body_multipart'):
                 for body_part in observable.body_multipart:
-                    relation, value = body_part.content_disposition.split(';')
+                    relation, _, value = getattr(
+                        body_part, 'content_disposition', ''
+                    ).partition(';')
                     feature = (
                         'email_attachment' if relation == 'attachment'
+                        else 'screenshot' if relation == 'screenshot'
                         else 'attachment'
                     )
                     reference = observables[body_part.body_raw_ref]

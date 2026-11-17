@@ -6350,6 +6350,60 @@ _EXTENSION_SYNTAX_EMAIL_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a"
     }
 ]
+_EXTENSION_SYNTAX_EMAIL_OBJECT_WITH_SCREENSHOT_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5e396622-2a54-4c8d-b61d-159da964451c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "email-message--5e396622-2a54-4c8d-b61d-159da964451c",
+            "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+            "artifact--462a46cd-f721-45a1-ab9d-6d29ff770440"
+        ],
+        "labels": ['misp:name="email"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "email-message",
+        "spec_version": "2.1",
+        "id": "email-message--5e396622-2a54-4c8d-b61d-159da964451c",
+        "is_multipart": True,
+        "subject": "Email test subject",
+        "body_multipart": [
+            {
+                "body_raw_ref": "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+                "content_disposition": "attachment; filename='attachment1.file'"
+            },
+            {
+                "body_raw_ref": "artifact--462a46cd-f721-45a1-ab9d-6d29ff770440",
+                "content_disposition": "screenshot; filename='screenshot.png'"
+            }
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "name": "attachment1.file"
+    },
+    {
+        "type": "artifact",
+        "spec_version": "2.1",
+        "id": "artifact--462a46cd-f721-45a1-ab9d-6d29ff770440",
+        "payload_bin": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK",
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "filename": "screenshot.png"
+            }
+        }
+    }
+]
 _EXTENSION_SYNTAX_FILE_AND_PE_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -16121,6 +16175,20 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_OBJECT)
 
     @classmethod
+    def get_bundle_with_email_observable_object_bare_content_disposition(cls):
+        stix_objects = deepcopy(_EMAIL_OBSERVABLE_OBJECT)
+        # No `;` separator and no filename param - a bare `Content-Disposition`
+        # value, which is valid per RFC 2183 but previously crashed the parser.
+        stix_objects[1]['body_multipart'][0]['content_disposition'] = 'attachment'
+        return cls.__assemble_bundle(*stix_objects)
+
+    @classmethod
+    def get_bundle_with_email_observable_object_without_content_disposition(cls):
+        stix_objects = deepcopy(_EMAIL_OBSERVABLE_OBJECT)
+        del stix_objects[1]['body_multipart'][0]['content_disposition']
+        return cls.__assemble_bundle(*stix_objects)
+
+    @classmethod
     def get_bundle_with_employee_object(cls):
         return cls.__assemble_bundle(_EMPLOYEE_OBJECT)
 
@@ -16851,6 +16919,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_email_indicator_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             _EXTENSION_SYNTAX_EMAIL_INDICATOR_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_email_object_with_screenshot_observable_object(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_EMAIL_OBJECT_WITH_SCREENSHOT_OBSERVABLE_OBJECT
         )
 
     @classmethod

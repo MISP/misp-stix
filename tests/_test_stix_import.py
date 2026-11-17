@@ -3934,6 +3934,42 @@ class TestInternalSTIX2Import(TestSTIX2Import):
                 self.assertEqual(self.parser.warnings, {})
                 self.assertEqual(self.parser.errors, {})
 
+    def _check_reused_parser_does_not_leak_indicator_references(
+            self, export_parser_class):
+        # An updated event imported on the parser that imported it before
+        # comes back with the `to_ids` flags of its own bundle: the indicator
+        # map, keyed on the record uuids both bundles share, is built per
+        # bundle, so an attribute switched to `to_ids` False is not matched
+        # against the Indicator the previous bundle wrote for it.
+        # The ip-src stays an Observed Data in both bundles: the first one
+        # needs one next to its Indicator to build the map at all, and the
+        # second one must hold no Indicator, the case where the previous map
+        # used to stay
+        from .test_events import get_event_with_ip_attributes
+        bundles = []
+        for ip_dst_to_ids in (True, False):
+            event = get_event_with_ip_attributes()['Event']
+            ip_src, ip_dst = event['Attribute']
+            ip_src['to_ids'] = False
+            ip_dst['to_ids'] = ip_dst_to_ids
+            export_parser = export_parser_class()
+            export_parser.parse_misp_event(event)
+            bundles.append((export_parser.bundle, ip_dst_to_ids))
+        self.parser = InternalSTIX2toMISPParser()
+        for bundle, ip_dst_to_ids in bundles:
+            self.parser.load_stix_bundle(bundle)
+            self.parser.parse_stix_bundle()
+            self.assertEqual(
+                {
+                    (attribute.type, attribute.value, attribute.to_ids)
+                    for attribute in self.parser.misp_event.attributes
+                },
+                {
+                    ('ip-src', '1.2.3.4', False),
+                    ('ip-dst', '5.6.7.8', ip_dst_to_ids)
+                }
+            )
+
     def _round_trip_escaped_pattern_values(self, export_parser_class):
         # A value holding a quote or a backslash, and in a registry key
         # pattern a `%`, comes back from its pattern as MISP gave it, not with
