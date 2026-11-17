@@ -3308,6 +3308,7 @@ class InternalSTIX2ObservedDataConverter(
                     relation, value = body_part.content_disposition.split(';')
                     feature = (
                         'email_attachment' if relation == 'attachment'
+                        else 'screenshot' if relation == 'screenshot'
                         else 'attachment'
                     )
                     reference = observables[body_part.body_raw_ref]

@@ -1096,6 +1096,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __parent_process_path_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'parent-process-path'}
     )
+    __screenshot_attribute = Mapping(
+        **{'type': 'attachment', 'object_relation': 'screenshot'}
+    )
     __script_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'script'}
     )
@@ -1329,7 +1332,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_received_header_ip={'type': 'ip-src', 'object_relation': 'received-header-ip'},
         x_misp_reply_to_display_name={'type': 'email-dst-display-name', 'object_relation': 'reply-to-display-name'},
         x_misp_return_path={'type': 'email-src', 'object_relation': 'return-path'},
-        x_misp_screenshot={'type': 'attachment', 'object_relation': 'screenshot'},
+        x_misp_screenshot=__screenshot_attribute,
         x_misp_thread_index={'type': 'email-thread-index', 'object_relation': 'thread-index'},
         x_misp_user_agent=STIX2Mapping.user_agent_attribute()
     )
@@ -1947,6 +1950,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def registry_key_object_mapping(cls) -> dict:
         return cls.__registry_key_object_mapping
+
+    @classmethod
+    def screenshot_attribute(cls) -> dict:
+        return cls.__screenshot_attribute
 
     @classmethod
     def script_attribute(cls) -> dict:
