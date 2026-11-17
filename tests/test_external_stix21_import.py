@@ -3650,6 +3650,46 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             misp_object=nt_object1, observable=nt1
         )
 
+    def test_stix21_bundle_with_network_traffic_mac_address_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_network_traffic_mac_address_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(dict(self.parser.errors), {})
+        event = self.parser.misp_event
+        _, grouping, observed_data, src_mac, dst_mac, network_traffic = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 1)
+        misp_object = misp_objects[0]
+        self.assertEqual(misp_object.name, 'network-traffic')
+        self._check_misp_object_fields(
+            misp_object, observed_data, network_traffic.id
+        )
+        self.assertEqual(
+            [
+                (attribute.type, attribute.object_relation, attribute.value)
+                for attribute in misp_object.attributes
+            ],
+            [
+                ('text', 'protocol', 'TCP'),
+                ('mac-address', 'src_mac', '00:2b:a0:4f:cc:7e'),
+                ('mac-address', 'dst_mac', '00:2b:a0:4f:cc:7f')
+            ]
+        )
+        object_id = network_traffic.id
+        prefixes = (
+            object_id, f'{object_id} - {src_mac.id}',
+            f'{object_id} - {dst_mac.id}'
+        )
+        for attribute, prefix in zip(misp_object.attributes, prefixes):
+            self.assertFalse(attribute.to_ids)
+            self.assertEqual(
+                attribute.uuid,
+                uuid5(
+                    UUIDv4,
+                    f'{prefix} - {attribute.object_relation} - {attribute.value}'
+                )
+            )
+
     def _check_sigma_indicator_object(self, misp_object, indicator):
         self.assertEqual(misp_object.name, 'sigma')
         self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
@@ -5847,14 +5887,17 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, traffic_indicator, socket_indicator = bundle.objects
+        _, grouping, traffic_indicator, socket_indicator, mac_indicator = bundle.objects
         misp_content = self._check_misp_event_features_from_grouping(
             event, grouping
         )
-        self.assertEqual(len(misp_content), 2)
-        network_traffic, network_socket = misp_content
+        self.assertEqual(len(misp_content), 3)
+        network_traffic, network_socket, mac_socket = misp_content
         self._check_network_traffic_indicator(traffic_indicator, network_traffic)
         self._check_network_socket_indicator(socket_indicator, network_socket)
+        self._check_network_socket_indicator_with_mac_addresses(
+            mac_indicator, mac_socket
+        )
         self._populate_ext_indicator_documentation(
             misp_object=network_traffic, indicator=traffic_indicator
         )

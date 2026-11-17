@@ -2008,22 +2008,37 @@ class TestExternalSTIX2Import(TestSTIX2Import):
 
     def _check_network_socket_indicator(self, indicator, misp_object):
         pattern = self._get_compiled_pattern(indicator)
-        (_src_ip, _dst_ip, _dst_port, _src_port,
-         _protocol, _address_family, _socket_type, _) = (
+        (_src_ip, _dst_ip, _dst_port, _src_port, _protocol, *_counts,
+         _address_family, _socket_type, _) = (
             value[-1] for value in pattern.get('network-traffic', [])
         )
         self.assertEqual(misp_object.name, 'network-socket')
         self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
         self.assertEqual(misp_object.timestamp, indicator.modified)
-        self.assertEqual(len(misp_object.attributes), 8)
+        self.assertEqual(len(misp_object.attributes), 12)
         self._check_attributes_from_indicator_fields(
-            misp_object.attributes[:5], indicator.id
+            misp_object.attributes[:9], indicator.id
         )
         self._check_attributes_from_indicator_fields(
-            misp_object.attributes[5:], f'{indicator.id} - socket-ext'
+            misp_object.attributes[9:], f'{indicator.id} - socket-ext'
         )
-        (src_ip, dst_ip, dst_port, src_port, protocol, address_family,
-         socket_type, listening) = misp_object.attributes
+        (src_ip, dst_ip, dst_port, src_port, protocol, *counts,
+         address_family, socket_type, listening) = misp_object.attributes
+        self.assertEqual(
+            [
+                (attribute.type, attribute.object_relation)
+                for attribute in counts
+            ],
+            [
+                ('size-in-bytes', 'src-bytes-count'),
+                ('size-in-bytes', 'dst-bytes-count'),
+                ('counter', 'src-packets-count'),
+                ('counter', 'dst-packets-count')
+            ]
+        )
+        self.assertEqual(
+            [attribute.value for attribute in counts], _counts
+        )
         self._assert_multiple_equal(src_ip.type, src_ip.object_relation, 'ip-src')
         self.assertEqual(src_ip.value, _src_ip)
         self._assert_multiple_equal(dst_ip.type, dst_ip.object_relation, 'ip-dst')
@@ -2045,6 +2060,29 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(listening.type, 'text')
         self.assertEqual(listening.object_relation, 'state')
         self.assertEqual(listening.value, 'listening')
+
+    def _check_network_socket_indicator_with_mac_addresses(
+            self, indicator, misp_object):
+        self.assertEqual(misp_object.name, 'network-socket')
+        self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
+        self.assertEqual(
+            [
+                (attribute.type, attribute.object_relation, attribute.value)
+                for attribute in misp_object.attributes
+            ],
+            [
+                ('mac-address', 'mac-src', '00:2b:a0:4f:cc:7e'),
+                ('mac-address', 'mac-dst', '00:2b:a0:4f:cc:7f'),
+                ('text', 'protocol', 'tcp'),
+                ('text', 'address-family', 'AF_INET')
+            ]
+        )
+        self._check_attributes_from_indicator_fields(
+            misp_object.attributes[:3], indicator.id
+        )
+        self._check_attributes_from_indicator_fields(
+            misp_object.attributes[3:], f'{indicator.id} - socket-ext'
+        )
 
     def _check_process_indicator(self, indicator, misp_object):
         pattern = self._get_compiled_pattern(indicator)

@@ -4187,12 +4187,15 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, report, traffic_indicator, socket_indicator = bundle.objects
+        _, report, traffic_indicator, socket_indicator, mac_indicator = bundle.objects
         misp_content = self._check_misp_event_features(event, report)
-        self.assertEqual(len(misp_content), 2)
-        network_traffic, network_socket = misp_content
+        self.assertEqual(len(misp_content), 3)
+        network_traffic, network_socket, mac_socket = misp_content
         self._check_network_traffic_indicator(traffic_indicator, network_traffic)
         self._check_network_socket_indicator(socket_indicator, network_socket)
+        self._check_network_socket_indicator_with_mac_addresses(
+            mac_indicator, mac_socket
+        )
         self._populate_ext_indicator_documentation(
             misp_object=network_traffic, indicator=traffic_indicator
         )

@@ -1935,7 +1935,17 @@ _NETWORK_TRAFFIC_INDICATORS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = 80 AND network-traffic:src_port = 8080 AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true]",
+        "pattern": "[network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = 80 AND network-traffic:src_port = 8080 AND network-traffic:protocols[0] = 'tcp' AND network-traffic:src_byte_count = 35779 AND network-traffic:dst_byte_count = 935750 AND network-traffic:src_packets = 14356 AND network-traffic:dst_packets = 14357 AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true]",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "labels": ["malicious-activity"]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--9ab1144f-2578-406f-8bad-9ed585cae85a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:src_ref.value = '00:2b:a0:4f:cc:7e' AND network-traffic:dst_ref.value = '00:2b:a0:4f:cc:7f' AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET']",
         "valid_from": "2020-10-25T16:22:00Z",
         "labels": ["malicious-activity"]
     }

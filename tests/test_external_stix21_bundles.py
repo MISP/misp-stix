@@ -2615,10 +2615,60 @@ _NETWORK_TRAFFIC_INDICATORS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = 80 AND network-traffic:src_port = 8080 AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true]",
+        "pattern": "[network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = 80 AND network-traffic:src_port = 8080 AND network-traffic:protocols[0] = 'tcp' AND network-traffic:src_byte_count = 35779 AND network-traffic:dst_byte_count = 935750 AND network-traffic:src_packets = 14356 AND network-traffic:dst_packets = 14357 AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true]",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--9ab1144f-2578-406f-8bad-9ed585cae85a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:src_ref.value = '00:2b:a0:4f:cc:7e' AND network-traffic:dst_ref.value = '00:2b:a0:4f:cc:7f' AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z"
+    }
+]
+_NETWORK_TRAFFIC_MAC_OBSERVED_DATA = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--f3b482b6-9882-4801-b3fd-eb1a152ac5dc",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "mac-addr--77e4d364-64f9-5e5d-aed5-99afc591f3fb",
+            "mac-addr--e8fe4b30-508c-5e9a-b1f8-7e81cd6eea0a",
+            "network-traffic--1677739d-30d5-55e7-8abf-ea5e5fd2e6f7"
+        ]
+    },
+    {
+        "type": "mac-addr",
+        "spec_version": "2.1",
+        "id": "mac-addr--77e4d364-64f9-5e5d-aed5-99afc591f3fb",
+        "value": "00:2b:a0:4f:cc:7e"
+    },
+    {
+        "type": "mac-addr",
+        "spec_version": "2.1",
+        "id": "mac-addr--e8fe4b30-508c-5e9a-b1f8-7e81cd6eea0a",
+        "value": "00:2b:a0:4f:cc:7f"
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--1677739d-30d5-55e7-8abf-ea5e5fd2e6f7",
+        "src_ref": "mac-addr--77e4d364-64f9-5e5d-aed5-99afc591f3fb",
+        "dst_ref": "mac-addr--e8fe4b30-508c-5e9a-b1f8-7e81cd6eea0a",
+        "protocols": ["tcp"]
     }
 ]
 _PATTERNING_LANGUAGE_INDICATORS = [
@@ -3517,6 +3567,10 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     def get_bundle_with_network_traffic_observables(cls):
         _, _, _, ip, _, _, _, *observables = deepcopy(_NETWORK_TRAFFIC_OBJECTS[:-1])
         return cls.__assemble_bundle(ip, *observables)
+
+    @classmethod
+    def get_bundle_with_network_traffic_mac_address_objects(cls):
+        return cls.__assemble_bundle(*_NETWORK_TRAFFIC_MAC_OBSERVED_DATA)
 
     @classmethod
     def get_bundle_with_process_objects(cls):
