@@ -1486,7 +1486,7 @@ class InternalSTIX2ObservableConverter(
                     value, object_id, protocol_mapping['object_relation']
                 )
             )
-        if not hasattr(observable, 'extensions') or 'socket-ext' not in observable.extensions:
+        if 'socket-ext' not in getattr(observable, 'extensions', {}):
             return
         socket_extension = observable.extensions['socket-ext']
         mapping = self._mapping.network_socket_extension_mapping
