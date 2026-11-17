@@ -1219,9 +1219,7 @@ class InternalSTIX2ObservableConverter(
             if hasattr(observable, 'id'):
                 yield {
                     **content, **getattr(self._mapping, mapping)(),
-                    'uuid': self.main_parser._sanitise_attribute_uuid(
-                        observable.id
-                    )
+                    **self.main_parser._sanitise_attribute_uuid(observable.id)
                 }
             else:
                 yield from self._handle_object_attributes_with_data(
