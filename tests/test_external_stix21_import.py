@@ -11,6 +11,7 @@ from ._test_stix_import import (
     SMUGGLING_TAG_VALUE, TestExternalSTIX2Import, TestSTIX21Import,
     UUIDv4, MISP_org_uuid)
 from copy import deepcopy
+from datetime import datetime, timezone
 from uuid import uuid5
 
 _ACS_EXTENSION_ID = 'extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce'
@@ -2110,6 +2111,48 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.assertEqual(misp_object.last_seen, observed_data.last_observed)
         self.assertEqual(misp_object.timestamp, observed_data.modified)
 
+    def _check_network_socket_observable_attributes(
+            self, attributes, network_traffic, src_ip, dst_ip):
+        self.assertEqual(
+            [
+                (attribute.type, attribute.object_relation, attribute.value)
+                for attribute in attributes
+            ],
+            [
+                ('port', 'src-port', 8080),
+                ('port', 'dst-port', 80),
+                ('datetime', 'first-packet-seen',
+                 datetime(2020, 10, 25, 16, 22, tzinfo=timezone.utc)),
+                ('datetime', 'last-packet-seen',
+                 datetime(2020, 10, 25, 16, 23, tzinfo=timezone.utc)),
+                ('size-in-bytes', 'src-bytes-count', 35779),
+                ('size-in-bytes', 'dst-bytes-count', 935750),
+                ('counter', 'src-packets-count', 14356),
+                ('counter', 'dst-packets-count', 14357),
+                ('text', 'protocol', 'TCP'),
+                ('text', 'address-family', 'AF_INET'),
+                ('text', 'socket-type', 'SOCK_STREAM'),
+                ('text', 'state', 'blocking'),
+                ('text', 'state', 'listening'),
+                ('ip-src', 'ip-src', '198.51.100.2'),
+                ('ip-dst', 'ip-dst', '203.0.113.1')
+            ]
+        )
+        object_id = network_traffic.id
+        prefixes = (
+            *(object_id,) * 9, *(f'{object_id} - socket-ext',) * 4,
+            f'{object_id} - {src_ip.id}', f'{object_id} - {dst_ip.id}'
+        )
+        for attribute, prefix in zip(attributes, prefixes):
+            self.assertFalse(attribute.to_ids)
+            self.assertEqual(
+                attribute.uuid,
+                uuid5(
+                    UUIDv4,
+                    f'{prefix} - {attribute.object_relation} - {attribute.value}'
+                )
+            )
+
     def _check_network_traffic_fields(self, attributes, network_traffic,
                                       src_ip, dst_ip, indicator=None):
         src_port, dst_port, src_return, dst_return, *protocols, ip_src, ip_dst = attributes
@@ -3550,6 +3593,47 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(mutex_attribute.value, mutex.name)
         self._populate_ext_observable_documentation(
             attribute=mutex_attribute, observable=mutex
+        )
+
+    def test_stix21_bundle_with_network_socket_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_network_socket_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(dict(self.parser.errors), {})
+        event = self.parser.misp_event
+        _, grouping, observed_data, src_ip, dst_ip, network_traffic = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 1)
+        misp_object = misp_objects[0]
+        self.assertEqual(misp_object.name, 'network-socket')
+        self._check_misp_object_fields(
+            misp_object, observed_data, network_traffic.id
+        )
+        self._check_network_socket_observable_attributes(
+            misp_object.attributes, network_traffic, src_ip, dst_ip
+        )
+        self._populate_ext_observed_data_documentation(
+            misp_object=misp_object,
+            observed_data=[observed_data, network_traffic, src_ip, dst_ip]
+        )
+
+    def test_stix21_bundle_with_network_socket_observables(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_network_socket_observables()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(dict(self.parser.errors), {})
+        event = self.parser.misp_event
+        _, grouping, src_ip, dst_ip, network_traffic = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 1)
+        misp_object = misp_objects[0]
+        self.assertEqual(misp_object.name, 'network-socket')
+        self.assertEqual(misp_object.uuid, network_traffic.id.split('--')[1])
+        self._check_network_socket_observable_attributes(
+            misp_object.attributes, network_traffic, src_ip, dst_ip
+        )
+        self._populate_ext_observable_documentation(
+            misp_object=misp_object, observable=network_traffic
         )
 
     def test_stix21_bundle_with_network_traffic_objects(self):

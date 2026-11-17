@@ -1775,6 +1775,61 @@ _NETWORK_TRAFFIC_OBJECTS = [
         "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
+_NETWORK_SOCKET_OBSERVED_DATA = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--67b16cd7-db74-44a8-a612-fdc5d805bcad",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "ipv4-addr--9cf4a8ec-7640-5f40-a006-79942896168b",
+            "ipv4-addr--ad74bc22-43d2-52ed-890e-7d382f58e1eb",
+            "network-traffic--9f672415-d144-5303-a04e-12b281ce208b"
+        ]
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--9cf4a8ec-7640-5f40-a006-79942896168b",
+        "value": "198.51.100.2"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--ad74bc22-43d2-52ed-890e-7d382f58e1eb",
+        "value": "203.0.113.1"
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--9f672415-d144-5303-a04e-12b281ce208b",
+        "src_ref": "ipv4-addr--9cf4a8ec-7640-5f40-a006-79942896168b",
+        "dst_ref": "ipv4-addr--ad74bc22-43d2-52ed-890e-7d382f58e1eb",
+        "src_port": 8080,
+        "dst_port": 80,
+        "start": "2020-10-25T16:22:00Z",
+        "end": "2020-10-25T16:23:00Z",
+        "is_active": False,
+        "src_byte_count": 35779,
+        "dst_byte_count": 935750,
+        "src_packets": 14356,
+        "dst_packets": 14357,
+        "protocols": ["tcp"],
+        "extensions": {
+            "socket-ext": {
+                "address_family": "AF_INET",
+                "socket_type": "SOCK_STREAM",
+                "is_blocking": True,
+                "is_listening": True
+            }
+        }
+    }
+]
 _PROCESS_OBJECTS = [
     {
         "type": "observed-data",
@@ -3558,6 +3613,14 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_mutex_observable(cls):
         return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES[-2:-1])
+
+    @classmethod
+    def get_bundle_with_network_socket_objects(cls):
+        return cls.__assemble_bundle(*_NETWORK_SOCKET_OBSERVED_DATA)
+
+    @classmethod
+    def get_bundle_with_network_socket_observables(cls):
+        return cls.__assemble_bundle(*_NETWORK_SOCKET_OBSERVED_DATA[1:])
 
     @classmethod
     def get_bundle_with_network_traffic_objects(cls):

@@ -1212,6 +1212,51 @@ _NETWORK_TRAFFIC_OBJECTS = [
         "labels": ["malicious-activity"]
     }
 ]
+_NETWORK_SOCKET_OBSERVED_DATA = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--7872cec6-cbaa-4986-9902-8174a37214af",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "ipv4-addr",
+                "value": "198.51.100.2"
+            },
+            "1": {
+                "type": "mac-addr",
+                "value": "00:2b:a0:4f:cc:7f"
+            },
+            "2": {
+                "type": "network-traffic",
+                "src_ref": "0",
+                "dst_ref": "1",
+                "src_port": 8080,
+                "dst_port": 80,
+                "start": "2020-10-25T16:22:00Z",
+                "end": "2020-10-25T16:23:00Z",
+                "src_byte_count": 35779,
+                "dst_byte_count": 935750,
+                "src_packets": 14356,
+                "dst_packets": 14357,
+                "protocols": ["tcp"],
+                "extensions": {
+                    "socket-ext": {
+                        "address_family": "AF_INET",
+                        "protocol_family": "PF_INET",
+                        "socket_type": "SOCK_STREAM",
+                        "is_blocking": True,
+                        "is_listening": True
+                    }
+                }
+            }
+        }
+    }
+]
 _PROCESS_OBJECTS = [
     {
         "type": "observed-data",
@@ -2507,6 +2552,10 @@ class TestExternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_mutex_attributes(cls):
         return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES[:-1])
+
+    @classmethod
+    def get_bundle_with_network_socket_objects(cls):
+        return cls.__assemble_bundle(*_NETWORK_SOCKET_OBSERVED_DATA)
 
     @classmethod
     def get_bundle_with_network_traffic_objects(cls):
