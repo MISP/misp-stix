@@ -125,8 +125,8 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'ipv4-addr_src': STIX2Mapping.src_ip_attribute(),
             'ipv6-addr_dst': STIX2Mapping.dst_ip_attribute(),
             'ipv6-addr_src': STIX2Mapping.src_ip_attribute(),
-            'mac-address_dst': STIX2Mapping.dst_mac_attribute(),
-            'mac-address_src': STIX2Mapping.src_mac_attribute()
+            'mac-addr_dst': STIX2Mapping.dst_mac_attribute(),
+            'mac-addr_src': STIX2Mapping.src_mac_attribute()
         }
     )
     __http_request_extension_mapping = Mapping(
@@ -149,8 +149,8 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'ipv4-addr_src': STIX2Mapping.ip_src_attribute(),
             'ipv6-addr_dst': STIX2Mapping.ip_dst_attribute(),
             'ipv6-addr_src': STIX2Mapping.ip_src_attribute(),
-            "mac-address_dst": STIX2Mapping.dst_mac_attribute(),
-            "mac-address_src": STIX2Mapping.src_mac_attribute()
+            "mac-addr_dst": STIX2Mapping.mac_dst_attribute(),
+            "mac-addr_src": STIX2Mapping.mac_src_attribute()
         }
     )
     __software_object_mapping = Mapping(
