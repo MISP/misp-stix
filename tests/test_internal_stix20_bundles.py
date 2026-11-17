@@ -2397,6 +2397,72 @@ _EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
         "target_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
     }
 ]
+_EMAIL_OBJECT_WITH_ARTIFACT_ATTACHMENT_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5e396622-2a54-4c8d-b61d-159da964451b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-message",
+                "is_multipart": True,
+                "subject": "Email test subject",
+                "body_multipart": [
+                    {
+                        "body_raw_ref": "1",
+                        "content_disposition": "attachment; filename='email_attachment.test'"
+                    }
+                ]
+            },
+            "1": {
+                "type": "artifact",
+                "payload_bin": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK"
+            }
+        },
+        "labels": ['misp:name="email"', 'misp:meta-category="network"']
+    }
+]
+_EMAIL_OBJECT_WITH_SCREENSHOT_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5e396622-2a54-4c8d-b61d-159da964451c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-message",
+                "is_multipart": True,
+                "subject": "Email test subject",
+                "body_multipart": [
+                    {
+                        "body_raw_ref": "1",
+                        "content_disposition": "attachment; filename='attachment1.file'"
+                    },
+                    {
+                        "body_raw_ref": "2",
+                        "content_disposition": "screenshot; filename='screenshot.png'"
+                    }
+                ]
+            },
+            "1": {"type": "file", "name": "attachment1.file"},
+            "2": {
+                "type": "artifact",
+                "payload_bin": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK",
+                "x_misp_filename": "screenshot.png"
+            }
+        },
+        "labels": ['misp:name="email"', 'misp:meta-category="network"']
+    }
+]
 _EMAIL_BODY_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -8175,6 +8241,18 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(deepcopy(_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE[0]))
 
     @classmethod
+    def get_bundle_with_email_object_with_artifact_attachment_observable_object(cls):
+        return cls.__assemble_bundle(
+            *deepcopy(_EMAIL_OBJECT_WITH_ARTIFACT_ATTACHMENT_OBSERVABLE_OBJECT)
+        )
+
+    @classmethod
+    def get_bundle_with_email_object_with_screenshot_observable_object(cls):
+        return cls.__assemble_bundle(
+            *deepcopy(_EMAIL_OBJECT_WITH_SCREENSHOT_OBSERVABLE_OBJECT)
+        )
+
+    @classmethod
     def get_bundle_with_email_attribute(cls):
         return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_ATTRIBUTE)
 
@@ -8990,6 +9068,20 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_email_observable_object(cls):
         return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_email_observable_object_bare_content_disposition(cls):
+        stix_objects = deepcopy(_EMAIL_OBSERVABLE_OBJECT)
+        body_part = stix_objects[0]['objects']['0']['body_multipart'][0]
+        body_part['content_disposition'] = 'attachment'
+        return cls.__assemble_bundle(*stix_objects)
+
+    @classmethod
+    def get_bundle_with_email_observable_object_without_content_disposition(cls):
+        stix_objects = deepcopy(_EMAIL_OBSERVABLE_OBJECT)
+        body_part = stix_objects[0]['objects']['0']['body_multipart'][0]
+        del body_part['content_disposition']
+        return cls.__assemble_bundle(*stix_objects)
 
     @classmethod
     def get_bundle_with_employee_object(cls):

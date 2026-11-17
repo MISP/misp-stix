@@ -1212,16 +1212,14 @@ class InternalSTIX2ObservableConverter(
             yield attribute
         else:
             content = {
-                'value': value.split('=').strip("'"),
+                'value': value.split('=', 1)[-1].strip("'"),
                 'data': observable.payload_bin
             }
             mapping = f'{feature}_attribute'
             if hasattr(observable, 'id'):
                 yield {
                     **content, **getattr(self._mapping, mapping)(),
-                    'uuid': self.main_parser._sanitise_attribute_uuid(
-                        observable.id
-                    )
+                    **self.main_parser._sanitise_attribute_uuid(observable.id)
                 }
             else:
                 yield from self._handle_object_attributes_with_data(
