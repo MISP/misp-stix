@@ -6986,6 +6986,26 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
+    def test_stix21_bundle_with_network_socket_observable_object_without_address_family_extension_syntax(self):
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_network_socket_observable_object_without_address_family()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(dict(self.parser.errors), {})
+        event = self.parser.misp_event
+        (_, grouping, observed_data, network_traffic, address1, address2,
+         indicator, _) = self._bundle_objects(bundle)
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_observed_data_object(misp_object, observed_data)
+        self._check_network_socket_observable_object_without_address_family(
+            misp_object.attributes,
+            {
+                network_traffic.id: network_traffic,
+                address1.id: address1,
+                address2.id: address2
+            },
+            self._get_compiled_pattern(indicator)
+        )
+
     def _check_bundle_with_news_agency_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()

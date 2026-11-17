@@ -7553,6 +7553,82 @@ _EXTENSION_SYNTAX_NETWORK_SOCKET_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f"
     }
 ]
+_EXTENSION_SYNTAX_NETWORK_SOCKET_OBSERVABLE_OBJECT_WITHOUT_ADDRESS_FAMILY = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "network-traffic--5afb3223-0988-4ef1-a920-02070a00020f",
+            "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b"
+        ],
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--5afb3223-0988-4ef1-a920-02070a00020f",
+        "src_ref": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "dst_ref": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+        "src_port": 8080,
+        "dst_port": 8080,
+        "protocols": ["tcp"],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "domain_family": "PF_INET",
+                "socket_type": "SOCK_RAW",
+                "state": "listening",
+                "hostname_dst": "circl.lu"
+            }
+        }
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "value": "1.2.3.4"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+        "value": "5.6.7.8"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu')]",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--bc5e3b34-b274-4ef7-b082-ee286c87ce84",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
+        "target_ref": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f"
+    }
+]
 _EXTENSION_SYNTAX_NEWS_AGENCY_OBJECT = {
     "type": "identity",
     "spec_version": "2.1",
@@ -17354,6 +17430,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_network_socket_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_NETWORK_SOCKET_OBSERVABLE_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_network_socket_observable_object_without_address_family(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_NETWORK_SOCKET_OBSERVABLE_OBJECT_WITHOUT_ADDRESS_FAMILY
         )
 
     @classmethod

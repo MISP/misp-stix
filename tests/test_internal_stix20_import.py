@@ -4276,6 +4276,20 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data=[observed_data, indicator, relationship]
         )
 
+    def test_stix20_bundle_with_network_socket_observable_object_without_address_family(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_network_socket_observable_object_without_address_family()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(dict(self.parser.errors), {})
+        event = self.parser.misp_event
+        _, report, observed_data, indicator, _ = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observables = self._check_observed_data_object(misp_object, observed_data)
+        self._check_network_socket_observable_object_without_address_family(
+            misp_object.attributes, observables,
+            self._get_compiled_pattern(indicator)
+        )
+
     def test_stix20_bundle_with_news_agency_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_news_agency_object()
         self.parser.load_stix_bundle(bundle)

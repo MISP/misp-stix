@@ -6645,6 +6645,57 @@ _NETWORK_SOCKET_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f"
     }
 ]
+_NETWORK_SOCKET_OBSERVABLE_OBJECT_WITHOUT_ADDRESS_FAMILY = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "src_ref": "1",
+                "dst_ref": "2",
+                "src_port": 8080,
+                "dst_port": 8080,
+                "protocols": ["tcp"],
+                "x_misp_domain_family": "PF_INET",
+                "x_misp_hostname_dst": "circl.lu",
+                "x_misp_socket_type": "SOCK_RAW",
+                "x_misp_state": "listening"
+            },
+            "1": {"type": "ipv4-addr", "value": "1.2.3.4"},
+            "2": {"type": "ipv4-addr", "value": "5.6.7.8"}
+        },
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu')]",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--bc5e3b34-b274-4ef7-b082-ee286c87ce84",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
+        "target_ref": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f"
+    }
+]
 _NEWS_AGENCY_OBJECT = {
     "type": "identity",
     "id": "identity--d17e31ce-5a7a-4713-bdff-49d89548c259",
@@ -9268,6 +9319,12 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_network_socket_observable_object(cls):
         return cls.__assemble_bundle(*_NETWORK_SOCKET_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_network_socket_observable_object_without_address_family(cls):
+        return cls.__assemble_bundle(
+            *_NETWORK_SOCKET_OBSERVABLE_OBJECT_WITHOUT_ADDRESS_FAMILY
+        )
 
     @classmethod
     def get_bundle_with_news_agency_object(cls):

@@ -6632,6 +6632,53 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(listening.object_relation, 'state')
         self.assertEqual(listening.value, 'listening')
 
+    def _check_network_socket_observable_object_without_address_family(
+            self, attributes, observables, pattern):
+        # With no address family, the export writes no `socket-ext`: the
+        # socket type, the domain family and the state are MISP values
+        self.assertEqual(len(attributes), 9)
+        self._check_attributes_ids_flag('network-traffic', pattern, *attributes)
+        (port_src, port_dst, domain_family, hostname, socket_type, state,
+         ip_src, ip_dst, protocol) = attributes
+        network_traffic, address1, address2 = observables.values()
+        self.assertEqual(port_src.type, 'port')
+        self.assertEqual(port_src.object_relation, 'src-port')
+        self.assertEqual(port_src.value, network_traffic.src_port)
+        self.assertEqual(port_dst.type, 'port')
+        self.assertEqual(port_dst.object_relation, 'dst-port')
+        self.assertEqual(port_dst.value, network_traffic.dst_port)
+        self.assertEqual(domain_family.type, 'text')
+        self.assertEqual(domain_family.object_relation, 'domain-family')
+        self.assertEqual(
+            domain_family.value,
+            self._custom_value(network_traffic, 'x_misp_domain_family')
+        )
+        self.assertEqual(hostname.type, 'hostname')
+        self.assertEqual(hostname.object_relation, 'hostname-dst')
+        self.assertEqual(
+            hostname.value, self._custom_value(network_traffic, 'x_misp_hostname_dst')
+        )
+        self.assertEqual(socket_type.type, 'text')
+        self.assertEqual(socket_type.object_relation, 'socket-type')
+        self.assertEqual(
+            socket_type.value,
+            self._custom_value(network_traffic, 'x_misp_socket_type')
+        )
+        self.assertEqual(state.type, 'text')
+        self.assertEqual(state.object_relation, 'state')
+        self.assertEqual(
+            state.value, self._custom_value(network_traffic, 'x_misp_state')
+        )
+        self.assertEqual(ip_src.type, 'ip-src')
+        self.assertEqual(ip_src.object_relation, 'ip-src')
+        self.assertEqual(ip_src.value, address1.value)
+        self.assertEqual(ip_dst.type, 'ip-dst')
+        self.assertEqual(ip_dst.object_relation, 'ip-dst')
+        self.assertEqual(ip_dst.value, address2.value)
+        self.assertEqual(protocol.type, 'text')
+        self.assertEqual(protocol.object_relation, 'protocol')
+        self.assertEqual(protocol.value, network_traffic.protocols[0].upper())
+
     def _check_news_agency_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
         self.assertEqual(misp_object.name, 'news-agency')
