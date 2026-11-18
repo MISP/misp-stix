@@ -710,27 +710,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_regkey_value_attribute_observable(
             self, attribute: MISPAttribute | dict) -> ObservedData:
-        for separator in self.composite_separators:
-            if separator in attribute['value']:
-                key, value = attribute['value'].split(separator)
-                observable_object = {
-                    '0': WindowsRegistryKey(
-                        key=key.strip(),
-                        values=[
-                            WindowsRegistryValueType(
-                                name='', data=value.strip()
-                            )
-                        ]
-                    )
-                }
-                return self._handle_attribute_observable(
-                    attribute, observable_object
-                )
-        self._composite_attribute_value_warning(
-            attribute['type'], attribute['value']
-        )
+        key, value = attribute['value'].split('|')
         observable_object = {
-            '0': WindowsRegistryKey(key=attribute['value'].strip())
+            '0': WindowsRegistryKey(
+                key=key.strip(),
+                values=[WindowsRegistryValueType(name='', data=value.strip())]
+            )
         }
         return self._handle_attribute_observable(attribute, observable_object)
 

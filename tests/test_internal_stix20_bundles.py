@@ -874,6 +874,53 @@ _ATTACK_PATTERN_OBJECT = {
     "x_misp_related_weakness": ["CWE-118", "CWE-120"],
     "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
 }
+_ATTACK_PATTERN_OBJECT_WITH_INCOMPLETE_REFERENCE = {
+    "type": "attack-pattern",
+    "id": "attack-pattern--7205da54-70de-4fa7-9b34-e14e63fe6787",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Buffer Overflow in Local Command-Line Utilities",
+    "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "vulnerability"}
+    ],
+    "labels": ['misp:name="attack-pattern"', 'misp:meta-category="vulnerability"'],
+    "external_references": [
+        {"source_name": "capec", "external_id": "CAPEC-9"},
+        {"source_name": "other", "description": "A reference without an external_id or url."}
+    ],
+    "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+    "x_misp_related_weakness": ["CWE-118", "CWE-120"],
+    "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
+}
+_ATTACK_PATTERN_OBJECT_WITH_REFERENCES = {
+    "type": "attack-pattern",
+    "id": "attack-pattern--7205da54-70de-4fa7-9b34-e14e63fe6787",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Buffer Overflow in Local Command-Line Utilities",
+    "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "vulnerability"}
+    ],
+    "labels": ['misp:name="attack-pattern"', 'misp:meta-category="vulnerability"'],
+    "external_references": [
+        {"source_name": "capec", "external_id": "CAPEC-9"},
+        {
+            "source_name": "mitre-attack",
+            "url": "https://capec.mitre.org/data/definitions/9.html"
+        },
+        {
+            "source_name": "external_url",
+            "url": "https://owasp.org/www-community/attacks/Buffer_overflow_attack"
+        }
+    ],
+    "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+    "x_misp_related_weakness": ["CWE-118", "CWE-120"],
+    "x_misp_solutions": "Carefully review the service's implementation before making it available to users."
+}
 _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
     _ATTACK_PATTERN_GALAXY,
     {
@@ -6645,6 +6692,57 @@ _NETWORK_SOCKET_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f"
     }
 ]
+_NETWORK_SOCKET_OBSERVABLE_OBJECT_WITHOUT_ADDRESS_FAMILY = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "src_ref": "1",
+                "dst_ref": "2",
+                "src_port": 8080,
+                "dst_port": 8080,
+                "protocols": ["tcp"],
+                "x_misp_domain_family": "PF_INET",
+                "x_misp_hostname_dst": "circl.lu",
+                "x_misp_socket_type": "SOCK_RAW",
+                "x_misp_state": "listening"
+            },
+            "1": {"type": "ipv4-addr", "value": "1.2.3.4"},
+            "2": {"type": "ipv4-addr", "value": "5.6.7.8"}
+        },
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu')]",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--bc5e3b34-b274-4ef7-b082-ee286c87ce84",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
+        "target_ref": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f"
+    }
+]
 _NEWS_AGENCY_OBJECT = {
     "type": "identity",
     "id": "identity--d17e31ce-5a7a-4713-bdff-49d89548c259",
@@ -7784,6 +7882,19 @@ _VULNERABILITY_OBJECT = {
             "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
         }
     ],
+    "x_misp_created": "2017-10-13T07:29:00Z",
+    "x_misp_cvss_score": "6.8",
+    "x_misp_published": "2017-10-13T07:29:00Z"
+}
+_VULNERABILITY_OBJECT_WITHOUT_EXTERNAL_REFERENCES = {
+    "type": "vulnerability",
+    "id": "vulnerability--5e579975-e9cc-46c6-a6ad-1611a964451b",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "CVE-2017-11774",
+    "description": "Microsoft Outlook allow an attacker to execute arbitrary commands",
+    "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
     "x_misp_created": "2017-10-13T07:29:00Z",
     "x_misp_cvss_score": "6.8",
     "x_misp_published": "2017-10-13T07:29:00Z"
@@ -9019,6 +9130,14 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_ATTACK_PATTERN_OBJECT)
 
     @classmethod
+    def get_bundle_with_attack_pattern_object_with_incomplete_reference(cls):
+        return cls.__assemble_bundle(_ATTACK_PATTERN_OBJECT_WITH_INCOMPLETE_REFERENCE)
+
+    @classmethod
+    def get_bundle_with_attack_pattern_object_with_references(cls):
+        return cls.__assemble_bundle(_ATTACK_PATTERN_OBJECT_WITH_REFERENCES)
+
+    @classmethod
     def get_bundle_with_course_of_action_object(cls):
         return cls.__assemble_bundle(_COURSE_OF_ACTION_OBJECT)
 
@@ -9270,6 +9389,12 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_NETWORK_SOCKET_OBSERVABLE_OBJECT)
 
     @classmethod
+    def get_bundle_with_network_socket_observable_object_without_address_family(cls):
+        return cls.__assemble_bundle(
+            *_NETWORK_SOCKET_OBSERVABLE_OBJECT_WITHOUT_ADDRESS_FAMILY
+        )
+
+    @classmethod
     def get_bundle_with_news_agency_object(cls):
         identity = _NEWS_AGENCY_OBJECT
         with open(_TESTFILES_PATH / 'AFP_logo.png', 'rb') as f:
@@ -9386,6 +9511,12 @@ class TestInternalSTIX20Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_vulnerability_object(cls):
         return cls.__assemble_bundle(_VULNERABILITY_OBJECT)
+
+    @classmethod
+    def get_bundle_with_vulnerability_object_without_external_references(cls):
+        return cls.__assemble_bundle(
+            _VULNERABILITY_OBJECT_WITHOUT_EXTERNAL_REFERENCES
+        )
 
     @classmethod
     def get_bundle_with_x509_indicator_object(cls):

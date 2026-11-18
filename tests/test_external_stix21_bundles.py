@@ -1775,6 +1775,61 @@ _NETWORK_TRAFFIC_OBJECTS = [
         "valid_from": "2024-10-25T16:22:00Z"
     }
 ]
+_NETWORK_SOCKET_OBSERVED_DATA = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--67b16cd7-db74-44a8-a612-fdc5d805bcad",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "ipv4-addr--9cf4a8ec-7640-5f40-a006-79942896168b",
+            "ipv4-addr--ad74bc22-43d2-52ed-890e-7d382f58e1eb",
+            "network-traffic--9f672415-d144-5303-a04e-12b281ce208b"
+        ]
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--9cf4a8ec-7640-5f40-a006-79942896168b",
+        "value": "198.51.100.2"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--ad74bc22-43d2-52ed-890e-7d382f58e1eb",
+        "value": "203.0.113.1"
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--9f672415-d144-5303-a04e-12b281ce208b",
+        "src_ref": "ipv4-addr--9cf4a8ec-7640-5f40-a006-79942896168b",
+        "dst_ref": "ipv4-addr--ad74bc22-43d2-52ed-890e-7d382f58e1eb",
+        "src_port": 8080,
+        "dst_port": 80,
+        "start": "2020-10-25T16:22:00Z",
+        "end": "2020-10-25T16:23:00Z",
+        "is_active": False,
+        "src_byte_count": 35779,
+        "dst_byte_count": 935750,
+        "src_packets": 14356,
+        "dst_packets": 14357,
+        "protocols": ["tcp"],
+        "extensions": {
+            "socket-ext": {
+                "address_family": "AF_INET",
+                "socket_type": "SOCK_STREAM",
+                "is_blocking": True,
+                "is_listening": True
+            }
+        }
+    }
+]
 _PROCESS_OBJECTS = [
     {
         "type": "observed-data",
@@ -2615,10 +2670,60 @@ _NETWORK_TRAFFIC_INDICATORS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = 80 AND network-traffic:src_port = 8080 AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true]",
+        "pattern": "[network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = 80 AND network-traffic:src_port = 8080 AND network-traffic:protocols[0] = 'tcp' AND network-traffic:src_byte_count = 35779 AND network-traffic:dst_byte_count = 935750 AND network-traffic:src_packets = 14356 AND network-traffic:dst_packets = 14357 AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true]",
         "pattern_type": "stix",
         "pattern_version": "2.1",
         "valid_from": "2020-10-25T16:22:00Z"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--9ab1144f-2578-406f-8bad-9ed585cae85a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:src_ref.value = '00:2b:a0:4f:cc:7e' AND network-traffic:dst_ref.value = '00:2b:a0:4f:cc:7f' AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z"
+    }
+]
+_NETWORK_TRAFFIC_MAC_OBSERVED_DATA = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--f3b482b6-9882-4801-b3fd-eb1a152ac5dc",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "mac-addr--77e4d364-64f9-5e5d-aed5-99afc591f3fb",
+            "mac-addr--e8fe4b30-508c-5e9a-b1f8-7e81cd6eea0a",
+            "network-traffic--1677739d-30d5-55e7-8abf-ea5e5fd2e6f7"
+        ]
+    },
+    {
+        "type": "mac-addr",
+        "spec_version": "2.1",
+        "id": "mac-addr--77e4d364-64f9-5e5d-aed5-99afc591f3fb",
+        "value": "00:2b:a0:4f:cc:7e"
+    },
+    {
+        "type": "mac-addr",
+        "spec_version": "2.1",
+        "id": "mac-addr--e8fe4b30-508c-5e9a-b1f8-7e81cd6eea0a",
+        "value": "00:2b:a0:4f:cc:7f"
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--1677739d-30d5-55e7-8abf-ea5e5fd2e6f7",
+        "src_ref": "mac-addr--77e4d364-64f9-5e5d-aed5-99afc591f3fb",
+        "dst_ref": "mac-addr--e8fe4b30-508c-5e9a-b1f8-7e81cd6eea0a",
+        "protocols": ["tcp"]
     }
 ]
 _PATTERNING_LANGUAGE_INDICATORS = [
@@ -3413,6 +3518,16 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_DIRECTORY_OBJECTS[-3:-1])
 
     @classmethod
+    def get_bundle_with_directory_dangling_content(cls):
+        # The directory contains a directory the bundle never carries, then
+        # one it carries.
+        directory, contained = deepcopy(_DIRECTORY_OBJECTS[-3:-1])
+        directory['contains_refs'].insert(
+            0, 'directory--00000000-0000-4000-8000-000000000000'
+        )
+        return cls.__assemble_bundle(directory, contained)
+
+    @classmethod
     def get_bundle_with_domain_attributes(cls):
         return cls.__assemble_bundle(*_DOMAIN_ATTRIBUTES[:-1])
 
@@ -3427,6 +3542,78 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_domain_ip_observables(cls):
         return cls.__assemble_bundle(*_DOMAIN_IP_OBJECTS[-5:-1])
+
+    @classmethod
+    def get_bundle_with_domain_ip_dangling_alias(cls):
+        # The domain-name resolves to a domain-name the bundle never carries,
+        # then to one it carries.
+        domain_name = {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--a606208a-f0f2-404c-98ff-9f3aac466a21",
+            "value": "alias.example.com",
+            "resolves_to_refs": [
+                "domain-name--00000000-0000-4000-8000-000000000000",
+                "domain-name--6894b07d-0d19-4337-ab97-f15e71564133"
+            ]
+        }
+        alias = {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--6894b07d-0d19-4337-ab97-f15e71564133",
+            "value": "example.com"
+        }
+        return cls.__assemble_bundle(domain_name, alias)
+
+    @classmethod
+    def get_bundle_with_domain_ip_dangling_mac_resolution(cls):
+        # The ip-addr resolves to a mac-addr the bundle never carries, then
+        # to one it carries.
+        domain_name = {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--ba16a811-3d22-4142-9926-9cb28566f183",
+            "value": "example.com",
+            "resolves_to_refs": [
+                "ipv4-addr--65f699a9-0811-45eb-b010-d141a76d15e0"
+            ]
+        }
+        ip_address = {
+            "type": "ipv4-addr",
+            "spec_version": "2.1",
+            "id": "ipv4-addr--65f699a9-0811-45eb-b010-d141a76d15e0",
+            "value": "198.51.100.3",
+            "resolves_to_refs": [
+                "mac-addr--00000000-0000-4000-8000-000000000000",
+                "mac-addr--207b5120-83db-4c84-bed0-55afe39f279a"
+            ]
+        }
+        mac_address = {
+            "type": "mac-addr",
+            "spec_version": "2.1",
+            "id": "mac-addr--207b5120-83db-4c84-bed0-55afe39f279a",
+            "value": "d2:fb:49:24:37:18"
+        }
+        return cls.__assemble_bundle(domain_name, ip_address, mac_address)
+
+    @classmethod
+    def get_bundle_with_domain_ip_dangling_resolution(cls):
+        # A domain-name is referenced by the Grouping on its own - not
+        # wrapped by an Observed Data - so it is converted by
+        # `STIX2ObservableObjectConverter._parse_domain_observable_object`
+        # as unparsed content. It resolves to an ip-addr the bundle never
+        # carries: the reference is dangling and must not raise while it is
+        # dereferenced.
+        domain_name = {
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--0e6d0e0e-5f2b-4b3a-9f0b-6a2f2f9b5c1e",
+            "value": "dangling.example.com",
+            "resolves_to_refs": [
+                "ipv4-addr--00000000-0000-4000-8000-000000000000"
+            ]
+        }
+        return cls.__assemble_bundle(domain_name)
 
     @classmethod
     def get_bundle_with_email_address_attributes(cls):
@@ -3457,6 +3644,32 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             observables[2]['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(*observables)
+
+    @classmethod
+    def get_bundle_with_file_archive_dangling_content(cls):
+        # The archive contains a file the bundle never carries, then one it
+        # carries.
+        archive = {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--f6f571fd-9fb7-4327-aab5-53c7fea90c1b",
+            "name": "oui.zip",
+            "extensions": {
+                "archive-ext": {
+                    "contains_refs": [
+                        "file--00000000-0000-4000-8000-000000000000",
+                        "file--8aa2940f-7ed7-48f8-ab9f-1382f870a18e"
+                    ]
+                }
+            }
+        }
+        contained = {
+            "type": "file",
+            "spec_version": "2.1",
+            "id": "file--8aa2940f-7ed7-48f8-ab9f-1382f870a18e",
+            "name": "oui"
+        }
+        return cls.__assemble_bundle(archive, contained)
 
     @classmethod
     def get_bundle_with_file_object_with_unmapped_hashes(cls):
@@ -3510,6 +3723,14 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES[-2:-1])
 
     @classmethod
+    def get_bundle_with_network_socket_objects(cls):
+        return cls.__assemble_bundle(*_NETWORK_SOCKET_OBSERVED_DATA)
+
+    @classmethod
+    def get_bundle_with_network_socket_observables(cls):
+        return cls.__assemble_bundle(*_NETWORK_SOCKET_OBSERVED_DATA[1:])
+
+    @classmethod
     def get_bundle_with_network_traffic_objects(cls):
         return cls.__assemble_bundle(*_NETWORK_TRAFFIC_OBJECTS[:-1])
 
@@ -3517,6 +3738,40 @@ class TestExternalSTIX21Bundles(TestSTIX2Bundles):
     def get_bundle_with_network_traffic_observables(cls):
         _, _, _, ip, _, _, _, *observables = deepcopy(_NETWORK_TRAFFIC_OBJECTS[:-1])
         return cls.__assemble_bundle(ip, *observables)
+
+    @classmethod
+    def get_bundle_with_network_traffic_dangling_source(cls):
+        # The source is an ipv4-addr the bundle never carries; its payload
+        # and the destination are objects it carries.
+        network_traffic = {
+            "type": "network-traffic",
+            "spec_version": "2.1",
+            "id": "network-traffic--4f86e1ea-0208-4a65-856f-e1756132158b",
+            "src_ref": "ipv4-addr--00000000-0000-4000-8000-000000000000",
+            "dst_ref": "ipv4-addr--85184a78-e179-4cb7-8ced-2031e18d6c74",
+            "src_port": 2487,
+            "dst_port": 80,
+            "protocols": ["tcp"],
+            "src_payload_ref": "artifact--83587479-a018-4c7b-987b-6552f21c7dae"
+        }
+        ip_address = {
+            "type": "ipv4-addr",
+            "spec_version": "2.1",
+            "id": "ipv4-addr--85184a78-e179-4cb7-8ced-2031e18d6c74",
+            "value": "198.51.100.3"
+        }
+        artifact = {
+            "type": "artifact",
+            "spec_version": "2.1",
+            "id": "artifact--83587479-a018-4c7b-987b-6552f21c7dae",
+            "mime_type": "text/plain",
+            "payload_bin": "aGVsbG8="
+        }
+        return cls.__assemble_bundle(network_traffic, ip_address, artifact)
+
+    @classmethod
+    def get_bundle_with_network_traffic_mac_address_objects(cls):
+        return cls.__assemble_bundle(*_NETWORK_TRAFFIC_MAC_OBSERVED_DATA)
 
     @classmethod
     def get_bundle_with_process_objects(cls):

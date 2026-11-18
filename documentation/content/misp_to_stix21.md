@@ -25,9 +25,10 @@ The MISP content no standard STIX 2.1 object or property holds is carried in fou
 
 A bundle carries the extension definitions it uses, with the MISP Project identity creating them, once each: in an event, ahead of the Report or Grouping of the first event using them; in a collection, ahead of the first object using them. The detailed mappings leave them out.
 
+The MISP Extensions are published in the [OASIS Common Object Repository](https://github.com/oasis-open/cti-stix-common-objects/tree/main/extension-definition-specifications/misp-5ec), their canonical home. misp-stix keeps copies synced from it:
 - The extension definitions packaged with the library: [`misp_stix_converter/data/misp_extensions/`](../misp_stix_converter/data/misp_extensions/)
 - Their JSON schemas and examples: [`data/misp-extensions/extension-definition-specifications/misp-5ec/`](../data/misp-extensions/extension-definition-specifications/misp-5ec/)
-- Their documentation: [MISP Extensions for STIX 2.1](../data/misp-extensions/extension-definition-specifications/misp-5ec/README.md)
+- Their documentation: [MISP Extensions for STIX 2.1](../data/misp-extensions/extension-definition-specifications/misp-5ec/STIX-2.1-MISP-Extensions.md)
 
 STIX 2.0 has no extension definitions: the STIX 2.0 export keeps writing this content as custom objects (`x-misp-attribute`, `x-misp-object`, `x-misp-galaxy-cluster`) and custom properties (`x_misp_*`), as the STIX 2.1 export did up to version 2026.10.12.
 

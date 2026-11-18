@@ -1,5 +1,5 @@
 {
-    "$id": "https://raw.githubusercontent.com/MISP/misp-stix/main/data/misp-extensions/extension-definition-specifications/misp-5ec/misp-object/extension-definition--a093107b-933f-4d72-a9a6-6d7318adadda.json",
+    "$id": "https://raw.githubusercontent.com/oasis-open/cti-stix-common-objects/main/extension-definition-specifications/misp-5ec/misp-object/extension-definition--a093107b-933f-4d72-a9a6-6d7318adadda.json",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "title": "misp-object",
     "description": "A MISP object that no standard STIX object represents, with its attributes.",

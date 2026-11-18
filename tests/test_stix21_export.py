@@ -33,14 +33,23 @@ from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export, TestS
 
 _TESTS = Path(__file__).resolve().parent
 _REPOSITORY = _TESTS.parent
-# The suite is named from the property extension's id, and the `schema` URL of
-# each definition is where its schema file sits on the main branch
+# The suite is named from the property extension's id. It is a copy of the
+# suite the OASIS Common Object Repository publishes, synced from it by
+# tools/update_misp_extensions.py: the `schema` URL of each definition is the
+# suite's directory on the repository's main branch, and the `$id` of each
+# schema is where its file sits on that branch
+_MISP_EXTENSION_COPY = _REPOSITORY / 'data' / 'misp-extensions'
 _MISP_EXTENSION_SUITE = (
-    _REPOSITORY / 'data' / 'misp-extensions' /
-    'extension-definition-specifications' /
+    _MISP_EXTENSION_COPY / 'extension-definition-specifications' /
     f"misp-{MISP_PROPERTY_EXTENSION_ID.split('--')[1][:3]}"
 )
-_MAIN_BRANCH_URL = 'https://raw.githubusercontent.com/MISP/misp-stix/main'
+_MISP_EXTENSION_SUITE_URL = (
+    'https://github.com/oasis-open/cti-stix-common-objects/tree/main/'
+    'extension-definition-specifications/misp-5ec'
+)
+_MAIN_BRANCH_URL = (
+    'https://raw.githubusercontent.com/oasis-open/cti-stix-common-objects/main'
+)
 # The STIX 2.1 base schemas, from the cti-stix2-json-schemas submodule
 _STIX2_BASE_SCHEMAS_SUBMODULE = _REPOSITORY / 'data' / 'cti-stix2-json-schemas'
 _STIX2_BASE_SCHEMAS = _STIX2_BASE_SCHEMAS_SUBMODULE / 'schemas' / 'common'
@@ -560,8 +569,10 @@ class TestSTIX21MISPExtensions(TestSTIX21):
                 )
                 self.assertEqual(list(base_validator.iter_errors(definition)), [])
                 schema = self._schema_file(identifier)
-                url = f'{_MAIN_BRANCH_URL}/{schema.relative_to(_REPOSITORY).as_posix()}'
-                self.assertEqual(self._load(schema)['$id'], url)
+                path = schema.relative_to(_MISP_EXTENSION_COPY).as_posix()
+                self.assertEqual(
+                    self._load(schema)['$id'], f'{_MAIN_BRANCH_URL}/{path}'
+                )
                 # The date of the first release carrying them, at midnight
                 created = definition.pop('created')
                 self.assertRegex(created, r'^\d{4}-\d{2}-\d{2}T00:00:00\.000Z$')
@@ -573,7 +584,8 @@ class TestSTIX21MISPExtensions(TestSTIX21):
                         'type': 'extension-definition', 'spec_version': '2.1',
                         'id': identifier,
                         'created_by_ref': MISP_PROJECT_IDENTITY_ID,
-                        'modified': created, 'name': name, 'schema': url,
+                        'modified': created, 'name': name,
+                        'schema': _MISP_EXTENSION_SUITE_URL,
                         'version': '1.0.0', 'extension_types': [extension_type]
                     }
                 )
@@ -2704,6 +2716,20 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
         self._assert_multiple_equal(len(observables), len(object_refs), 1)
         self._check_regkey_value_observable_attribute(attribute, observables[0], object_refs[0])
 
+    def _test_event_with_regkey_value_attribute_no_separator(self, event):
+        attribute_value, pattern = self._run_indicator_tests(event, indicator_only=True)
+        self.assertEqual(
+            pattern.replace('\\\\', '\\'),
+            f"[windows-registry-key:key = '{attribute_value}']"
+        )
+        self.assertEqual(
+            self.parser.warnings[event['uuid']],
+            [
+                'The regkey|value MISP Attribute should have a composite '
+                f'value: {attribute_value}.'
+            ]
+        )
+
     def _test_event_with_size_in_bytes_indicator_attribute(self, event):
         attribute_value, pattern = self._run_indicator_tests(event, indicator_only=True)
         self.assertEqual(pattern, f"[file:size = '{attribute_value}']")
@@ -3170,6 +3196,10 @@ class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
     def test_event_with_regkey_value_observable_attribute(self):
         event = get_event_with_regkey_value_attribute()
         self._test_event_with_regkey_value_observable_attribute(event['Event'])
+
+    def test_event_with_regkey_value_attribute_no_separator(self):
+        event = get_event_with_regkey_value_attribute_no_separator()
+        self._test_event_with_regkey_value_attribute_no_separator(event['Event'])
 
     def test_event_with_size_in_bytes_indicator_attribute(self):
         event = get_event_with_size_in_bytes_attribute()
@@ -3650,6 +3680,12 @@ class TestSTIX21MISPAttributesExport(TestSTIX21AttributesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_regkey_value_observable_attribute(misp_event)
+
+    def test_event_with_regkey_value_attribute_no_separator(self):
+        event = get_event_with_regkey_value_attribute_no_separator()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_regkey_value_attribute_no_separator(misp_event)
 
     def test_event_with_size_in_bytes_indicator_attribute(self):
         event = get_event_with_size_in_bytes_attribute()

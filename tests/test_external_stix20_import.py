@@ -8,6 +8,7 @@ from ._test_stix_import import (
     SANITISED_PRODUCER, SANITISED_TAG_VALUE, SMUGGLING_PRODUCER,
     SMUGGLING_TAG_VALUE, TestExternalSTIX2Import, TestSTIX20Import,
     UUIDv4, MISP_org_uuid)
+from datetime import datetime, timezone
 from uuid import uuid5
 
 
@@ -2108,6 +2109,63 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
             attribute=s_mutex, observed_data=observed_data2
         )
 
+    def test_stix20_bundle_with_network_socket_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_network_socket_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(dict(self.parser.errors), {})
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_objects = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_objects), 1)
+        misp_object = misp_objects[0]
+        self.assertEqual(misp_object.name, 'network-socket')
+        self._check_misp_object_fields(misp_object, observed_data, '2')
+        attributes = misp_object.attributes
+        self.assertEqual(
+            [
+                (attribute.type, attribute.object_relation, attribute.value)
+                for attribute in attributes
+            ],
+            [
+                ('port', 'src-port', 8080),
+                ('port', 'dst-port', 80),
+                ('datetime', 'first-packet-seen',
+                 datetime(2020, 10, 25, 16, 22, tzinfo=timezone.utc)),
+                ('datetime', 'last-packet-seen',
+                 datetime(2020, 10, 25, 16, 23, tzinfo=timezone.utc)),
+                ('size-in-bytes', 'src-bytes-count', 35779),
+                ('size-in-bytes', 'dst-bytes-count', 935750),
+                ('counter', 'src-packets-count', 14356),
+                ('counter', 'dst-packets-count', 14357),
+                ('text', 'protocol', 'TCP'),
+                ('text', 'address-family', 'AF_INET'),
+                ('text', 'domain-family', 'PF_INET'),
+                ('text', 'socket-type', 'SOCK_STREAM'),
+                ('text', 'state', 'blocking'),
+                ('text', 'state', 'listening'),
+                ('ip-src', 'ip-src', '198.51.100.2'),
+                ('mac-address', 'mac-dst', '00:2b:a0:4f:cc:7f')
+            ]
+        )
+        object_id = f'{observed_data.id} - 2'
+        prefixes = (
+            *(object_id,) * 9, *(f'{object_id} - socket-ext',) * 5,
+            f'{object_id} - 0', f'{object_id} - 1'
+        )
+        for attribute, prefix in zip(attributes, prefixes):
+            self.assertFalse(attribute.to_ids)
+            self.assertEqual(
+                attribute.uuid,
+                uuid5(
+                    UUIDv4,
+                    f'{prefix} - {attribute.object_relation} - {attribute.value}'
+                )
+            )
+        self._populate_ext_observed_data_documentation(
+            misp_object=misp_object, observed_data=observed_data
+        )
+
     def test_stix20_bundle_with_network_traffic_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_network_traffic_objects()
         self.parser.load_stix_bundle(bundle)
@@ -4187,12 +4245,15 @@ class TestExternalSTIX20Import(TestExternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, report, traffic_indicator, socket_indicator = bundle.objects
+        _, report, traffic_indicator, socket_indicator, mac_indicator = bundle.objects
         misp_content = self._check_misp_event_features(event, report)
-        self.assertEqual(len(misp_content), 2)
-        network_traffic, network_socket = misp_content
+        self.assertEqual(len(misp_content), 3)
+        network_traffic, network_socket, mac_socket = misp_content
         self._check_network_traffic_indicator(traffic_indicator, network_traffic)
         self._check_network_socket_indicator(socket_indicator, network_socket)
+        self._check_network_socket_indicator_with_mac_addresses(
+            mac_indicator, mac_socket
+        )
         self._populate_ext_indicator_documentation(
             misp_object=network_traffic, indicator=traffic_indicator
         )

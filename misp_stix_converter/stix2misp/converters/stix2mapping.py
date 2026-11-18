@@ -163,6 +163,12 @@ class STIX2Mapping:
     __layer7_protocol_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'layer7-protocol'}
     )
+    __mac_dst_attribute = Mapping(
+        **{'type': 'mac-address', 'object_relation': 'mac-dst'}
+    )
+    __mac_src_attribute = Mapping(
+        **{'type': 'mac-address', 'object_relation': 'mac-src'}
+    )
     __md5_attribute = Mapping(
         **{'type': 'md5', 'object_relation': 'md5'}
     )
@@ -391,10 +397,10 @@ class STIX2Mapping:
         dst_port=__dst_port_attribute,
         start=__first_packet_seen_attribute,
         end=__last_packet_seen_attribute,
-        src_byte_count={'type': 'size-in-bytes', 'object_relation': 'src-byte-count'},
-        dst_byte_count={'type': 'size-in-bytes', 'object_relation': 'dst-byte-count'},
-        src_packets={'type': 'counter', 'object_relation': 'src-packets'},
-        dst_packets={'type': 'counter', 'object_relation': 'dst-packets'}
+        src_byte_count={'type': 'size-in-bytes', 'object_relation': 'src-bytes-count'},
+        dst_byte_count={'type': 'size-in-bytes', 'object_relation': 'dst-bytes-count'},
+        src_packets={'type': 'counter', 'object_relation': 'src-packets-count'},
+        dst_packets={'type': 'counter', 'object_relation': 'dst-packets-count'}
     )
     __network_traffic_object_mapping = Mapping(
         src_port={'type': 'port', 'object_relation': 'src_port'},
@@ -692,6 +698,14 @@ class STIX2Mapping:
     @classmethod
     def layer7_protocol_attribute(cls) -> dict:
         return cls.__layer7_protocol_attribute
+
+    @classmethod
+    def mac_dst_attribute(cls) -> dict:
+        return cls.__mac_dst_attribute
+
+    @classmethod
+    def mac_src_attribute(cls) -> dict:
+        return cls.__mac_src_attribute
 
     @classmethod
     def md5_attribute(cls) -> dict:

@@ -7,7 +7,7 @@
     "modified": "2026-11-12T00:00:00.000Z",
     "name": "MISP Galaxy Cluster Extension",
     "description": "Defines misp-galaxy-cluster, the object carrying a MISP galaxy cluster that no standard STIX object represents.",
-    "schema": "https://raw.githubusercontent.com/MISP/misp-stix/main/data/misp-extensions/extension-definition-specifications/misp-5ec/misp-galaxy-cluster/extension-definition--573a76d8-f8a0-4f53-bc93-f2777576b7b9.json",
+    "schema": "https://github.com/oasis-open/cti-stix-common-objects/tree/main/extension-definition-specifications/misp-5ec",
     "version": "1.0.0",
     "extension_types": [
         "new-sdo"

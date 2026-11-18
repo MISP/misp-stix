@@ -331,18 +331,33 @@ class InternalSTIX2IdentityConverter(
         for attribute in self._generic_parser(identity, 'employee'):
             misp_object.add_attribute(**attribute)
         if hasattr(identity, 'contact_information'):
-            object_relation, value = identity.contact_information.split(': ')
-            misp_object.add_attribute(
-                **{
-                    'type': 'target-email', 'value': value,
-                    'object_relation': object_relation,
-                    'uuid': self.main_parser._create_v5_uuid(
-                        f'{identity.id} - {object_relation} - {value}'
-                    )
-                }
-            )
+            try:
+                object_relation, value = identity.contact_information.split(
+                    ': ', 1
+                )
+            except ValueError:
+                misp_object.add_attribute(
+                    **{
+                        'type': 'text', 'value': identity.contact_information,
+                        'object_relation': 'contact_information',
+                        'uuid': self.main_parser._create_v5_uuid(
+                            f'{identity.id} - contact_information - '
+                            f'{identity.contact_information}'
+                        )
+                    }
+                )
+            else:
+                misp_object.add_attribute(
+                    **{
+                        'type': 'target-email', 'value': value,
+                        'object_relation': object_relation,
+                        'uuid': self.main_parser._create_v5_uuid(
+                            f'{identity.id} - {object_relation} - {value}'
+                        )
+                    }
+                )
         self.main_parser._add_misp_object(misp_object, identity)
-    
+
     def _parse_identity_object_attributes(
             self, identity: _IDENTITY_TYPING, name: str) -> MISPObject:
         misp_object = self._create_misp_object(name, identity)

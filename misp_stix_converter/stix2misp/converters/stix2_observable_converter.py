@@ -125,8 +125,8 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'ipv4-addr_src': STIX2Mapping.src_ip_attribute(),
             'ipv6-addr_dst': STIX2Mapping.dst_ip_attribute(),
             'ipv6-addr_src': STIX2Mapping.src_ip_attribute(),
-            'mac-address_dst': STIX2Mapping.dst_mac_attribute(),
-            'mac-address_src': STIX2Mapping.src_mac_attribute()
+            'mac-addr_dst': STIX2Mapping.dst_mac_attribute(),
+            'mac-addr_src': STIX2Mapping.src_mac_attribute()
         }
     )
     __http_request_extension_mapping = Mapping(
@@ -149,8 +149,8 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'ipv4-addr_src': STIX2Mapping.ip_src_attribute(),
             'ipv6-addr_dst': STIX2Mapping.ip_dst_attribute(),
             'ipv6-addr_src': STIX2Mapping.ip_src_attribute(),
-            "mac-address_dst": STIX2Mapping.dst_mac_attribute(),
-            "mac-address_src": STIX2Mapping.src_mac_attribute()
+            "mac-addr_dst": STIX2Mapping.mac_dst_attribute(),
+            "mac-addr_src": STIX2Mapping.mac_src_attribute()
         }
     )
     __software_object_mapping = Mapping(
@@ -712,22 +712,37 @@ class ExternalSTIX2ObservableConverter(
             indicator_ref: set | None = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
+        yield from self._parse_generic_observable(
+            observable, 'network_socket', object_id, indicator_ref=indicator_ref
+        )
+        protocol_attribute = self._mapping.protocol_attribute()
         for protocol in observable.protocols:
             yield self._populate_object_attribute(
-                self._mapping.protocol_attribute(), protocol.upper(), object_id
+                protocol.upper(), protocol_attribute,
+                self._handle_object_id(
+                    indicator_ref, observable.type, protocol.upper(),
+                    f"{object_id} - {protocol_attribute['object_relation']}",
+                    value_to_check=protocol
+                )
             )
         socket_extension = observable.extensions['socket-ext']
+        socket_ext_id = f'{object_id} - socket-ext'
         mapping = self._mapping.network_socket_extension_mapping
         for field, attribute in mapping().items():
             if hasattr(socket_extension, field):
                 yield from self._handle_object_attributes(
                     socket_extension, attribute, indicator_ref, field,
-                    object_id, observable_type=observable.type
+                    socket_ext_id, observable_type=observable.type
                 )
+        state_attribute = self._mapping.state_attribute()
         for feature in ('blocking', 'listening'):
             if getattr(socket_extension, f'is_{feature}', False):
                 yield self._populate_object_attribute(
-                    self._mapping.state_attribute(), feature, object_id
+                    feature, state_attribute,
+                    self._handle_object_id(
+                        indicator_ref, observable.type, feature,
+                        f"{socket_ext_id} - {state_attribute['object_relation']}"
+                    )
                 )
 
     def _parse_network_traffic_observable(
@@ -1486,6 +1501,8 @@ class InternalSTIX2ObservableConverter(
                     value, object_id, protocol_mapping['object_relation']
                 )
             )
+        if 'socket-ext' not in getattr(observable, 'extensions', {}):
+            return
         socket_extension = observable.extensions['socket-ext']
         mapping = self._mapping.network_socket_extension_mapping
         for field, attribute in mapping().items():

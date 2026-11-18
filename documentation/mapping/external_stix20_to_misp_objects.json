@@ -1170,6 +1170,42 @@
                         "category": "Other"
                     },
                     {
+                        "uuid": "b964ef06-41b5-5749-8029-315453896412",
+                        "object_relation": "src-bytes-count",
+                        "value": "35779",
+                        "type": "size-in-bytes",
+                        "disable_correlation": true,
+                        "to_ids": true,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "0561d285-3b4a-50b5-9633-a71a94429cb2",
+                        "object_relation": "dst-bytes-count",
+                        "value": "935750",
+                        "type": "size-in-bytes",
+                        "disable_correlation": true,
+                        "to_ids": true,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "69e38126-3807-550f-b0e3-03aa4dd81952",
+                        "object_relation": "src-packets-count",
+                        "value": "14356",
+                        "type": "counter",
+                        "disable_correlation": true,
+                        "to_ids": true,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "795795fb-d954-5b1d-930a-8a11509ec171",
+                        "object_relation": "dst-packets-count",
+                        "value": "14357",
+                        "type": "counter",
+                        "disable_correlation": true,
+                        "to_ids": true,
+                        "category": "Other"
+                    },
+                    {
                         "uuid": "88565fbe-2a16-53fd-b978-40544c12eef1",
                         "object_relation": "address-family",
                         "value": "AF_INET",
@@ -1207,11 +1243,216 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = 80 AND network-traffic:src_port = 8080 AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true]",
+                "pattern": "[network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = 80 AND network-traffic:src_port = 8080 AND network-traffic:protocols[0] = 'tcp' AND network-traffic:src_byte_count = 35779 AND network-traffic:dst_byte_count = 935750 AND network-traffic:src_packets = 14356 AND network-traffic:dst_packets = 14357 AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true]",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "labels": [
                     "malicious-activity"
                 ]
+            }
+        },
+        "Observed Data": {
+            "MISP": {
+                "name": "network-socket",
+                "meta-category": "network",
+                "template_uuid": "48bbfd72-ef8e-4649-b14d-41b4b5a0eba2",
+                "description": "Network socket object describes a local or remote network connections based on the socket data structure.",
+                "template_version": "4",
+                "uuid": "3fc8df23-0214-5957-ac09-3ff91cb6d394",
+                "Attribute": [
+                    {
+                        "uuid": "bc663d2a-26a2-5abd-bf01-e9a6372fd05b",
+                        "object_relation": "src-port",
+                        "value": "8080",
+                        "type": "port",
+                        "category": "Network activity",
+                        "disable_correlation": false,
+                        "to_ids": false
+                    },
+                    {
+                        "uuid": "547b9d5a-6157-5f5a-9d14-606dd70d96b6",
+                        "object_relation": "dst-port",
+                        "value": "80",
+                        "type": "port",
+                        "category": "Network activity",
+                        "disable_correlation": false,
+                        "to_ids": false
+                    },
+                    {
+                        "uuid": "0ecf5cf2-07dc-5415-b13b-5ba18db10339",
+                        "object_relation": "first-packet-seen",
+                        "value": "2020-10-25T16:22:00+00:00",
+                        "type": "datetime",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "1984bbc9-8707-5288-a28e-48d9e86b5476",
+                        "object_relation": "last-packet-seen",
+                        "value": "2020-10-25T16:23:00+00:00",
+                        "type": "datetime",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "de9ba4f7-ecb0-5c18-8811-cf32ae082c01",
+                        "object_relation": "src-bytes-count",
+                        "value": "35779",
+                        "type": "size-in-bytes",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "05962b3e-2424-5e72-901b-f4e5c07b22eb",
+                        "object_relation": "dst-bytes-count",
+                        "value": "935750",
+                        "type": "size-in-bytes",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "b4191e96-d327-5c0c-b224-32db86eb4b2c",
+                        "object_relation": "src-packets-count",
+                        "value": "14356",
+                        "type": "counter",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "bf5b4631-3d44-50b4-b9c3-449cb811e4e2",
+                        "object_relation": "dst-packets-count",
+                        "value": "14357",
+                        "type": "counter",
+                        "disable_correlation": true,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "a5bafdc3-395a-5cd9-b8a2-df4ebac98dc0",
+                        "object_relation": "protocol",
+                        "value": "TCP",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "830cba84-4c6f-54a0-810e-312ed2d6b729",
+                        "object_relation": "address-family",
+                        "value": "AF_INET",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "38e60872-d92a-5d1a-99b5-8a11ce841c33",
+                        "object_relation": "domain-family",
+                        "value": "PF_INET",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "2a1ba4c9-f458-584d-af79-dac7dbc36d5e",
+                        "object_relation": "socket-type",
+                        "value": "SOCK_STREAM",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "a2bcc705-26f2-584e-bbe1-0cabb66b7bb0",
+                        "object_relation": "state",
+                        "value": "blocking",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "28d78482-196a-5f32-a892-60557b185c35",
+                        "object_relation": "state",
+                        "value": "listening",
+                        "type": "text",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Other"
+                    },
+                    {
+                        "uuid": "a3cfd755-34f7-5fb7-b221-5ac27fcff660",
+                        "object_relation": "ip-src",
+                        "value": "198.51.100.2",
+                        "type": "ip-src",
+                        "category": "Network activity",
+                        "disable_correlation": false,
+                        "to_ids": false
+                    },
+                    {
+                        "uuid": "01421d76-45ac-5c23-85d3-4d3a1a7c522c",
+                        "object_relation": "mac-dst",
+                        "value": "00:2b:a0:4f:cc:7f",
+                        "type": "mac-address",
+                        "disable_correlation": false,
+                        "to_ids": false,
+                        "category": "Network activity"
+                    }
+                ],
+                "distribution": "5",
+                "sharing_group_id": "0",
+                "timestamp": "1603642920",
+                "comment": "Observed Data ID: observed-data--7872cec6-cbaa-4986-9902-8174a37214af"
+            },
+            "STIX": {
+                "type": "observed-data",
+                "id": "observed-data--7872cec6-cbaa-4986-9902-8174a37214af",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "0": {
+                        "type": "ipv4-addr",
+                        "value": "198.51.100.2"
+                    },
+                    "1": {
+                        "type": "mac-addr",
+                        "value": "00:2b:a0:4f:cc:7f"
+                    },
+                    "2": {
+                        "type": "network-traffic",
+                        "start": "2020-10-25T16:22:00Z",
+                        "end": "2020-10-25T16:23:00Z",
+                        "src_ref": "0",
+                        "dst_ref": "1",
+                        "src_port": 8080,
+                        "dst_port": 80,
+                        "protocols": [
+                            "tcp"
+                        ],
+                        "src_byte_count": 35779,
+                        "dst_byte_count": 935750,
+                        "src_packets": 14356,
+                        "dst_packets": 14357,
+                        "extensions": {
+                            "socket-ext": {
+                                "address_family": "AF_INET",
+                                "is_blocking": true,
+                                "is_listening": true,
+                                "protocol_family": "PF_INET",
+                                "socket_type": "SOCK_STREAM"
+                            }
+                        }
+                    }
+                }
             }
         }
     },

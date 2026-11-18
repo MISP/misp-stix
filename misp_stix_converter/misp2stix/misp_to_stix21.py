@@ -670,25 +670,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_regkey_value_attribute_observable(
             self, attribute: MISPAttribute | dict) -> ObservedData:
-        registry_key_args = {
-            'id': f"windows-registry-key--{attribute['uuid']}"
-        }
-        for separator in self.composite_separators:
-            if separator in attribute['value']:
-                key, value = attribute['value'].split(separator)
-                registry_key_args.update(
-                    {
-                        'key': key.strip(),
-                        'values': [WindowsRegistryValueType(data=value.strip())]
-                    }
-                )
-                break
-        else:
-            self._composite_attribute_value_warning(
-                attribute['type'], attribute['value']
-            )
-            registry_key_args['key'] = attribute['value'].strip()
-        regkey_object = WindowsRegistryKey(**registry_key_args)
+        key, value = attribute['value'].split('|')
+        regkey_object = WindowsRegistryKey(
+            id=f"windows-registry-key--{attribute['uuid']}",
+            key=key.strip(),
+            values=[WindowsRegistryValueType(data=value.strip())]
+        )
         return self._handle_attribute_observable(attribute, [regkey_object])
 
     def _parse_url_attribute_observable(

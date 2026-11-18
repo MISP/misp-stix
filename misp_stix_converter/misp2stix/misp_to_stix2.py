@@ -1451,7 +1451,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
     def _parse_regkey_value_attribute(
             self, attribute: MISPAttribute | dict):
-        if not any(s in attribute['value'] for s in self.composite_separators):
+        # MISP stores a regkey|value with exactly one `|`
+        if '|' not in attribute['value']:
             self._composite_attribute_value_warning(
                 attribute['type'], attribute['value']
             )
@@ -1471,20 +1472,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             value = self._sanitise_registry_key_value(
                 self._handle_value_for_pattern(attribute['value'])
             )
-            for separator in self.composite_separators:
-                if separator in value:
-                    key, data = value.split(separator)
-                    key_pattern = self._create_regkey_pattern(key)
-                    indicator = self._handle_attribute_indicator(
-                        attribute,
-                        f'[{key_pattern} AND windows-registry-key:values.data'
-                        f" = '{data.strip()}']"
-                    )
-                    self._parse_indicator_relationship(
-                        indicator.id, observed_data.id, indicator.modified
-                    )
-                    stix_objects.append(indicator)
-                    break
+            key, data = value.split('|')
+            key_pattern = self._create_regkey_pattern(key)
+            indicator = self._handle_attribute_indicator(
+                attribute,
+                f'[{key_pattern} AND windows-registry-key:values.data'
+                f" = '{data.strip()}']"
+            )
+            self._parse_indicator_relationship(
+                indicator.id, observed_data.id, indicator.modified
+            )
+            stix_objects.append(indicator)
         self._handle_attribute_analyst_fields(attribute, *stix_objects)
 
     def _parse_size_in_bytes_attribute(

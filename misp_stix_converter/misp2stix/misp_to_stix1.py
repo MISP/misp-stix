@@ -509,18 +509,17 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_attribute(attribute, observable)
 
     def _parse_regkey_value_attribute(self, attribute: dict):
-        for separator in self.composite_separators:
-            if separator in attribute['value']:
-                regkey, value = attribute['value'].split(separator)
-                registry_key = self._create_registry_key_object(regkey)
-                registry_value = RegistryValue()
-                registry_value.data = value.strip()
-                registry_value.data.condition = "Equals"
-                registry_key.values = RegistryValues(registry_value)
-                observable = self._create_observable(
-                    registry_key, attribute['uuid'], 'WindowsRegistryKey')
-                self._handle_attribute(attribute, observable)
-                break
+        # MISP stores a regkey|value with exactly one `|`
+        if '|' in attribute['value']:
+            regkey, value = attribute['value'].split('|')
+            registry_key = self._create_registry_key_object(regkey)
+            registry_value = RegistryValue()
+            registry_value.data = value.strip()
+            registry_value.data.condition = "Equals"
+            registry_key.values = RegistryValues(registry_value)
+            observable = self._create_observable(
+                registry_key, attribute['uuid'], 'WindowsRegistryKey')
+            self._handle_attribute(attribute, observable)
         else:
             self._composite_attribute_value_warning(attribute['type'], attribute['value'])
             registry_key = self._create_registry_key_object(attribute['value'])
