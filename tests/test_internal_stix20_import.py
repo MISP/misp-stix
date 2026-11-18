@@ -3571,11 +3571,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
 
     def test_stix20_bundle_with_employee_object_bare_contact_information(self):
         # A `contact_information` value with no `object_relation: value`
-        # separator used to blow up the unguarded split in
-        # `_parse_employee_object`, discarding the whole Employee object
-        # before `_add_misp_object` ever ran (issue #98). The sibling
-        # `_parse_identity_object_attributes` already tolerates this shape
-        # by falling back to storing the raw string.
+        # separator is kept whole, as a `contact_information` text attribute:
+        # the sibling `_parse_identity_object_attributes` already tolerates
+        # this shape by falling back to storing the raw string.
         from misp_stix_converter.tools import load_stix2_content
         identity_id = 'identity--a0c22599-9e58-4da4-96ac-7051603fa951'
         employee_id = 'identity--3f5a9e6c-1b2d-4c3e-8f9a-0b1c2d3e4f5a'
@@ -3627,15 +3625,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(self.parser.errors, {})
         self.assertEqual(len(event.objects), 1)
         misp_object = event.objects[0]
-        self.assertEqual(misp_object.name, 'employee')
-        full_name, employee_type, contact_information = misp_object.attributes
-        self.assertEqual(full_name.value, 'John Doe')
-        self.assertEqual(employee_type.value, 'Human Resources')
-        self.assertEqual(contact_information.type, 'text')
-        self.assertEqual(
-            contact_information.object_relation, 'contact_information'
+        employee_type = self._check_employee_object_with_bare_contact_information(
+            misp_object, bundle.objects[-1]
         )
-        self.assertEqual(contact_information.value, 'jdoe@example.com')
+        self.assertEqual(employee_type.value, 'Human Resources')
 
     def test_stix20_bundle_with_file_and_pe_indicator_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_file_and_pe_indicator_object()

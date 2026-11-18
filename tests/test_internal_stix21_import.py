@@ -5575,6 +5575,67 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             misp_object=json.loads(misp_object.to_json()), identity=identity
         )
 
+    def test_stix21_bundle_with_employee_object_bare_contact_information(self):
+        # A `contact_information` value with no `object_relation: value`
+        # separator is kept whole, as a `contact_information` text attribute:
+        # the sibling `_parse_identity_object_attributes` already tolerates
+        # this shape by falling back to storing the raw string.
+        from misp_stix_converter.tools import load_stix2_content
+        identity_id = 'identity--a0c22599-9e58-4da4-96ac-7051603fa951'
+        employee_id = 'identity--3f5a9e6c-1b2d-4c3e-8f9a-0b1c2d3e4f5a'
+        grouping_id = 'grouping--6b1e2f3a-4c5d-4e6f-8a9b-0c1d2e3f4a5b'
+        bundle = load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--f5e2c3d4-1a2b-4c3d-8e9f-0a1b2c3d4e5f',
+                'objects': [
+                    {
+                        'type': 'identity', 'spec_version': '2.1',
+                        'id': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'CIRCL', 'identity_class': 'organization'
+                    },
+                    {
+                        'type': 'grouping', 'spec_version': '2.1',
+                        'id': grouping_id, 'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'MISP-STIX-Converter test event',
+                        'context': 'suspicious-activity',
+                        'labels': [
+                            'Threat-Report',
+                            'misp:tool="MISP-STIX-Converter"'
+                        ],
+                        'object_refs': [employee_id]
+                    },
+                    {
+                        'type': 'identity', 'spec_version': '2.1',
+                        'id': employee_id, 'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'John Doe', 'identity_class': 'individual',
+                        'contact_information': 'jdoe@example.com',
+                        'roles': ['Human Resources'],
+                        'labels': [
+                            'misp:name="employee"',
+                            'misp:meta-category="misc"'
+                        ]
+                    }
+                ]
+            }
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self.assertEqual(self.parser.errors, {})
+        self.assertEqual(len(event.objects), 1)
+        misp_object = event.objects[0]
+        employee_type = self._check_employee_object_with_bare_contact_information(
+            misp_object, bundle.objects[-1]
+        )
+        self.assertEqual(employee_type.value, 'Human Resources')
+
     def _check_bundle_with_file_and_pe_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()

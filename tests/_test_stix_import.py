@@ -5469,6 +5469,22 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
         return employee_type
 
+    def _check_employee_object_with_bare_contact_information(
+            self, misp_object, identity):
+        self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        self.assertEqual(misp_object.name, 'employee')
+        name, employee_type, contact_information = misp_object.attributes
+        self.assertEqual(name.value, identity.name)
+        self.assertEqual(contact_information.type, 'text')
+        self.assertEqual(
+            contact_information.object_relation, 'contact_information'
+        )
+        self.assertEqual(
+            contact_information.value, identity.contact_information
+        )
+        self._check_object_attribute_uuid(contact_information, identity.id)
+        return employee_type
+
     def _check_facebook_account_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)
         user_id, account_login, link_pattern, *avatar_pattern = pattern[1:-1].split(' AND ')[1:]
