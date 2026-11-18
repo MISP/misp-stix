@@ -366,6 +366,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             'x_misp_explanation': 'False positive Sighting',
             'x_misp_opinion': 'strongly-disagree'
         }
+        self._allow_custom_references(opinion_args, reference_ids)
         if sighting.get('date_sighting', ''):
             date_sighting = self._datetime_from_timestamp(
                 sighting['date_sighting']
