@@ -746,7 +746,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                         )
                     ]
                 if sighting.get('source', ''):
-                    sighting_args['description'] = sighting['source']
+                    self._set_sighting_source(sighting_args, sighting['source'])
                 getattr(self, self._results_handling_method)(
                     self._create_sighting(sighting_args)
                 )
@@ -5605,7 +5605,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
 
         :param args: the arguments of the STIX object
         :param name: `filename`, `url`, `malware_sample`, `attachment`,
-            `opinion` or `author_ref`
+            `opinion`, `author_ref` or `source`
         :param value: the value, shaped as written
         """
 
@@ -5644,6 +5644,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         :param key: the meta key as MISP spells it
         :param values: the meta value
         :param cluster_value: the cluster value, which the warnings name
+        """
+
+    @abstractmethod
+    def _set_sighting_source(self, sighting_args: dict, source: str):
+        """Write the source of a MISP sighting on its Sighting.
+
+        :param sighting_args: the arguments of the Sighting
+        :param source: the sighting source
         """
 
     ############################################################################

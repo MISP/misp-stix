@@ -1801,6 +1801,11 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         meta_args.update({'allow_custom': True, feature: values})
         self._record_original_name(meta_args, feature, key)
 
+    def _set_sighting_source(self, sighting_args: dict, source: str):
+        # The 2.0 Sighting has no `description`: the source goes under the
+        # name the 2.0 Opinion of a false positive sighting gives it
+        self._set_fixed_value(sighting_args, 'source', source)
+
     ############################################################################
     #                            UTILITY FUNCTIONS.                            #
     ############################################################################
