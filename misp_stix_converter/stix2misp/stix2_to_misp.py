@@ -1305,6 +1305,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         }
         if 'description' in sighting:
             sighting_args['source'] = sighting['description']
+        elif 'x_misp_source' in sighting:
+            # The 2.0 Sighting has no `description`
+            sighting_args['source'] = sighting['x_misp_source']
         if identity is not None:
             sighting_args['Organisation'] = {
                 'uuid': self._sanitise_uuid(identity['id']),
