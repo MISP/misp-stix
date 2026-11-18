@@ -2008,22 +2008,37 @@ class TestExternalSTIX2Import(TestSTIX2Import):
 
     def _check_network_socket_indicator(self, indicator, misp_object):
         pattern = self._get_compiled_pattern(indicator)
-        (_src_ip, _dst_ip, _dst_port, _src_port,
-         _protocol, _address_family, _socket_type, _) = (
+        (_src_ip, _dst_ip, _dst_port, _src_port, _protocol, *_counts,
+         _address_family, _socket_type, _) = (
             value[-1] for value in pattern.get('network-traffic', [])
         )
         self.assertEqual(misp_object.name, 'network-socket')
         self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
         self.assertEqual(misp_object.timestamp, indicator.modified)
-        self.assertEqual(len(misp_object.attributes), 8)
+        self.assertEqual(len(misp_object.attributes), 12)
         self._check_attributes_from_indicator_fields(
-            misp_object.attributes[:5], indicator.id
+            misp_object.attributes[:9], indicator.id
         )
         self._check_attributes_from_indicator_fields(
-            misp_object.attributes[5:], f'{indicator.id} - socket-ext'
+            misp_object.attributes[9:], f'{indicator.id} - socket-ext'
         )
-        (src_ip, dst_ip, dst_port, src_port, protocol, address_family,
-         socket_type, listening) = misp_object.attributes
+        (src_ip, dst_ip, dst_port, src_port, protocol, *counts,
+         address_family, socket_type, listening) = misp_object.attributes
+        self.assertEqual(
+            [
+                (attribute.type, attribute.object_relation)
+                for attribute in counts
+            ],
+            [
+                ('size-in-bytes', 'src-bytes-count'),
+                ('size-in-bytes', 'dst-bytes-count'),
+                ('counter', 'src-packets-count'),
+                ('counter', 'dst-packets-count')
+            ]
+        )
+        self.assertEqual(
+            [attribute.value for attribute in counts], _counts
+        )
         self._assert_multiple_equal(src_ip.type, src_ip.object_relation, 'ip-src')
         self.assertEqual(src_ip.value, _src_ip)
         self._assert_multiple_equal(dst_ip.type, dst_ip.object_relation, 'ip-dst')
@@ -2045,6 +2060,29 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(listening.type, 'text')
         self.assertEqual(listening.object_relation, 'state')
         self.assertEqual(listening.value, 'listening')
+
+    def _check_network_socket_indicator_with_mac_addresses(
+            self, indicator, misp_object):
+        self.assertEqual(misp_object.name, 'network-socket')
+        self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
+        self.assertEqual(
+            [
+                (attribute.type, attribute.object_relation, attribute.value)
+                for attribute in misp_object.attributes
+            ],
+            [
+                ('mac-address', 'mac-src', '00:2b:a0:4f:cc:7e'),
+                ('mac-address', 'mac-dst', '00:2b:a0:4f:cc:7f'),
+                ('text', 'protocol', 'tcp'),
+                ('text', 'address-family', 'AF_INET')
+            ]
+        )
+        self._check_attributes_from_indicator_fields(
+            misp_object.attributes[:3], indicator.id
+        )
+        self._check_attributes_from_indicator_fields(
+            misp_object.attributes[3:], f'{indicator.id} - socket-ext'
+        )
 
     def _check_process_indicator(self, indicator, misp_object):
         pattern = self._get_compiled_pattern(indicator)
@@ -5006,14 +5044,14 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self.assertEqual(attribute.object_relation, 'subnet-announced')
             self.assertEqual(attribute.value, subnet)
 
-    def _check_attack_pattern_object(self, misp_object, attack_pattern):
+    def _check_attack_pattern_object(self, misp_object, attack_pattern, *url_references):
         self.assertEqual(misp_object.uuid, attack_pattern.id.split('--')[1])
         self.assertEqual(misp_object.name, attack_pattern.type)
         self._assert_multiple_equal(
             misp_object.timestamp, attack_pattern.created, attack_pattern.modified
         )
         self._check_object_labels(misp_object, attack_pattern.labels)
-        summary, name, prerequisites, weakness1, weakness2, solution, capec_id = misp_object.attributes
+        summary, name, prerequisites, weakness1, weakness2, solution, capec_id, *references = misp_object.attributes
         self.assertEqual(summary.value, attack_pattern.description)
         self.assertEqual(name.value, attack_pattern.name)
         self.assertEqual(
@@ -5033,6 +5071,12 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             attack_pattern.external_references[0].external_id
         )
         self._check_object_attribute_uuid(capec_id, attack_pattern.id)
+        self.assertEqual(len(references), len(url_references))
+        for attribute, reference in zip(references, url_references):
+            self.assertEqual(attribute.type, 'link')
+            self.assertEqual(attribute.object_relation, 'references')
+            self.assertEqual(attribute.value, reference.url)
+            self._check_object_attribute_uuid(attribute, attack_pattern.id)
 
     def _check_attributes_ids_flag(self, feature, pattern, *attributes):
         pattern_values = [value[-1] for value in pattern[feature]]
@@ -5423,6 +5467,22 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             identity.contact_information,
             f"{email.object_relation}: {email.value}"
         )
+        return employee_type
+
+    def _check_employee_object_with_bare_contact_information(
+            self, misp_object, identity):
+        self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        self.assertEqual(misp_object.name, 'employee')
+        name, employee_type, contact_information = misp_object.attributes
+        self.assertEqual(name.value, identity.name)
+        self.assertEqual(contact_information.type, 'text')
+        self.assertEqual(
+            contact_information.object_relation, 'contact_information'
+        )
+        self.assertEqual(
+            contact_information.value, identity.contact_information
+        )
+        self._check_object_attribute_uuid(contact_information, identity.id)
         return employee_type
 
     def _check_facebook_account_indicator_object(self, attributes, pattern):
@@ -6632,6 +6692,53 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(listening.object_relation, 'state')
         self.assertEqual(listening.value, 'listening')
 
+    def _check_network_socket_observable_object_without_address_family(
+            self, attributes, observables, pattern):
+        # With no address family, the export writes no `socket-ext`: the
+        # socket type, the domain family and the state are MISP values
+        self.assertEqual(len(attributes), 9)
+        self._check_attributes_ids_flag('network-traffic', pattern, *attributes)
+        (port_src, port_dst, domain_family, hostname, socket_type, state,
+         ip_src, ip_dst, protocol) = attributes
+        network_traffic, address1, address2 = observables.values()
+        self.assertEqual(port_src.type, 'port')
+        self.assertEqual(port_src.object_relation, 'src-port')
+        self.assertEqual(port_src.value, network_traffic.src_port)
+        self.assertEqual(port_dst.type, 'port')
+        self.assertEqual(port_dst.object_relation, 'dst-port')
+        self.assertEqual(port_dst.value, network_traffic.dst_port)
+        self.assertEqual(domain_family.type, 'text')
+        self.assertEqual(domain_family.object_relation, 'domain-family')
+        self.assertEqual(
+            domain_family.value,
+            self._custom_value(network_traffic, 'x_misp_domain_family')
+        )
+        self.assertEqual(hostname.type, 'hostname')
+        self.assertEqual(hostname.object_relation, 'hostname-dst')
+        self.assertEqual(
+            hostname.value, self._custom_value(network_traffic, 'x_misp_hostname_dst')
+        )
+        self.assertEqual(socket_type.type, 'text')
+        self.assertEqual(socket_type.object_relation, 'socket-type')
+        self.assertEqual(
+            socket_type.value,
+            self._custom_value(network_traffic, 'x_misp_socket_type')
+        )
+        self.assertEqual(state.type, 'text')
+        self.assertEqual(state.object_relation, 'state')
+        self.assertEqual(
+            state.value, self._custom_value(network_traffic, 'x_misp_state')
+        )
+        self.assertEqual(ip_src.type, 'ip-src')
+        self.assertEqual(ip_src.object_relation, 'ip-src')
+        self.assertEqual(ip_src.value, address1.value)
+        self.assertEqual(ip_dst.type, 'ip-dst')
+        self.assertEqual(ip_dst.object_relation, 'ip-dst')
+        self.assertEqual(ip_dst.value, address2.value)
+        self.assertEqual(protocol.type, 'text')
+        self.assertEqual(protocol.object_relation, 'protocol')
+        self.assertEqual(protocol.value, network_traffic.protocols[0].upper())
+
     def _check_news_agency_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
         self.assertEqual(misp_object.name, 'news-agency')
@@ -7360,6 +7467,25 @@ class TestInternalSTIX2Import(TestSTIX2Import):
                 self._custom_value(vulnerability, 'x_misp_published')
             )
         )
+
+    def _check_vulnerability_object_without_external_references(
+            self, misp_object, vulnerability):
+        self.assertEqual(misp_object.uuid, vulnerability.id.split('--')[1])
+        self.assertEqual(misp_object.name, vulnerability.type)
+        object_relations = {
+            attribute.object_relation for attribute in misp_object.attributes
+        }
+        self.assertNotIn('id', object_relations)
+        self.assertNotIn('references', object_relations)
+        summary = [
+            attribute for attribute in misp_object.attributes
+            if attribute.object_relation == 'summary'
+        ]
+        self.assertEqual(
+            [(attribute.type, attribute.value) for attribute in summary],
+            [('text', 'CVE-2017-11774')]
+        )
+        self._check_object_attribute_uuid(summary[0], vulnerability.id)
 
     def _check_x509_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 13)

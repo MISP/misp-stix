@@ -4621,6 +4621,39 @@ _EXTENSION_SYNTAX_ATTACK_PATTERN_OBJECT = {
         }
     }
 }
+_EXTENSION_SYNTAX_ATTACK_PATTERN_OBJECT_WITH_REFERENCES = {
+    "type": "attack-pattern",
+    "spec_version": "2.1",
+    "id": "attack-pattern--7205da54-70de-4fa7-9b34-e14e63fe6787",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Buffer Overflow in Local Command-Line Utilities",
+    "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
+    "kill_chain_phases": [
+        {"kill_chain_name": "misp-category", "phase_name": "vulnerability"}
+    ],
+    "labels": ['misp:name="attack-pattern"', 'misp:meta-category="vulnerability"'],
+    "external_references": [
+        {"source_name": "capec", "external_id": "CAPEC-9"},
+        {
+            "source_name": "mitre-attack",
+            "url": "https://capec.mitre.org/data/definitions/9.html"
+        },
+        {
+            "source_name": "external_url",
+            "url": "https://owasp.org/www-community/attacks/Buffer_overflow_attack"
+        }
+    ],
+    "extensions": {
+        MISP_PROPERTY_EXTENSION_ID: {
+            "extension_type": "property-extension",
+            "related_weakness": ["CWE-118", "CWE-120"],
+            "prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+            "solutions": "Carefully review the service's implementation before making it available to users."
+        }
+    }
+}
 _EXTENSION_SYNTAX_BUNDLE_WITH_INVALID_UUIDS = [
     {
         "type": "identity",
@@ -7510,6 +7543,82 @@ _EXTENSION_SYNTAX_NETWORK_SOCKET_OBSERVABLE_OBJECT = [
             MISP_PROPERTY_EXTENSION_ID: {
                 "extension_type": "property-extension",
                 "domain_family": "PF_INET",
+                "hostname_dst": "circl.lu"
+            }
+        }
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "value": "1.2.3.4"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+        "value": "5.6.7.8"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu')]",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {"kill_chain_name": "misp-category", "phase_name": "network"}
+        ],
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--bc5e3b34-b274-4ef7-b082-ee286c87ce84",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "based-on",
+        "source_ref": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
+        "target_ref": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f"
+    }
+]
+_EXTENSION_SYNTAX_NETWORK_SOCKET_OBSERVABLE_OBJECT_WITHOUT_ADDRESS_FAMILY = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "network-traffic--5afb3223-0988-4ef1-a920-02070a00020f",
+            "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b"
+        ],
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--5afb3223-0988-4ef1-a920-02070a00020f",
+        "src_ref": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "dst_ref": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+        "src_port": 8080,
+        "dst_port": 8080,
+        "protocols": ["tcp"],
+        "extensions": {
+            MISP_PROPERTY_EXTENSION_ID: {
+                "extension_type": "property-extension",
+                "domain_family": "PF_INET",
+                "socket_type": "SOCK_RAW",
+                "state": "listening",
                 "hostname_dst": "circl.lu"
             }
         }
@@ -13054,6 +13163,47 @@ _NETWORK_SOCKET_OBSERVABLE_OBJECT = [
         "target_ref": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f"
     }
 ]
+_NETWORK_SOCKET_OBSERVABLE_OBJECT_WITHOUT_EXTENSION = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--71c74b48-1122-4b81-8f82-b6dda19f8f19",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "network-traffic--71c74b48-1122-4b81-8f82-b6dda19f8f19",
+            "ipv4-addr--65195b1c-8ea9-42dd-9a20-d63f5e6ecfdb",
+            "ipv4-addr--fc98adb7-c56a-46b1-a4b9-4de9df6ab653"
+        ],
+        "labels": ['misp:name="network-socket"', 'misp:meta-category="network"']
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--71c74b48-1122-4b81-8f82-b6dda19f8f19",
+        "src_ref": "ipv4-addr--65195b1c-8ea9-42dd-9a20-d63f5e6ecfdb",
+        "dst_ref": "ipv4-addr--fc98adb7-c56a-46b1-a4b9-4de9df6ab653",
+        "src_port": 8080,
+        "dst_port": 8080,
+        "protocols": ["tcp"]
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--65195b1c-8ea9-42dd-9a20-d63f5e6ecfdb",
+        "value": "1.2.3.4"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--fc98adb7-c56a-46b1-a4b9-4de9df6ab653",
+        "value": "5.6.7.8"
+    }
+]
 _NEWS_AGENCY_OBJECT = {
     "type": "identity",
     "spec_version": "2.1",
@@ -14601,6 +14751,20 @@ _VULNERABILITY_OBJECT = {
             "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
         }
     ],
+    "x_misp_created": "2017-10-13T07:29:00Z",
+    "x_misp_cvss_score": "6.8",
+    "x_misp_published": "2017-10-13T07:29:00Z"
+}
+_VULNERABILITY_OBJECT_WITHOUT_EXTERNAL_REFERENCES = {
+    "type": "vulnerability",
+    "spec_version": "2.1",
+    "id": "vulnerability--5e579975-e9cc-46c6-a6ad-1611a964451b",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "CVE-2017-11774",
+    "description": "Microsoft Outlook allow an attacker to execute arbitrary commands",
+    "labels": ['misp:name="vulnerability"', 'misp:meta-category="vulnerability"'],
     "x_misp_created": "2017-10-13T07:29:00Z",
     "x_misp_cvss_score": "6.8",
     "x_misp_published": "2017-10-13T07:29:00Z"
@@ -16453,6 +16617,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(*_NETWORK_SOCKET_OBSERVABLE_OBJECT)
 
     @classmethod
+    def get_bundle_with_network_socket_observable_object_without_extension(cls):
+        return cls.__assemble_bundle(
+            *_NETWORK_SOCKET_OBSERVABLE_OBJECT_WITHOUT_EXTENSION
+        )
+
+    @classmethod
     def get_bundle_with_news_agency_object(cls):
         identity = _NEWS_AGENCY_OBJECT
         with open(_TESTFILES_PATH / 'AFP_logo.png', 'rb') as f:
@@ -16586,6 +16756,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     @classmethod
     def get_bundle_with_vulnerability_object(cls):
         return cls.__assemble_bundle(_VULNERABILITY_OBJECT)
+
+    @classmethod
+    def get_bundle_with_vulnerability_object_without_external_references(cls):
+        return cls.__assemble_bundle(
+            _VULNERABILITY_OBJECT_WITHOUT_EXTERNAL_REFERENCES
+        )
 
     @classmethod
     def get_bundle_with_x509_indicator_object(cls):
@@ -16790,6 +16966,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_attack_pattern_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             _EXTENSION_SYNTAX_ATTACK_PATTERN_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_attack_pattern_object_with_references(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            _EXTENSION_SYNTAX_ATTACK_PATTERN_OBJECT_WITH_REFERENCES
         )
 
     @classmethod
@@ -17307,6 +17489,12 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_network_socket_observable_object(cls):
         return cls.__assemble_extension_syntax_bundle(
             *_EXTENSION_SYNTAX_NETWORK_SOCKET_OBSERVABLE_OBJECT
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_network_socket_observable_object_without_address_family(cls):
+        return cls.__assemble_extension_syntax_bundle(
+            *_EXTENSION_SYNTAX_NETWORK_SOCKET_OBSERVABLE_OBJECT_WITHOUT_ADDRESS_FAMILY
         )
 
     @classmethod

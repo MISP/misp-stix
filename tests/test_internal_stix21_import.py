@@ -5125,6 +5125,19 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
+    def test_stix21_bundle_with_attack_pattern_object_with_references_extension_syntax(self):
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_attack_pattern_object_with_references()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(self.parser.errors, {})
+        event = self.parser.misp_event
+        _, grouping, attack_pattern = self._bundle_objects(bundle)
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        _, mitre_reference, other_reference = attack_pattern.external_references
+        self._check_attack_pattern_object(
+            misp_object, attack_pattern, mitre_reference, other_reference
+        )
+
     def _check_bundle_with_course_of_action_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -5561,6 +5574,67 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._populate_documentation(
             misp_object=json.loads(misp_object.to_json()), identity=identity
         )
+
+    def test_stix21_bundle_with_employee_object_bare_contact_information(self):
+        # A `contact_information` value with no `object_relation: value`
+        # separator is kept whole, as a `contact_information` text attribute:
+        # the sibling `_parse_identity_object_attributes` already tolerates
+        # this shape by falling back to storing the raw string.
+        from misp_stix_converter.tools import load_stix2_content
+        identity_id = 'identity--a0c22599-9e58-4da4-96ac-7051603fa951'
+        employee_id = 'identity--3f5a9e6c-1b2d-4c3e-8f9a-0b1c2d3e4f5a'
+        grouping_id = 'grouping--6b1e2f3a-4c5d-4e6f-8a9b-0c1d2e3f4a5b'
+        bundle = load_stix2_content(
+            {
+                'type': 'bundle',
+                'id': 'bundle--f5e2c3d4-1a2b-4c3d-8e9f-0a1b2c3d4e5f',
+                'objects': [
+                    {
+                        'type': 'identity', 'spec_version': '2.1',
+                        'id': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'CIRCL', 'identity_class': 'organization'
+                    },
+                    {
+                        'type': 'grouping', 'spec_version': '2.1',
+                        'id': grouping_id, 'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'MISP-STIX-Converter test event',
+                        'context': 'suspicious-activity',
+                        'labels': [
+                            'Threat-Report',
+                            'misp:tool="MISP-STIX-Converter"'
+                        ],
+                        'object_refs': [employee_id]
+                    },
+                    {
+                        'type': 'identity', 'spec_version': '2.1',
+                        'id': employee_id, 'created_by_ref': identity_id,
+                        'created': '2020-10-25T16:22:00.000Z',
+                        'modified': '2020-10-25T16:22:00.000Z',
+                        'name': 'John Doe', 'identity_class': 'individual',
+                        'contact_information': 'jdoe@example.com',
+                        'roles': ['Human Resources'],
+                        'labels': [
+                            'misp:name="employee"',
+                            'misp:meta-category="misc"'
+                        ]
+                    }
+                ]
+            }
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        self.assertEqual(self.parser.errors, {})
+        self.assertEqual(len(event.objects), 1)
+        misp_object = event.objects[0]
+        employee_type = self._check_employee_object_with_bare_contact_information(
+            misp_object, bundle.objects[-1]
+        )
+        self.assertEqual(employee_type.value, 'Human Resources')
 
     def _check_bundle_with_file_and_pe_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
@@ -6893,6 +6967,29 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             documented=True
         )
 
+    def test_stix21_bundle_with_network_socket_observable_object_without_extension(self):
+        # A `network-traffic` SCO labelled `network-socket` but missing the
+        # `socket-ext` extension must not abort the whole bundle conversion.
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_network_socket_observable_object_without_extension()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(dict(self.parser.errors), {})
+        event = self.parser.misp_event
+        _, grouping, observed_data, network_traffic, address1, address2 = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_observed_data_object(misp_object, observed_data)
+        port_src, port_dst, ip_src, ip_dst, protocol = misp_object.attributes
+        self.assertEqual(port_src.object_relation, 'src-port')
+        self.assertEqual(port_src.value, network_traffic.src_port)
+        self.assertEqual(port_dst.object_relation, 'dst-port')
+        self.assertEqual(port_dst.value, network_traffic.dst_port)
+        self.assertEqual(ip_src.object_relation, 'ip-src')
+        self.assertEqual(ip_src.value, address1.value)
+        self.assertEqual(ip_dst.object_relation, 'ip-dst')
+        self.assertEqual(ip_dst.value, address2.value)
+        self.assertEqual(protocol.object_relation, 'protocol')
+        self.assertEqual(protocol.value, network_traffic.protocols[0].upper())
+
     def _check_bundle_with_network_socket_indicator_object(self, bundle, documented=False):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -6961,6 +7058,26 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_bundle_with_network_socket_observable_object(
             TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_network_socket_observable_object(),
             documented=True
+        )
+
+    def test_stix21_bundle_with_network_socket_observable_object_without_address_family_extension_syntax(self):
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_network_socket_observable_object_without_address_family()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(dict(self.parser.errors), {})
+        event = self.parser.misp_event
+        (_, grouping, observed_data, network_traffic, address1, address2,
+         indicator, _) = self._bundle_objects(bundle)
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_observed_data_object(misp_object, observed_data)
+        self._check_network_socket_observable_object_without_address_family(
+            misp_object.attributes,
+            {
+                network_traffic.id: network_traffic,
+                address1.id: address1,
+                address2.id: address2
+            },
+            self._get_compiled_pattern(indicator)
         )
 
     def _check_bundle_with_news_agency_object(self, bundle, documented=False):
@@ -7478,6 +7595,21 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_bundle_with_vulnerability_object(
             TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_vulnerability_object(),
             documented=True
+        )
+
+    def test_stix21_bundle_with_vulnerability_object_without_external_references(self):
+        bundle = (
+            TestInternalSTIX21Bundles
+            .get_bundle_with_vulnerability_object_without_external_references()
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(self.parser.errors, {})
+        event = self.parser.misp_event
+        _, grouping, vulnerability = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_vulnerability_object_without_external_references(
+            misp_object, vulnerability
         )
 
     def _check_bundle_with_x509_indicator_object(self, bundle, documented=False):

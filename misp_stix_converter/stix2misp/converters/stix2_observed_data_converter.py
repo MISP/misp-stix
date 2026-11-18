@@ -1977,7 +1977,6 @@ class ExternalSTIX2ObservedDataConverter(
             misp_object = self._parse_network_traffic_observable_object_ref(
                 observable, observed_data, name
             )
-            feature = f"_parse_{name.replace('-', '_')}_reference_observable"
             for asset, field in self.network_assets.items():
                 if hasattr(network_traffic, f'{asset}_ref'):
                     reference = getattr(network_traffic, f'{asset}_ref')
@@ -1988,9 +1987,10 @@ class ExternalSTIX2ObservedDataConverter(
                         )
                         continue
                     referenced_observable = referenced['observable']
-                    attributes = getattr(self._observables, feature)(
+                    attributes = self._observables._parse_network_traffic_reference_observable(
                         asset, referenced_observable,
                         f'{network_traffic.id} - {reference}',
+                        name.replace('-', '_'),
                         indicator_ref=referenced.get('indicator_ref')
                     )
                     for attribute in attributes:
@@ -2066,6 +2066,7 @@ class ExternalSTIX2ObservedDataConverter(
                     attributes = self._observables._parse_network_traffic_reference_observable(
                         asset, referenced,
                         f'{observed_data.id} - {object_id} - {referenced_id}',
+                        name.replace('-', '_'),
                         indicator_ref=self._observables._get_observed_data_indicator_refs(
                             observed_data.id, referenced_id
                         )

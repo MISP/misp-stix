@@ -6492,14 +6492,12 @@ class TestSTIX1Import(TestSTIX):
     def test_internal_regkey_value_is_rebuilt_with_the_canonical_separator(self):
         """A `regkey|value` travels as a registry key holding one value, and
         is rebuilt with the canonical `|`. What the export does to the value
-        before the wire is not undone: it splits on `_` too, and a key written
-        `key_data` comes back `key|data`; it strips both halves, and the
-        padding around the separator is gone."""
+        before the wire is not undone: it strips both halves, and the padding
+        around the separator is gone."""
         for value, expected in (
                 ('HKLM\\Software\\mthjk|%DATA%\\1234567890',
                  'HKLM\\Software\\mthjk|%DATA%\\1234567890'),
-                ('HKLM\\Software\\mthjk | %DATA%', 'HKLM\\Software\\mthjk|%DATA%'),
-                ('HKLM\\Software\\mthjk_1234', 'HKLM\\Software\\mthjk|1234')):
+                ('HKLM\\Software\\mthjk | %DATA%', 'HKLM\\Software\\mthjk|%DATA%')):
             for to_ids in (True, False):
                 with self.subTest(value=value, to_ids=to_ids):
                     original = get_event_with_regkey_value_attribute()

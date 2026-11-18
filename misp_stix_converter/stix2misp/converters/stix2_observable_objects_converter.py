@@ -84,9 +84,7 @@ class STIX2SampleObservableParser(metaclass=ABCMeta):
         if hasattr(directory, 'contains_refs'):
             for ref in directory.contains_refs:
                 if not self.main_parser._has_observable(ref):
-                    self._missing_observable_object_error(
-                        directory.id, ref, child=child
-                    )
+                    self._missing_observable_object_error(directory.id, ref)
                     continue
                 feature = f"_parse_{ref.split('--')[0]}_observable_object"
                 referenced_object = (
@@ -127,6 +125,11 @@ class STIX2SampleObservableParser(metaclass=ABCMeta):
                         comment = f'{comment} - {misp_object.comment}'
                     misp_object.comment = comment
                 for contains_ref in archive_ext.contains_refs:
+                    if not self.main_parser._has_observable(contains_ref):
+                        self._missing_observable_object_error(
+                            _file.id, contains_ref
+                        )
+                        continue
                     object_type = contains_ref.split('--')[0]
                     contained_object = getattr(
                         self, f'_parse_{object_type}_observable_object'
@@ -316,6 +319,11 @@ class STIX2ObservableObjectConverter(
             observable['used'][self.event_uuid] = True
             for reference in domain_name.resolves_to_refs:
                 if reference.split('--')[0] == 'domain-name':
+                    if not self.main_parser._has_observable(reference):
+                        self._missing_observable_object_error(
+                            domain_name.id, reference
+                        )
+                        continue
                     referenced_domain = self._parse_domain_observable_object(
                         reference
                     )
@@ -324,6 +332,11 @@ class STIX2ObservableObjectConverter(
                     )
                     continue
                 resolved_ip = self.main_parser._fetch_observable(reference)
+                if resolved_ip is None:
+                    self._missing_observable_object_error(
+                        domain_name.id, reference
+                    )
+                    continue
                 ip_address = resolved_ip['observable']
                 misp_object.add_attribute(
                     **self._parse_ip_observable(
@@ -335,7 +348,14 @@ class STIX2ObservableObjectConverter(
                 resolved_ip['misp_object'] = misp_object
                 if hasattr(ip_address, 'resolves_to_refs'):
                     for referenced_mac in ip_address.resolves_to_refs:
-                        resolved_mac = self.main_parser._fetch_observable(referenced_mac)
+                        resolved_mac = self.main_parser._fetch_observable(
+                            referenced_mac
+                        )
+                        if resolved_mac is None:
+                            self._missing_observable_object_error(
+                                ip_address.id, referenced_mac
+                            )
+                            continue
                         mac_address = resolved_mac['observable']
                         indicator_ref = resolved_mac.get('indicator_ref')
                         misp_attribute = self.main_parser._add_misp_attribute(
@@ -636,18 +656,23 @@ class STIX2ObservableObjectConverter(
         observable['misp_object'] = misp_object
         for asset, field in self.network_assets.items():
             if hasattr(network_traffic, f'{asset}_ref'):
-                referenced = self.main_parser._fetch_observable(
-                    getattr(network_traffic, f'{asset}_ref')
-                )
-                referenced_observable = referenced['observable']
-                attributes = self._parse_network_traffic_reference_observable(
-                    asset, referenced_observable,
-                    f'{network_traffic.id} - {referenced_observable.id}',
-                    indicator_ref=referenced.get('indicator_ref')
-                )
-                for attribute in attributes:
-                    misp_object.add_attribute(**attribute)
-                self._handle_misp_object_storage(referenced, misp_object)
+                asset_ref = getattr(network_traffic, f'{asset}_ref')
+                referenced = self.main_parser._fetch_observable(asset_ref)
+                if referenced is None:
+                    self._missing_observable_object_error(
+                        network_traffic.id, asset_ref
+                    )
+                else:
+                    referenced_observable = referenced['observable']
+                    attributes = self._parse_network_traffic_reference_observable(
+                        asset, referenced_observable,
+                        f'{network_traffic.id} - {referenced_observable.id}',
+                        name.replace('-', '_'),
+                        indicator_ref=referenced.get('indicator_ref')
+                    )
+                    for attribute in attributes:
+                        misp_object.add_attribute(**attribute)
+                    self._handle_misp_object_storage(referenced, misp_object)
             if hasattr(network_traffic, f'{asset}_payload_ref'):
                 reference = getattr(network_traffic, f'{asset}_payload_ref')
                 if not self.main_parser._has_observable(reference):
