@@ -4646,6 +4646,21 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             vulnerability=vulnerability
         )
 
+    def test_stix20_bundle_with_vulnerability_object_without_external_references(self):
+        bundle = (
+            TestInternalSTIX20Bundles
+            .get_bundle_with_vulnerability_object_without_external_references()
+        )
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self.assertEqual(self.parser.errors, {})
+        event = self.parser.misp_event
+        _, report, vulnerability = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_vulnerability_object_without_external_references(
+            misp_object, vulnerability
+        )
+
     def test_stix20_bundle_with_x509_indicator_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_x509_indicator_object()
         self.parser.load_stix_bundle(bundle)

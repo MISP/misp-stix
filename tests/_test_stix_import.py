@@ -7452,6 +7452,25 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             )
         )
 
+    def _check_vulnerability_object_without_external_references(
+            self, misp_object, vulnerability):
+        self.assertEqual(misp_object.uuid, vulnerability.id.split('--')[1])
+        self.assertEqual(misp_object.name, vulnerability.type)
+        object_relations = {
+            attribute.object_relation for attribute in misp_object.attributes
+        }
+        self.assertNotIn('id', object_relations)
+        self.assertNotIn('references', object_relations)
+        summary = [
+            attribute for attribute in misp_object.attributes
+            if attribute.object_relation == 'summary'
+        ]
+        self.assertEqual(
+            [(attribute.type, attribute.value) for attribute in summary],
+            [('text', 'CVE-2017-11774')]
+        )
+        self._check_object_attribute_uuid(summary[0], vulnerability.id)
+
     def _check_x509_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 13)
         MD5, SHA1, _issuer, spka, spke, spkm, _serial_number, _signature_algorithm, _subject, _version, _not_after, _not_before, x_misp_pem = pattern[1:-1].split(' AND ')
