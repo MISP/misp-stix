@@ -1,5 +1,5 @@
 {
-    "$id": "https://raw.githubusercontent.com/MISP/misp-stix/main/data/misp-extensions/extension-definition-specifications/misp-5ec/misp-property-extension.json",
+    "$id": "https://raw.githubusercontent.com/oasis-open/cti-stix-common-objects/main/extension-definition-specifications/misp-5ec/misp-property-extension.json",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "title": "misp-property-extension",
     "description": "The MISP values of a standard STIX object: one property per MISP object relation or galaxy cluster meta key, the MISP fields, and the rooms holding the values of the MISP objects nested in a STIX structure.",
