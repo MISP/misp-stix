@@ -338,9 +338,12 @@ class InternalSTIX2IdentityConverter(
             except ValueError:
                 misp_object.add_attribute(
                     **{
-                        'type': 'text', 'object_relation':
-                        'contact_information',
-                        'value': identity.contact_information
+                        'type': 'text', 'value': identity.contact_information,
+                        'object_relation': 'contact_information',
+                        'uuid': self.main_parser._create_v5_uuid(
+                            f'{identity.id} - contact_information - '
+                            f'{identity.contact_information}'
+                        )
                     }
                 )
             else:
@@ -354,7 +357,7 @@ class InternalSTIX2IdentityConverter(
                     }
                 )
         self.main_parser._add_misp_object(misp_object, identity)
-    
+
     def _parse_identity_object_attributes(
             self, identity: _IDENTITY_TYPING, name: str) -> MISPObject:
         misp_object = self._create_misp_object(name, identity)
