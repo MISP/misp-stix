@@ -33,14 +33,23 @@ from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export, TestS
 
 _TESTS = Path(__file__).resolve().parent
 _REPOSITORY = _TESTS.parent
-# The suite is named from the property extension's id, and the `schema` URL of
-# each definition is where its schema file sits on the main branch
+# The suite is named from the property extension's id. It is a copy of the
+# suite the OASIS Common Object Repository publishes, synced from it by
+# tools/update_misp_extensions.py: the `schema` URL of each definition is the
+# suite's directory on the repository's main branch, and the `$id` of each
+# schema is where its file sits on that branch
+_MISP_EXTENSION_COPY = _REPOSITORY / 'data' / 'misp-extensions'
 _MISP_EXTENSION_SUITE = (
-    _REPOSITORY / 'data' / 'misp-extensions' /
-    'extension-definition-specifications' /
+    _MISP_EXTENSION_COPY / 'extension-definition-specifications' /
     f"misp-{MISP_PROPERTY_EXTENSION_ID.split('--')[1][:3]}"
 )
-_MAIN_BRANCH_URL = 'https://raw.githubusercontent.com/MISP/misp-stix/main'
+_MISP_EXTENSION_SUITE_URL = (
+    'https://github.com/oasis-open/cti-stix-common-objects/tree/main/'
+    'extension-definition-specifications/misp-5ec'
+)
+_MAIN_BRANCH_URL = (
+    'https://raw.githubusercontent.com/oasis-open/cti-stix-common-objects/main'
+)
 # The STIX 2.1 base schemas, from the cti-stix2-json-schemas submodule
 _STIX2_BASE_SCHEMAS_SUBMODULE = _REPOSITORY / 'data' / 'cti-stix2-json-schemas'
 _STIX2_BASE_SCHEMAS = _STIX2_BASE_SCHEMAS_SUBMODULE / 'schemas' / 'common'
@@ -560,8 +569,10 @@ class TestSTIX21MISPExtensions(TestSTIX21):
                 )
                 self.assertEqual(list(base_validator.iter_errors(definition)), [])
                 schema = self._schema_file(identifier)
-                url = f'{_MAIN_BRANCH_URL}/{schema.relative_to(_REPOSITORY).as_posix()}'
-                self.assertEqual(self._load(schema)['$id'], url)
+                path = schema.relative_to(_MISP_EXTENSION_COPY).as_posix()
+                self.assertEqual(
+                    self._load(schema)['$id'], f'{_MAIN_BRANCH_URL}/{path}'
+                )
                 # The date of the first release carrying them, at midnight
                 created = definition.pop('created')
                 self.assertRegex(created, r'^\d{4}-\d{2}-\d{2}T00:00:00\.000Z$')
@@ -573,7 +584,8 @@ class TestSTIX21MISPExtensions(TestSTIX21):
                         'type': 'extension-definition', 'spec_version': '2.1',
                         'id': identifier,
                         'created_by_ref': MISP_PROJECT_IDENTITY_ID,
-                        'modified': created, 'name': name, 'schema': url,
+                        'modified': created, 'name': name,
+                        'schema': _MISP_EXTENSION_SUITE_URL,
                         'version': '1.0.0', 'extension_types': [extension_type]
                     }
                 )
