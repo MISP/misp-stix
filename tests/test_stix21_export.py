@@ -1326,25 +1326,6 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
                     int(misp_opinion['opinion'])
                 )
 
-    @staticmethod
-    def _get_event_with_sightings_and_references_on_custom_records():
-        # A custom attribute, sighted and reported as a false positive, and a
-        # custom object referring to it
-        event = get_event_with_custom_objects()
-        btc, *_ = get_event_with_stix2_custom_attributes()['Event']['Attribute']
-        btc['Sighting'] = get_event_with_sightings()['Event']['Attribute'][0]['Sighting']
-        event['Event']['Attribute'] = [btc]
-        bank_account = event['Event']['Object'][0]
-        bank_account['ObjectReference'] = [
-            {
-                'uuid': 'c3f8b3a2-6c43-4a8e-9a43-2b8e1f0b3c71',
-                'object_uuid': bank_account['uuid'],
-                'referenced_uuid': btc['uuid'],
-                'relationship_type': 'related-to'
-            }
-        ]
-        return event
-
     def _test_event_with_sightings_and_references_on_custom_records(self, event):
         # The `misp-*` types are registered, and none is a custom type: a
         # Sighting, an Opinion, a Relationship and a Bundle refer to them
@@ -1503,6 +1484,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         self._check_sighting_features(
             sighting1, sightings1[0], observed_data1.id, identity1.id
         )
+        self.assertEqual(sighting1.description, sightings1[0]['source'])
         self._check_sighting_features(
             sighting2, sightings1[1], observed_data1.id, identity2.id
         )
@@ -1605,7 +1587,7 @@ class TestSTIX21JSONEventExport(TestSTIX21EventExport):
         self._test_event_with_analyst_data_on_custom_records(event['Event'])
 
     def test_event_with_sightings_and_references_on_custom_records(self):
-        event = self._get_event_with_sightings_and_references_on_custom_records()
+        event = get_event_with_sightings_and_references_on_custom_records()
         self._test_event_with_sightings_and_references_on_custom_records(
             event['Event']
         )
@@ -1663,7 +1645,7 @@ class TestSTIX21MISPEventExport(TestSTIX21EventExport):
         self._test_event_with_analyst_data_on_custom_records(misp_event)
 
     def test_event_with_sightings_and_references_on_custom_records(self):
-        event = self._get_event_with_sightings_and_references_on_custom_records()
+        event = get_event_with_sightings_and_references_on_custom_records()
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_sightings_and_references_on_custom_records(
