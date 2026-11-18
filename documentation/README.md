@@ -871,7 +871,7 @@ The detailed mapping for attributes from external STIX 2.0 bundles, with explana
 | email | Email Message Object (pattern) / Artifact & Email Addr & Email Message & File Objects and IoCs described in Indicator (pattern) (observable) |
 | file | File Object (pattern) / Artifact & Directory & File Objects and IoCs described in Indicator (pattern) (observable) |
 | identity | **Identity** |
-| network-socket | Network Traffic Object (pattern) / Custom Object |
+| network-socket | Ipv4 Addr & Mac Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / Network Traffic Object (pattern) |
 | network-traffic | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) |
 | process | Process Object (pattern) / Process Object and IoCs described in Indicator (pattern) (observable) |
 | registry-key | Windows Registry Key Object (pattern) / Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) |
@@ -1133,7 +1133,7 @@ The detailed mapping for attributes from external STIX 2.1 bundles, with explana
 | geolocation | **Location** |
 | identity | **Identity** |
 | malware-analysis | **Malware Analysis** |
-| network-socket | Network Traffic Object (pattern) / Custom Object |
+| network-socket | Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / **Observable** / Network Traffic Object (pattern) |
 | network-traffic | Network Traffic Object (pattern) / Ipv4 Addr & Network Traffic Objects and IoCs described in Indicator (pattern) (observable) / **Observable** |
 | process | Process Object (pattern) / Process Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
 | registry-key | Windows Registry Key Object (pattern) / Windows Registry Key Object and IoCs described in Indicator (pattern) (observable) / **Observable** |
