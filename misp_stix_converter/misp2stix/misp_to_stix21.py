@@ -2515,6 +2515,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             body, name, key, prefix='', channel='original_names'
         )
 
+    @staticmethod
+    def _set_sighting_source(sighting_args: dict, source: str):
+        sighting_args['description'] = source
+
     def _to_ids(self, attribute: MISPAttribute | dict) -> bool:
         # Written whether true or false: an attribute that does not say takes
         # the default of its type

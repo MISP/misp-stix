@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from collections import defaultdict
 from datetime import datetime
 from misp_stix_converter import (
     InvalidMISPInputError, MISPtoSTIX20Mapping, MISPtoSTIX20Parser,
@@ -564,6 +565,8 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         self._check_sighting_features(
             sighting1, sightings1[0], observed_data1.id, identity1.id
         )
+        # The 2.0 Sighting has no `description`
+        self.assertEqual(sighting1.x_misp_source, sightings1[0]['source'])
         self._check_sighting_features(
             sighting2, sightings1[1], observed_data1.id, identity2.id
         )
@@ -581,6 +584,37 @@ class TestSTIX20EventExport(TestSTIX20GenericExport):
         self._check_relationship_features(
             relationship, indicator.id, observed_data2.id, 'based-on', timestamp
         )
+
+    def _test_event_with_sightings_and_references_on_custom_records(self, event):
+        # The `x-misp-*` types are custom: a Sighting, an Opinion and a
+        # Relationship refer to them
+        self.parser.parse_misp_event(event)
+        self.assertEqual(self.parser.errors, {})
+        attribute = self.parser._misp_event.attributes[0]
+        attribute_id = f"x-misp-attribute--{attribute['uuid']}"
+        object_id = f"x-misp-object--{self.parser._misp_event.objects[0]['uuid']}"
+        references = defaultdict(list)
+        sources = []
+        for stix_object in self.parser.stix_objects:
+            if stix_object.type == 'sighting':
+                references['sighting'].append(stix_object.sighting_of_ref)
+                sources.append(stix_object.get('x_misp_source'))
+            elif stix_object.type == 'x-misp-opinion':
+                references['opinion'].extend(stix_object.object_refs)
+            elif stix_object.type == 'relationship':
+                references['relationship'].append(
+                    (stix_object.source_ref, stix_object.target_ref)
+                )
+        self.assertEqual(
+            references,
+            {
+                'sighting': [attribute_id] * 2,
+                'opinion': [attribute_id] * 2,
+                'relationship': [(object_id, attribute_id)]
+            }
+        )
+        # The 2.0 Sighting has no `description`, on a custom attribute too
+        self.assertEqual(sources, [attribute['Sighting'][0]['source'], None])
 
     def _test_event_with_tags(self, event):
         self.parser.parse_misp_event(event)
@@ -648,6 +682,12 @@ class TestSTIX20JSONEventExport(TestSTIX20EventExport):
         event = get_event_with_sightings()
         self._test_event_with_sightings(event['Event'])
 
+    def test_event_with_sightings_and_references_on_custom_records(self):
+        event = get_event_with_sightings_and_references_on_custom_records()
+        self._test_event_with_sightings_and_references_on_custom_records(
+            event['Event']
+        )
+
     def test_event_with_tags(self):
         event = get_event_with_tags()
         self._test_event_with_tags(event['Event'])
@@ -697,6 +737,14 @@ class TestSTIX20MISPEventExport(TestSTIX20EventExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_sightings(misp_event)
+
+    def test_event_with_sightings_and_references_on_custom_records(self):
+        event = get_event_with_sightings_and_references_on_custom_records()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_sightings_and_references_on_custom_records(
+            misp_event
+        )
 
     def test_event_with_tags(self):
         event = get_event_with_tags()

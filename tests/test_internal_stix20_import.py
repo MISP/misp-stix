@@ -2419,6 +2419,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.assertEqual(sighting.type, '0' if stix_object.type == 'sighting' else '1')
             self.assertEqual(sighting.Organisation['uuid'], identity.id.split('--')[1])
             self.assertEqual(sighting.Organisation['name'], identity.name)
+        self.assertEqual(AS.sightings[0].source, sighting1.x_misp_source)
         self.assertEqual(domain.uuid, indicator.id.split('--')[1])
         self.assertEqual(len(domain.sightings), 4)
         stix_objects = (sighting3, sighting4, opinion3, opinion4)

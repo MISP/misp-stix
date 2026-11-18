@@ -4132,6 +4132,7 @@ _TEST_SIGHTINGS = [
                 "uuid": "5125aa81-ab95-4cdf-83f9-3c467207307d",
                 "date_sighting": "1603642925",
                 "type": "0",
+                "source": "honeypot",
                 "Organisation": {
                     "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
                     "name": "CIRCL"
@@ -5940,6 +5941,25 @@ def get_event_with_regkey_value_attribute_no_separator():
 def get_event_with_sightings():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = deepcopy(_TEST_SIGHTINGS)
+    return event
+
+
+def get_event_with_sightings_and_references_on_custom_records():
+    # A custom attribute, sighted and reported as a false positive, and a
+    # custom object referring to it
+    event = get_event_with_custom_objects()
+    btc, *_ = get_event_with_stix2_custom_attributes()['Event']['Attribute']
+    btc['Sighting'] = get_event_with_sightings()['Event']['Attribute'][0]['Sighting']
+    event['Event']['Attribute'] = [btc]
+    bank_account = event['Event']['Object'][0]
+    bank_account['ObjectReference'] = [
+        {
+            'uuid': 'c3f8b3a2-6c43-4a8e-9a43-2b8e1f0b3c71',
+            'object_uuid': bank_account['uuid'],
+            'referenced_uuid': btc['uuid'],
+            'relationship_type': 'related-to'
+        }
+    ]
     return event
 
 

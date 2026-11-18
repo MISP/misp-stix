@@ -1579,7 +1579,8 @@ _BUNDLE_WITH_SIGHTINGS = [
         "created": "2020-10-25T16:22:05.000Z",
         "modified": "2020-10-25T16:22:05.000Z",
         "sighting_of_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "where_sighted_refs": ["identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"]
+        "where_sighted_refs": ["identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"],
+        "x_misp_source": "honeypot"
     },
     {
         "type": "sighting",
