@@ -23,7 +23,7 @@ from misp_stix_converter.tools.misp_object_templates import (
     _extension_property_name, _ORIGINAL_NAMES_PROPERTY,
     _template_custom_properties)
 from pathlib import Path
-from pymisp import AbstractMISP, MISPAttribute
+from pymisp import AbstractMISP, MISPAttribute, MISPEvent
 from stix2.parsing import dict_to_stix2
 from tempfile import TemporaryDirectory
 from typing import Optional
@@ -3863,6 +3863,83 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self.assertEqual(
                 [key for key in imported if key.lower() == 'ttp'], [survivor]
             )
+
+    ################################################################################
+    #                      CLUSTER TAG CHECKING FUNCTIONS                          #
+    ################################################################################
+
+    @staticmethod
+    def _cluster_tag_names(record) -> set:
+        return {
+            tag.name for tag in record.tags
+            if tag.name.startswith('misp-galaxy:')
+        }
+
+    def _check_cluster_tag(
+            self, bundle, tag_name: str, kept: bool = True) -> list:
+        """Every record the cluster is attached to is tagged `tag_name`, and
+        the imported cluster keeps it as its own tag when `kept`."""
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        [attribute] = event.attributes
+        [misp_object] = event.objects
+        clusters = []
+        for record in (attribute, *misp_object.attributes):
+            self.assertEqual(self._cluster_tag_names(record), {tag_name})
+            [galaxy] = record.galaxies
+            [cluster] = galaxy.clusters
+            self.assertEqual(
+                cluster.get('tag_name'), tag_name if kept else None
+            )
+            clusters.append(cluster)
+        return clusters
+
+    def _check_cluster_tag_round_trip(self, export_class):
+        """A tag MISP stored for a cluster by its uuid comes back on the
+        records, and the next export carries it again, once."""
+        from .test_events import get_event_with_cluster_tag_names_by_uuid
+        event = MISPEvent()
+        event.from_dict(**get_event_with_cluster_tag_names_by_uuid())
+        [cluster] = event.galaxies[0].clusters
+        export_parser = export_class()
+        export_parser.parse_misp_event(event)
+        self.parser.load_stix_bundle(export_parser.bundle)
+        self.parser.parse_stix_bundle()
+        imported = self.parser.misp_event
+        [attribute] = imported.attributes
+        [misp_object] = imported.objects
+        for record in (attribute, *misp_object.attributes):
+            self.assertEqual(
+                self._cluster_tag_names(record), {cluster.tag_name}
+            )
+        export_parser = export_class()
+        export_parser.parse_misp_event(imported)
+        cluster_objects = [
+            stix_object for stix_object in export_parser.bundle.objects
+            if stix_object['id'].endswith(cluster.uuid)
+        ]
+        self.assertEqual(len(cluster_objects), 1)
+        self.assertEqual(
+            [
+                label for label in cluster_objects[0]['labels']
+                if label.startswith('misp-galaxy:')
+            ],
+            [cluster.tag_name]
+        )
+
+    def _check_cluster_tag_as_tags(self, bundle, tag_name: str):
+        """Every record the cluster is attached to is tagged `tag_name`, and
+        given no galaxy."""
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=True)
+        event = self.parser.misp_event
+        [attribute] = event.attributes
+        [misp_object] = event.objects
+        for record in (attribute, *misp_object.attributes):
+            self.assertEqual(self._cluster_tag_names(record), {tag_name})
+            self.assertEqual(record.galaxies, [])
+        self.assertEqual(event.galaxies, [])
 
     ################################################################################
     #             OBJECT TEMPLATE RELATION RESTORATION CHECKING FUNCTIONS          #

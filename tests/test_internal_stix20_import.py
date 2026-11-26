@@ -2631,6 +2631,174 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.assertEqual(record.galaxies, [])
         self.assertEqual(event.galaxies, [])
 
+    def test_stix20_bundle_with_threat_actor_galaxy_carrying_its_tag_by_uuid(self):
+        # A cluster an instance made is tagged by its uuid: its object
+        # carries that tag, which names it where its value would not
+        tag_name = 'misp-galaxy:threat-actor="11e17436-6ede-4733-8547-4ce0254ea19e"'
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag(bundle, tag_name)
+
+    def test_stix20_bundle_with_custom_galaxy_carrying_its_tag_by_uuid(self):
+        tag_name = 'misp-galaxy:tea-matrix="24430dc6-9c27-4b3c-a5e7-6dda478fffa0"'
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_custom_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag(bundle, tag_name)
+
+    def test_stix20_bundle_with_threat_actor_galaxy_carrying_its_tag_by_value(self):
+        # A cluster MISP ships is tagged by its value: the carried tag is kept
+        # on the cluster all the same, so the next export carries it again
+        tag_name = 'misp-galaxy:threat-actor="Cutting Kitten"'
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag(bundle, tag_name)
+
+    def test_stix20_bundle_with_custom_galaxy_carrying_its_tag_by_value(self):
+        tag_name = 'misp-galaxy:tea-matrix="Milk in tea"'
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_custom_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag(bundle, tag_name)
+
+    def test_stix20_bundle_with_threat_actor_galaxy_carrying_no_tag(self):
+        # No tag carried: the records are tagged by the cluster value, which
+        # the cluster does not keep as its own tag
+        self._check_cluster_tag(
+            TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(),
+            'misp-galaxy:threat-actor="Cutting Kitten"', kept=False
+        )
+
+    def test_stix20_bundle_with_custom_galaxy_carrying_no_tag(self):
+        self._check_cluster_tag(
+            TestInternalSTIX20Bundles.get_bundle_with_custom_galaxy_on_attribute_and_object(),
+            'misp-galaxy:tea-matrix="Milk in tea"', kept=False
+        )
+
+    def test_stix20_bundle_with_galaxy_carrying_a_tag_value_a_tag_cannot_carry(self):
+        # The carried value goes through the tag builder like any other: what
+        # a tag cannot carry has the tag name the cluster by its uuid
+        tag_name = 'misp-galaxy:threat-actor="11e17436-6ede-4733-8547-4ce0254ea19e"'
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            f'misp-galaxy:threat-actor="{SMUGGLING_TAG_VALUE}"'
+        )
+        self._check_cluster_tag(bundle, tag_name)
+        self._check_cluster_tag_by_uuid_warning(
+            SMUGGLING_TAG_VALUE, '11e17436-6ede-4733-8547-4ce0254ea19e',
+            self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_threat_actor_galaxy_carrying_its_tag_by_uuid_as_tags(self):
+        tag_name = 'misp-galaxy:threat-actor="11e17436-6ede-4733-8547-4ce0254ea19e"'
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag_as_tags(bundle, tag_name)
+
+    def test_stix20_bundle_with_custom_galaxy_carrying_its_tag_by_uuid_as_tags(self):
+        tag_name = 'misp-galaxy:tea-matrix="24430dc6-9c27-4b3c-a5e7-6dda478fffa0"'
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_custom_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag_as_tags(bundle, tag_name)
+
+    def test_stix20_bundle_with_galaxy_carrying_a_tag_value_a_tag_cannot_carry_as_tags(self):
+        # No cluster to keep the tag in step with: the carried value is
+        # cleaned, as a guessed one is
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            f'misp-galaxy:threat-actor="{SMUGGLING_TAG_VALUE}"'
+        )
+        self._check_cluster_tag_as_tags(
+            bundle, f'misp-galaxy:threat-actor="{SANITISED_TAG_VALUE}"'
+        )
+        self._check_sanitised_tag_warning(
+            SMUGGLING_TAG_VALUE, SANITISED_TAG_VALUE, self.parser.warnings
+        )
+
+    def test_stix20_bundle_with_tool_galaxy_carrying_its_tag_as_tags(self):
+        # The tag of a cluster MISP ships names it by its value, which the
+        # STIX name alone does not hold for a `mitre-*` type
+        tag_name = 'misp-galaxy:mitre-tool="cmd - S0106"'
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_tool_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag_as_tags(bundle, tag_name)
+
+    def test_stix20_bundle_with_threat_actor_galaxy_carrying_its_tag_out_of_meta(self):
+        # The carried tag is the cluster's own tag, not one of its meta labels
+        tag_name = 'misp-galaxy:threat-actor="11e17436-6ede-4733-8547-4ce0254ea19e"'
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        for cluster in self._check_cluster_tag(bundle, tag_name):
+            self.assertNotIn('labels', cluster.meta)
+
+    def test_stix20_bundle_with_malware_galaxy_carrying_its_tag_out_of_meta(self):
+        tag_name = 'misp-galaxy:mitre-malware="b8eb28e4-48a6-40ae-951a-328714f75eda"'
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_malware_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        for cluster in self._check_cluster_tag(bundle, tag_name):
+            self.assertNotIn('labels', cluster.meta)
+
+    def test_stix20_bundle_with_tool_galaxy_carrying_its_tag_out_of_meta(self):
+        tag_name = 'misp-galaxy:mitre-tool="bba595da-b73a-4354-aa6c-224d4de7cb4e"'
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_tool_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        for cluster in self._check_cluster_tag(bundle, tag_name):
+            self.assertNotIn('labels', cluster.meta)
+
+    def test_stix20_bundle_with_galaxy_carrying_a_tag_of_another_galaxy(self):
+        # Only the label of the cluster's own galaxy type carries its tag:
+        # another one is a meta label, as any other label is
+        label = 'misp-galaxy:mitre-intrusion-set="APT16 - G0023"'
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            label
+        )
+        clusters = self._check_cluster_tag(
+            bundle, 'misp-galaxy:threat-actor="Cutting Kitten"', kept=False
+        )
+        for cluster in clusters:
+            self.assertEqual(cluster.meta['labels'], [label])
+
+    def test_stix20_bundle_with_galaxy_carrying_a_tag_of_another_galaxy_as_tags(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            'misp-galaxy:mitre-intrusion-set="APT16 - G0023"'
+        )
+        self._check_cluster_tag_as_tags(
+            bundle, 'misp-galaxy:threat-actor="Cutting Kitten"'
+        )
+
+    def test_stix20_bundle_with_galaxy_carrying_an_empty_tag(self):
+        # An empty value slot carries no tag: the cluster value names the
+        # cluster, as when no tag was carried, and nothing is reported. The
+        # label is still that of the cluster's own galaxy, so no meta label.
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            'misp-galaxy:threat-actor=""'
+        )
+        clusters = self._check_cluster_tag(
+            bundle, 'misp-galaxy:threat-actor="Cutting Kitten"', kept=False
+        )
+        for cluster in clusters:
+            self.assertNotIn('labels', cluster.meta)
+        self.assertEqual(dict(self.parser.warnings), {})
+
+    def test_stix20_bundle_with_galaxy_carrying_an_empty_tag_as_tags(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            'misp-galaxy:threat-actor=""'
+        )
+        self._check_cluster_tag_as_tags(
+            bundle, 'misp-galaxy:threat-actor="Cutting Kitten"'
+        )
+        self.assertEqual(dict(self.parser.warnings), {})
+
+    def test_stix20_cluster_tag_round_trip(self):
+        from misp_stix_converter import MISPtoSTIX20Parser
+        self._check_cluster_tag_round_trip(MISPtoSTIX20Parser)
+
     def test_stix20_reused_parser_does_not_leak_galaxy_clusters(self):
         # `_reset_bundle_state()` must clear `_clusters`/`_galaxies` so a parser
         # reused across documents does not carry one bundle's galaxy into the
