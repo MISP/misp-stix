@@ -241,8 +241,11 @@ class MISPtoSTIXParser(AbstractParser):
 
     @staticmethod
     def _quick_fetch_tag_names(galaxy: dict) -> tuple:
+        # A galaxy cluster's own tag name first: one made on a MISP instance
+        # has a tag naming it by its uuid, not the one its type and value build
         return tuple(
-            f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"'
+            cluster.get('tag_name')
+            or f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"'
             for cluster in galaxy["GalaxyCluster"]
         )
 
