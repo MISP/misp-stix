@@ -3970,6 +3970,53 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_custom_galaxy()
         )
 
+    def _check_bundle_with_custom_galaxy_as_tags(self, bundle):
+        # A cluster of a galaxy type STIX has no object for gives the event a
+        # tag, as a mapped one does, and no galaxy
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=True)
+        event = self.parser.misp_event
+        self.assertEqual(event.galaxies, [])
+        self.assertIn(
+            'misp-galaxy:tea-matrix="Milk in tea"',
+            {tag.name for tag in event.tags}
+        )
+
+    def test_stix21_bundle_with_custom_galaxy_as_tags(self):
+        self._check_bundle_with_custom_galaxy_as_tags(
+            TestInternalSTIX21Bundles.get_bundle_with_custom_galaxy()
+        )
+
+    def test_stix21_bundle_with_custom_galaxy_as_tags_extension_syntax(self):
+        self._check_bundle_with_custom_galaxy_as_tags(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_custom_galaxy()
+        )
+
+    def _check_bundle_with_custom_galaxy_on_attribute_and_object_as_tags(
+            self, bundle):
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=True)
+        event = self.parser.misp_event
+        [attribute] = event.attributes
+        [misp_object] = event.objects
+        for record in (attribute, *misp_object.attributes):
+            self.assertIn(
+                'misp-galaxy:tea-matrix="Milk in tea"',
+                {tag.name for tag in record.tags}
+            )
+            self.assertEqual(record.galaxies, [])
+        self.assertEqual(event.galaxies, [])
+
+    def test_stix21_bundle_with_custom_galaxy_on_attribute_and_object_as_tags(self):
+        self._check_bundle_with_custom_galaxy_on_attribute_and_object_as_tags(
+            TestInternalSTIX21Bundles.get_bundle_with_custom_galaxy_on_attribute_and_object()
+        )
+
+    def test_stix21_bundle_with_custom_galaxy_on_attribute_and_object_as_tags_extension_syntax(self):
+        self._check_bundle_with_custom_galaxy_on_attribute_and_object_as_tags(
+            TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_custom_galaxy_on_attribute_and_object()
+        )
+
     def test_stix21_reused_parser_does_not_leak_galaxy_clusters(self):
         # `_reset_bundle_state()` must clear `_clusters`/`_galaxies` so a parser
         # reused across documents does not carry one bundle's galaxy into the
