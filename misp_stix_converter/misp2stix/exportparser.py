@@ -168,9 +168,9 @@ class MISPtoSTIXParser(AbstractParser):
                 try:
                     if to_call is not None:
                         getattr(self, to_call.format('event'))(galaxy)
-                        tag_names.extend(self._quick_fetch_tag_names(galaxy))
                     else:
                         self._handle_undefined_event_galaxy(galaxy)
+                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 except Exception as exception:
                     self._event_galaxy_error(galaxy, exception)
             return tuple(
