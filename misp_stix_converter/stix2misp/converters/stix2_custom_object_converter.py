@@ -133,6 +133,12 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
             self, custom_galaxy: _CUSTOM_OBJECT_TYPING):
         if self._reuse_galaxy_cluster(custom_galaxy.id):
             return
+        if self.main_parser.galaxies_as_tags:
+            self._add_custom_galaxy_cluster_tag(
+                custom_galaxy.id, custom_galaxy.x_misp_type,
+                custom_galaxy.x_misp_value
+            )
+            return
         cluster_args = {
             'type': custom_galaxy.x_misp_type,
             'value': custom_galaxy.x_misp_value,
@@ -152,6 +158,12 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
         # read as written, where the `x-misp-galaxy-cluster` joins them
         custom_ref = custom_galaxy['id']
         if self._reuse_galaxy_cluster(custom_ref):
+            return
+        if self.main_parser.galaxies_as_tags:
+            self._add_custom_galaxy_cluster_tag(
+                custom_ref, custom_galaxy['galaxy_type'],
+                custom_galaxy['value']
+            )
             return
         cluster_args = {
             'type': custom_galaxy['galaxy_type'],
@@ -182,6 +194,19 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
             return False
         clusters[custom_ref]['used'][self.event_uuid] = False
         return True
+
+    def _add_custom_galaxy_cluster_tag(
+            self, custom_ref: str, galaxy_type: str, value: str):
+        # Under galaxies as tags a cluster is only the tag naming it, as for
+        # the galaxy types STIX has an object for: no Galaxy and no Galaxy
+        # Cluster are built, so nothing else of the object is read
+        tag_name = self.main_parser._build_tag(
+            'misp-galaxy', galaxy_type, value
+        )
+        self.main_parser._clusters[custom_ref] = {
+            'tag_names': [tag_name] if tag_name is not None else [],
+            'used': {self.event_uuid: False}
+        }
 
     def _add_custom_galaxy_cluster(
             self, custom_ref: str, cluster_args: dict, galaxy_name: str,
