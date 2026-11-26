@@ -9061,6 +9061,17 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         self.assertEqual(campaign.type, 'campaign')
         self._check_galaxy_features(campaign, galaxy, timestamp)
 
+    def _test_event_with_cluster_tag_names_by_uuid(self, event):
+        # The tag of a galaxy cluster labels its own STIX object, never a
+        # record carrying it
+        cluster = event['Galaxy'][0]['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event)
+        self.assertEqual(
+            [stix_object.id for stix_object in self.parser.stix_objects
+             if cluster['tag_name'] in stix_object.get('labels', [])],
+            [f"threat-actor--{cluster['uuid']}"]
+        )
+
     def _test_event_with_course_of_action_galaxy(self, event):
         galaxy = event['Galaxy'][0]
         timestamp = event['timestamp']
@@ -9464,6 +9475,10 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         event = get_event_with_custom_galaxy_meta_keys_outside_the_dictionary_charset()
         self._test_event_with_custom_galaxy(event['Event'])
 
+    def test_event_with_cluster_tag_names_by_uuid(self):
+        event = get_event_with_cluster_tag_names_by_uuid()
+        self._test_event_with_cluster_tag_names_by_uuid(event['Event'])
+
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
         self._test_event_with_course_of_action_galaxy(event['Event'])
@@ -9795,6 +9810,12 @@ class TestSTIX21MISPGalaxiesExport(TestSTIX21GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_custom_galaxy(misp_event)
+
+    def test_event_with_cluster_tag_names_by_uuid(self):
+        event = get_event_with_cluster_tag_names_by_uuid()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_cluster_tag_names_by_uuid(misp_event)
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()

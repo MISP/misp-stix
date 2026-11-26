@@ -4764,6 +4764,24 @@ def get_event_with_attack_pattern_galaxy():
     return event
 
 
+def get_event_with_cluster_tag_names_by_uuid():
+    # A galaxy cluster made on a MISP instance has a tag naming it by its
+    # uuid, not by its value: here on the event, an attribute and an
+    # object's attribute
+    galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
+    cluster = galaxy['GalaxyCluster'][0]
+    cluster['tag_name'] = f'misp-galaxy:threat-actor="{cluster["uuid"]}"'
+    attribute = deepcopy(_NON_INDICATOR_ATTRIBUTE)
+    misp_object = dict(_populate_object(_TEST_ASN_OBJECT))
+    event = deepcopy(_BASE_EVENT)
+    for record in (event['Event'], attribute, misp_object['Attribute'][0]):
+        record['Galaxy'] = [deepcopy(galaxy)]
+        record['Tag'] = [{'name': cluster['tag_name']}]
+    event['Event']['Attribute'] = [attribute]
+    event['Event']['Object'] = [misp_object]
+    return event
+
+
 def get_event_with_course_of_action_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
