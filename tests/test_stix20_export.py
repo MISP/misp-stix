@@ -6287,6 +6287,26 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
             ]
         )
 
+    def _test_event_with_cluster_tags_of_an_unmapped_galaxy(self, event):
+        # A cluster of a galaxy type with no STIX mapping goes out as a custom
+        # galaxy cluster the Report references: its tag labels that object
+        # only, and the Report keeps the event's other tags
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        report, = (
+            stix_object for stix_object in stix_objects
+            if stix_object.type == 'report'
+        )
+        self.assertIn('admiralty-scale:source-reliability="a"', report.labels)
+        for cluster in event['Galaxy'][0]['GalaxyCluster']:
+            custom_id = f"x-misp-galaxy-cluster--{cluster['uuid']}"
+            self.assertIn(custom_id, report.object_refs)
+            self.assertEqual(
+                [stix_object.id for stix_object in stix_objects
+                 if cluster['tag_name'] in stix_object.get('labels', [])],
+                [custom_id]
+            )
+
     def _test_event_with_course_of_action_galaxy(self, event):
         galaxy = event['Galaxy'][0]
         timestamp = event['timestamp']
@@ -6584,6 +6604,12 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
         event = get_event_with_cluster_tags_on_a_pair_attribute()
         self._test_event_with_cluster_tags_on_a_pair_attribute(event['Event'])
 
+    def test_event_with_cluster_tags_of_an_unmapped_galaxy(self):
+        event = get_event_with_cluster_tags_of_an_unmapped_galaxy()
+        self._test_event_with_cluster_tags_of_an_unmapped_galaxy(
+            event['Event']
+        )
+
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
         self._test_event_with_course_of_action_galaxy(event['Event'])
@@ -6848,6 +6874,12 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_cluster_tags_on_a_pair_attribute(misp_event)
+
+    def test_event_with_cluster_tags_of_an_unmapped_galaxy(self):
+        event = get_event_with_cluster_tags_of_an_unmapped_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_cluster_tags_of_an_unmapped_galaxy(misp_event)
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()

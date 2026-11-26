@@ -4808,6 +4808,32 @@ def get_event_with_cluster_tags_on_a_pair_attribute():
     return event
 
 
+def get_event_with_cluster_tags_of_an_unmapped_galaxy():
+    # An event holding two clusters of a galaxy type with no STIX mapping, one
+    # tagged by its uuid and one by its value, next to a plain tag
+    galaxy = deepcopy(_TEST_TEA_MATRIX_GALAXY)
+    by_uuid = galaxy['GalaxyCluster'][0]
+    by_uuid['tag_name'] = f'misp-galaxy:tea-matrix="{by_uuid["uuid"]}"'
+    by_value = deepcopy(by_uuid)
+    by_value.update(
+        {
+            'uuid': 'e8456520-033d-4411-85ac-f72daad0ac1f',
+            'value': 'Sugar in tea',
+            'description': 'Sugar in tea',
+            'tag_name': 'misp-galaxy:tea-matrix="Sugar in tea"'
+        }
+    )
+    galaxy['GalaxyCluster'].append(by_value)
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [galaxy]
+    event['Event']['Tag'] = [
+        {'name': by_uuid['tag_name']},
+        {'name': by_value['tag_name']},
+        {'name': 'admiralty-scale:source-reliability="a"'}
+    ]
+    return event
+
+
 def get_event_with_course_of_action_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
