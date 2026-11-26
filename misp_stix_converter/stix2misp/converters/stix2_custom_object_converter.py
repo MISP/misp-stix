@@ -135,7 +135,7 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
             return
         if self.main_parser.galaxies_as_tags:
             self._add_custom_galaxy_cluster_tag(
-                custom_galaxy.id, custom_galaxy.x_misp_type,
+                custom_galaxy, custom_galaxy.x_misp_type,
                 custom_galaxy.x_misp_value
             )
             return
@@ -150,7 +150,7 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
                 custom_galaxy, 'x_misp_meta', _ORIGINAL_NAMES_PROPERTY
             )
         self._add_custom_galaxy_cluster(
-            custom_galaxy.id, cluster_args, custom_galaxy.x_misp_name
+            custom_galaxy, cluster_args, custom_galaxy.x_misp_name
         )
 
     def _parse_misp_galaxy_cluster(self, custom_galaxy: _MISP_OBJECT_TYPING):
@@ -161,7 +161,7 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
             return
         if self.main_parser.galaxies_as_tags:
             self._add_custom_galaxy_cluster_tag(
-                custom_ref, custom_galaxy['galaxy_type'],
+                custom_galaxy, custom_galaxy['galaxy_type'],
                 custom_galaxy['value']
             )
             return
@@ -182,7 +182,7 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
                 custom_galaxy, 'meta', 'original_names'
             )
         self._add_custom_galaxy_cluster(
-            custom_ref, cluster_args, custom_galaxy['galaxy_name'],
+            custom_galaxy, cluster_args, custom_galaxy['galaxy_name'],
             custom_galaxy.get('galaxy_description')
         )
 
@@ -196,28 +196,31 @@ class STIX2CustomObjectConverter(InternalSTIX2Converter):
         return True
 
     def _add_custom_galaxy_cluster_tag(
-            self, custom_ref: str, galaxy_type: str, value: str):
+            self, custom_galaxy: _CUSTOM_OBJECT_TYPING | _MISP_OBJECT_TYPING,
+            galaxy_type: str, value: str):
         # Under galaxies as tags a cluster is only the tag naming it, as for
         # the galaxy types STIX has an object for: no Galaxy and no Galaxy
-        # Cluster are built, so nothing else of the object is read
+        # Cluster are built, so nothing else of the object is read. The tag
+        # its object carried names it, else its value does.
         tag_name = self.main_parser._build_tag(
-            'misp-galaxy', galaxy_type, value
+            'misp-galaxy', galaxy_type,
+            self._carried_cluster_value(custom_galaxy, galaxy_type) or value
         )
-        self.main_parser._clusters[custom_ref] = {
+        self.main_parser._clusters[custom_galaxy['id']] = {
             'tag_names': [tag_name] if tag_name is not None else [],
             'used': {self.event_uuid: False}
         }
 
     def _add_custom_galaxy_cluster(
-            self, custom_ref: str, cluster_args: dict, galaxy_name: str,
+            self, custom_galaxy: _CUSTOM_OBJECT_TYPING | _MISP_OBJECT_TYPING,
+            cluster_args: dict, galaxy_name: str,
             galaxy_description: Optional[str] = None):
-        self.main_parser._clusters[custom_ref] = {
-            'used': {self.event_uuid: False},
-            'cluster': self.main_parser._create_misp_galaxy_cluster(
-                **cluster_args
-            )
-        }
         galaxy_type = cluster_args['type']
+        cluster = self.main_parser._create_misp_galaxy_cluster(**cluster_args)
+        self._keep_carried_cluster_tag(cluster, custom_galaxy, galaxy_type)
+        self.main_parser._clusters[custom_galaxy['id']] = {
+            'used': {self.event_uuid: False}, 'cluster': cluster
+        }
         if galaxy_type not in self.main_parser._galaxies:
             self._create_galaxy_args(
                 galaxy_type, galaxy_name, galaxy_description
