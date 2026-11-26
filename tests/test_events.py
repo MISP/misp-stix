@@ -4782,6 +4782,32 @@ def get_event_with_cluster_tag_names_by_uuid():
     return event
 
 
+def get_event_with_cluster_tags_on_a_pair_attribute():
+    # An attribute exported as an Observed Data and an Indicator, holding a
+    # cluster tagged by its uuid, one tagged by its value and one of a galaxy
+    # type with no STIX mapping, next to a marking and a plain tag
+    threat_actor = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
+    by_uuid = threat_actor['GalaxyCluster'][0]
+    by_uuid['tag_name'] = f'misp-galaxy:threat-actor="{by_uuid["uuid"]}"'
+    malware = deepcopy(_TEST_MALWARE_GALAXY)
+    by_value = malware['GalaxyCluster'][0]
+    by_value['tag_name'] = f'misp-galaxy:mitre-malware="{by_value["value"]}"'
+    attribute = deepcopy(_INDICATOR_ATTRIBUTE)
+    attribute['Galaxy'] = [
+        threat_actor, malware, deepcopy(_TEST_TEA_MATRIX_GALAXY)
+    ]
+    attribute['Tag'] = [
+        {'name': by_uuid['tag_name']},
+        {'name': by_value['tag_name']},
+        {'name': 'misp-galaxy:tea-matrix="Milk in tea"'},
+        {'name': 'tlp:white'},
+        {'name': 'admiralty-scale:source-reliability="a"'}
+    ]
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [attribute]
+    return event
+
+
 def get_event_with_course_of_action_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [

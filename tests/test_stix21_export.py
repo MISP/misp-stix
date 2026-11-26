@@ -9072,6 +9072,45 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
             [f"threat-actor--{cluster['uuid']}"]
         )
 
+    def _test_event_with_cluster_tags_on_a_pair_attribute(self, event):
+        # The Indicator of an Indicator and Observed Data pair reaches the
+        # attribute's galaxy clusters through the Observed Data it is based
+        # on: it keeps the attribute's other tags, with no cluster tag as a
+        # label and no relationship of its own to a cluster
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        indicator, = (
+            stix_object for stix_object in stix_objects
+            if stix_object.type == 'indicator'
+        )
+        self.assertEqual(
+            [label for label in indicator.labels
+             if label.startswith('misp-galaxy:')],
+            []
+        )
+        self.assertIn(
+            'admiralty-scale:source-reliability="a"', indicator.labels
+        )
+        self.assertEqual(
+            indicator.object_marking_refs,
+            ['marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9']
+        )
+        observed_data_id = 'observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f'
+        self.assertEqual(
+            [(stix_object.source_ref, stix_object.target_ref)
+             for stix_object in stix_objects
+             if stix_object.type == 'relationship'],
+            [
+                (observed_data_id,
+                 'threat-actor--11e17436-6ede-4733-8547-4ce0254ea19e'),
+                (observed_data_id,
+                 'malware--b8eb28e4-48a6-40ae-951a-328714f75eda'),
+                (observed_data_id,
+                 'misp-galaxy-cluster--24430dc6-9c27-4b3c-a5e7-6dda478fffa0'),
+                (indicator.id, observed_data_id)
+            ]
+        )
+
     def _test_event_with_course_of_action_galaxy(self, event):
         galaxy = event['Galaxy'][0]
         timestamp = event['timestamp']
@@ -9479,6 +9518,10 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         event = get_event_with_cluster_tag_names_by_uuid()
         self._test_event_with_cluster_tag_names_by_uuid(event['Event'])
 
+    def test_event_with_cluster_tags_on_a_pair_attribute(self):
+        event = get_event_with_cluster_tags_on_a_pair_attribute()
+        self._test_event_with_cluster_tags_on_a_pair_attribute(event['Event'])
+
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
         self._test_event_with_course_of_action_galaxy(event['Event'])
@@ -9816,6 +9859,12 @@ class TestSTIX21MISPGalaxiesExport(TestSTIX21GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_cluster_tag_names_by_uuid(misp_event)
+
+    def test_event_with_cluster_tags_on_a_pair_attribute(self):
+        event = get_event_with_cluster_tags_on_a_pair_attribute()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_cluster_tags_on_a_pair_attribute(misp_event)
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
