@@ -16048,6 +16048,71 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         return cls.__assemble_bundle(_CUSTOM_GALAXY)
 
     @classmethod
+    def get_bundle_with_custom_galaxy_on_attribute_and_object(cls, *labels):
+        """A Custom Galaxy Cluster an attribute and an object each relate
+        to, its object carrying `labels` besides the galaxy ones."""
+        return cls.__assemble_bundle(
+            *cls.__galaxy_on_attribute_and_object(
+                _CUSTOM_GALAXY, _ASN_INDICATOR_OBJECT, labels
+            )
+        )
+
+    @classmethod
+    def get_bundle_with_malware_galaxy_on_attribute_and_object(cls, *labels):
+        """A Malware Galaxy Cluster an attribute and an object each relate
+        to, its object carrying `labels` besides the galaxy ones."""
+        return cls.__assemble_bundle(
+            *cls.__galaxy_on_attribute_and_object(
+                _MALWARE_GALAXY, _ASN_INDICATOR_OBJECT, labels
+            )
+        )
+
+    @classmethod
+    def get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            cls, *labels):
+        """A Threat Actor Galaxy Cluster an attribute and an object each
+        relate to, its object carrying `labels` besides the galaxy ones."""
+        return cls.__assemble_bundle(
+            *cls.__galaxy_on_attribute_and_object(
+                _THREAT_ACTOR_GALAXY, _ASN_INDICATOR_OBJECT, labels
+            )
+        )
+
+    @classmethod
+    def get_bundle_with_tool_galaxy_on_attribute_and_object(cls, *labels):
+        """A Tool Galaxy Cluster an attribute and an object each relate to,
+        its object carrying `labels` besides the galaxy ones."""
+        return cls.__assemble_bundle(
+            *cls.__galaxy_on_attribute_and_object(
+                _TOOL_GALAXY, _ASN_INDICATOR_OBJECT, labels
+            )
+        )
+
+    @classmethod
+    def __galaxy_on_attribute_and_object(cls, galaxy, asn_object, labels):
+        galaxy = deepcopy(galaxy)
+        galaxy['labels'].extend(labels)
+        relationships = [
+            {
+                "type": "relationship",
+                "spec_version": "2.1",
+                "id": f"relationship--{relationship_uuid}",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "relationship_type": "related-to",
+                "source_ref": record['id'],
+                "target_ref": galaxy['id']
+            } for relationship_uuid, record in (
+                ('3c3b6d24-3a43-4d5c-9b6e-2bd5b4a3e5a1',
+                 _DOMAIN_INDICATOR_ATTRIBUTE),
+                ('8f2d7a51-6e0c-4f8b-a7d3-5c1e9b0f4d62', asn_object)
+            )
+        ]
+        return (
+            _DOMAIN_INDICATOR_ATTRIBUTE, asn_object, galaxy, *relationships
+        )
+
+    @classmethod
     def get_bundle_with_stix_galaxy(cls):
         return cls.__assemble_bundle(_STIX_MALWARE_GALAXY)
 
@@ -17057,6 +17122,16 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
         )
 
     @classmethod
+    def get_extension_syntax_bundle_with_custom_galaxy_on_attribute_and_object(
+            cls, *labels):
+        return cls.__assemble_extension_syntax_bundle(
+            *cls.__galaxy_on_attribute_and_object(
+                _EXTENSION_SYNTAX_CUSTOM_GALAXY,
+                _EXTENSION_SYNTAX_ASN_INDICATOR_OBJECT, labels
+            )
+        )
+
+    @classmethod
     def get_extension_syntax_bundle_with_custom_labels(cls):
         return cls.__assemble_extension_syntax_bundle(
             *cls.__custom_labels(_EXTENSION_SYNTAX_DOMAIN_IP_INDICATOR_OBJECT)
@@ -17718,6 +17793,16 @@ class TestInternalSTIX21Bundles(TestSTIX2Bundles):
     def get_extension_syntax_bundle_with_threat_actor_galaxy(cls):
         return cls.__assemble_extension_syntax_bundle(
             _EXTENSION_SYNTAX_THREAT_ACTOR_GALAXY
+        )
+
+    @classmethod
+    def get_extension_syntax_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            cls, *labels):
+        return cls.__assemble_extension_syntax_bundle(
+            *cls.__galaxy_on_attribute_and_object(
+                _EXTENSION_SYNTAX_THREAT_ACTOR_GALAXY,
+                _EXTENSION_SYNTAX_ASN_INDICATOR_OBJECT, labels
+            )
         )
 
     @classmethod

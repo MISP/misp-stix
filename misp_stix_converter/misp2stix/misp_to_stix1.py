@@ -1440,10 +1440,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         """
         tag_names = list(tag_names)
         for galaxy in galaxies:
-            for cluster in galaxy['GalaxyCluster']:
-                tag_name = cluster.get('tag_name') or (
-                    f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"'
-                )
+            for tag_name in MISPtoSTIXParser._quick_fetch_tag_names(galaxy):
                 if tag_name not in tag_names:
                     tag_names.append(tag_name)
         return tuple(tag_names)

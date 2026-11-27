@@ -863,19 +863,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _handle_attribute_tags_and_galaxies(
             self, attribute: MISPAttribute | dict,
             object_args: dict, standalone: Optional[bool] = True) -> tuple:
-        if standalone and attribute.get('Galaxy'):
+        if attribute.get('Galaxy'):
+            # The Indicator of an Indicator and Observed Data pair reaches the
+            # galaxy clusters through the Observed Data, which alone converts
+            # them, but drops their tags all the same
             tag_names: list = []
             for galaxy in attribute['Galaxy']:
-                galaxy_type = galaxy['type']
-                to_call = self._mapping.galaxy_types_mapping(galaxy_type)
-                if to_call is not None:
-                    getattr(self, to_call.format('attribute'))(
-                        galaxy, object_args
-                    )
-                else:
-                    self._handle_undefined_attribute_galaxy(
-                        galaxy, object_args
-                    )
+                if standalone:
+                    galaxy_type = galaxy['type']
+                    to_call = self._mapping.galaxy_types_mapping(galaxy_type)
+                    if to_call is not None:
+                        getattr(self, to_call.format('attribute'))(
+                            galaxy, object_args
+                        )
+                    else:
+                        self._handle_undefined_attribute_galaxy(
+                            galaxy, object_args
+                        )
                 tag_names.extend(self._quick_fetch_tag_names(galaxy))
             return tuple(
                 tag['name'] for tag in attribute.get('Tag', [])

@@ -161,6 +161,10 @@ class MISPtoSTIXParser(AbstractParser):
 
     def _handle_event_tags_and_galaxies(self) -> tuple:
         if self._misp_event.get('Galaxy'):
+            # The Report or Grouping lists the event's clusters, which says
+            # that the event holds one only while none of its records does:
+            # the tag of a cluster a record holds as well stays a label
+            record_cluster_uuids = self._record_cluster_uuids()
             tag_names: list = []
             for galaxy in self._misp_event['Galaxy']:
                 galaxy_type = galaxy['type']
@@ -168,9 +172,13 @@ class MISPtoSTIXParser(AbstractParser):
                 try:
                     if to_call is not None:
                         getattr(self, to_call.format('event'))(galaxy)
-                        tag_names.extend(self._quick_fetch_tag_names(galaxy))
                     else:
                         self._handle_undefined_event_galaxy(galaxy)
+                    tag_names.extend(
+                        self._cluster_tag_name(galaxy_type, cluster)
+                        for cluster in galaxy['GalaxyCluster']
+                        if cluster['uuid'] not in record_cluster_uuids
+                    )
                 except Exception as exception:
                     self._event_galaxy_error(galaxy, exception)
             return tuple(
@@ -178,6 +186,21 @@ class MISPtoSTIXParser(AbstractParser):
                 if tag['name'] not in tag_names
             )
         return tuple(tag['name'] for tag in self._misp_event.get('Tag', []))
+
+    def _record_cluster_uuids(self) -> set:
+        # The clusters the event's attributes and object attributes hold
+        records = [
+            *self._misp_event.get('Attribute', []),
+            *(
+                attribute for misp_object in self._misp_event.get('Object', [])
+                for attribute in misp_object['Attribute']
+            )
+        ]
+        return {
+            cluster['uuid'] for record in records
+            for galaxy in record.get('Galaxy', [])
+            for cluster in galaxy['GalaxyCluster']
+        }
 
     def _parse_event_galaxies(self, galaxies: list):
         for galaxy in galaxies:
@@ -240,10 +263,19 @@ class MISPtoSTIXParser(AbstractParser):
                 galaxies['GalaxyCluster'].append(cluster)
 
     @staticmethod
+    def _cluster_tag_name(galaxy_type: str, cluster: dict) -> str:
+        # A galaxy cluster's own tag name first: one made on a MISP instance
+        # has a tag naming it by its uuid, not the one its type and value build
+        return (
+            cluster.get('tag_name')
+            or f'misp-galaxy:{galaxy_type}="{cluster["value"]}"'
+        )
+
+    @staticmethod
     def _quick_fetch_tag_names(galaxy: dict) -> tuple:
         return tuple(
-            f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"'
-            for cluster in galaxy["GalaxyCluster"]
+            MISPtoSTIXParser._cluster_tag_name(galaxy['type'], cluster)
+            for cluster in galaxy['GalaxyCluster']
         )
 
     def _sanitise_event_object_names(

@@ -23,7 +23,7 @@ from misp_stix_converter.tools.misp_object_templates import (
     _extension_property_name, _ORIGINAL_NAMES_PROPERTY,
     _template_custom_properties)
 from pathlib import Path
-from pymisp import AbstractMISP, MISPAttribute
+from pymisp import AbstractMISP, MISPAttribute, MISPEvent
 from stix2.parsing import dict_to_stix2
 from tempfile import TemporaryDirectory
 from typing import Optional
@@ -3863,6 +3863,189 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self.assertEqual(
                 [key for key in imported if key.lower() == 'ttp'], [survivor]
             )
+
+    ################################################################################
+    #                      CLUSTER TAG CHECKING FUNCTIONS                          #
+    ################################################################################
+
+    @staticmethod
+    def _cluster_tag_names(record) -> set:
+        return {
+            tag.name for tag in record.tags
+            if tag.name.startswith('misp-galaxy:')
+        }
+
+    def _check_cluster_tag(
+            self, bundle, tag_name: str, kept: bool = True) -> list:
+        """Every record the cluster is attached to is tagged `tag_name`, and
+        the imported cluster keeps it as its own tag when `kept`."""
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        [attribute] = event.attributes
+        [misp_object] = event.objects
+        clusters = []
+        for record in (attribute, *misp_object.attributes):
+            self.assertEqual(self._cluster_tag_names(record), {tag_name})
+            [galaxy] = record.galaxies
+            [cluster] = galaxy.clusters
+            self.assertEqual(
+                cluster.get('tag_name'), tag_name if kept else None
+            )
+            clusters.append(cluster)
+        return clusters
+
+    @staticmethod
+    def _with_event_label(bundle, label: str):
+        # The bundle with its Report or Grouping labelled `label` as well, as
+        # the export writes the tag of a cluster the event holds when one of
+        # its records holds it too
+        content = json.loads(bundle.serialize())
+        for stix_object in content['objects']:
+            if stix_object['type'] in ('grouping', 'report'):
+                stix_object['labels'].append(label)
+        return dict_to_stix2(content, allow_custom=True)
+
+    def _check_cluster_tag_on_the_event_too(
+            self, bundle, tag_name: str, kept: bool = True):
+        """The Report or Grouping labelled with the tag of the cluster the
+        records hold: the event holds that cluster as well, tagged once, and
+        every record keeps its own."""
+        [record_cluster, *_] = self._check_cluster_tag(
+            self._with_event_label(bundle, tag_name), tag_name, kept=kept
+        )
+        event = self.parser.misp_event
+        self.assertEqual(
+            [tag.name for tag in event.tags].count(tag_name), 1
+        )
+        [galaxy] = event.galaxies
+        [cluster] = galaxy.clusters
+        self.assertEqual(cluster.uuid, record_cluster.uuid)
+        self.assertEqual(cluster.get('tag_name'), tag_name if kept else None)
+
+    def _check_cluster_tag_on_the_event_too_as_tags(
+            self, bundle, tag_name: str):
+        """Imported as tags, the label is the event's tag already."""
+        self._check_cluster_tag_as_tags(
+            self._with_event_label(bundle, tag_name), tag_name
+        )
+        self.assertEqual(
+            [tag.name for tag in self.parser.misp_event.tags].count(tag_name),
+            1
+        )
+
+    def _check_event_label_naming_no_cluster(
+            self, bundle, label: str, tag_name: str):
+        """A Report or Grouping label naming no cluster of the bundle stays
+        a plain event tag, and attaches no cluster to the event."""
+        self._check_cluster_tag(self._with_event_label(bundle, label), tag_name)
+        event = self.parser.misp_event
+        event_tags = [tag.name for tag in event.tags]
+        self.assertIn(label, event_tags)
+        self.assertNotIn(tag_name, event_tags)
+        self.assertEqual(event.galaxies, [])
+
+    def _export_and_import(
+            self, export_class, event: dict,
+            galaxies_as_tags: bool = False) -> tuple:
+        """The event as the export takes it, and as the import makes it back
+        from the bundle the export writes."""
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        export_parser = export_class()
+        export_parser.parse_misp_event(misp_event)
+        self.parser.load_stix_bundle(export_parser.bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=galaxies_as_tags)
+        return misp_event, self.parser.misp_event
+
+    def _round_trip_cluster_tag_names_by_uuid(
+            self, export_class, galaxies_as_tags: bool = False) -> tuple:
+        """A tag MISP stored for a cluster by its uuid comes back on the
+        event and the records.
+
+        :return: the cluster, the imported event and its records
+        """
+        from .test_events import get_event_with_cluster_tag_names_by_uuid
+        event, imported = self._export_and_import(
+            export_class, get_event_with_cluster_tag_names_by_uuid(),
+            galaxies_as_tags=galaxies_as_tags
+        )
+        [cluster] = event.galaxies[0].clusters
+        [attribute] = imported.attributes
+        [misp_object] = imported.objects
+        records = (attribute, *misp_object.attributes)
+        for record in records:
+            self.assertEqual(
+                self._cluster_tag_names(record), {cluster.tag_name}
+            )
+        self.assertIn(cluster.tag_name, [tag.name for tag in imported.tags])
+        return cluster, imported, records
+
+    def _check_cluster_tag_round_trip(self, export_class):
+        """The event and the records each hold the cluster again, and the
+        next export carries its tag again, once."""
+        cluster, imported, records = (
+            self._round_trip_cluster_tag_names_by_uuid(export_class)
+        )
+        for record in (imported, *records):
+            self.assertEqual(
+                [record_cluster.uuid for galaxy in record.galaxies
+                 for record_cluster in galaxy.clusters],
+                [cluster.uuid]
+            )
+        export_parser = export_class()
+        export_parser.parse_misp_event(imported)
+        cluster_objects = [
+            stix_object for stix_object in export_parser.bundle.objects
+            if stix_object['id'].endswith(cluster.uuid)
+        ]
+        self.assertEqual(len(cluster_objects), 1)
+        self.assertEqual(
+            [
+                label for label in cluster_objects[0]['labels']
+                if label.startswith('misp-galaxy:')
+            ],
+            [cluster.tag_name]
+        )
+
+    def _check_cluster_tag_round_trip_as_tags(self, export_class):
+        """Imported as tags, the event and the records hold no galaxy."""
+        _, imported, records = self._round_trip_cluster_tag_names_by_uuid(
+            export_class, galaxies_as_tags=True
+        )
+        for record in (imported, *records):
+            self.assertEqual(record.galaxies, [])
+
+    def _check_record_cluster_tagged_as_the_producer(self, export_class):
+        """A cluster an attribute alone holds stays off the event, though
+        the import tags the event with its producer as the cluster is
+        tagged."""
+        from .test_events import (
+            get_event_with_a_producer_cluster_on_an_attribute)
+        _, imported = self._export_and_import(
+            export_class, get_event_with_a_producer_cluster_on_an_attribute()
+        )
+        tag_name = 'misp-galaxy:producer="MISP-Project"'
+        self.assertIn(tag_name, [tag.name for tag in imported.tags])
+        [attribute] = imported.attributes
+        self.assertEqual(self._cluster_tag_names(attribute), {tag_name})
+        self.assertEqual(
+            [galaxy.type for galaxy in attribute.galaxies], ['producer']
+        )
+        self.assertEqual(imported.galaxies, [])
+
+    def _check_cluster_tag_as_tags(self, bundle, tag_name: str):
+        """Every record the cluster is attached to is tagged `tag_name`, and
+        given no galaxy."""
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(galaxies_as_tags=True)
+        event = self.parser.misp_event
+        [attribute] = event.attributes
+        [misp_object] = event.objects
+        for record in (attribute, *misp_object.attributes):
+            self.assertEqual(self._cluster_tag_names(record), {tag_name})
+            self.assertEqual(record.galaxies, [])
+        self.assertEqual(event.galaxies, [])
 
     ################################################################################
     #             OBJECT TEMPLATE RELATION RESTORATION CHECKING FUNCTIONS          #
