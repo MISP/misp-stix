@@ -793,20 +793,34 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for cluster_id, cluster in self._clusters.items():
             if self.misp_event.uuid not in cluster['used']:
                 continue
+            misp_cluster = cluster['cluster']
             if not cluster['used'][self.misp_event.uuid]:
                 if cluster_id in getattr(self, '_marking_definition', {}):
                     for tag in self._marking_definition[cluster_id]:
                         if tag not in self.event_tags:
                             self.misp_event.add_tag(tag)
                             self.event_tags.add(tag)
-                misp_cluster = cluster['cluster']
                 if isinstance(misp_cluster, list):
                     for cluster in misp_cluster:
                         clusters[cluster.type].append(cluster)
                     continue
                 clusters[misp_cluster.type].append(misp_cluster)
+            # The clusters a marking yields come in a list, and reach the
+            # event through its own marking references
+            elif (not isinstance(misp_cluster, list)
+                    and self._event_holds_record_cluster(misp_cluster)):
+                clusters[misp_cluster.type].append(misp_cluster)
         if clusters:
             self._add_event_galaxies(clusters)
+
+    def _event_holds_record_cluster(self, cluster) -> bool:
+        """Whether the event holds a cluster one of its records holds.
+
+        The Report or Grouping listing a cluster says that the event holds it
+        only while none of the event's records does: nothing else in a bundle
+        says it in general.
+        """
+        return False
 
     def _parse_galaxies_as_tag_names(self):
         for tags in self._clusters.values():
@@ -1418,6 +1432,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._add_producer_tag(
                 misp_event, self._handle_creator(tuple(self._creators)[0])
             )
+        self._event_labels = set()
         return misp_event
 
     def _create_misp_event(
@@ -1455,6 +1470,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 misp_event, self._handle_creator(stix_object['created_by_ref'])
             )
         self._event_tags = set()
+        # The labels apart from the event's tags, which also hold its
+        # producer and its markings
+        self._event_labels = set()
         self._add_markings_to_misp_event(misp_event, stix_object)
         if 'labels' in stix_object:
             labels = (
@@ -1463,6 +1481,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             )
             for label in labels:
                 misp_event.add_tag(label)
+                self._event_labels.add(label)
         return misp_event
 
     @staticmethod

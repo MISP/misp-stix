@@ -867,6 +867,19 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             elif cluster_value not in meta['synonyms']:
                 meta['synonyms'].append(cluster_value)
 
+    def _handle_labels(self, meta: dict, labels: list):
+        # The label carrying the Cluster Tag is read as the cluster's own tag,
+        # not as one of its meta labels
+        galaxy_type = self._parse_labels({'labels': labels}).get(
+            'misp:galaxy-type'
+        )
+        meta_labels = [
+            label for label in labels if not self._is_cluster_tag_field(
+                label.partition('=')[0], galaxy_type
+            )
+        ]
+        super()._handle_labels(meta, meta_labels)
+
     def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
         mapping = f"{stix_object['type'].replace('-', '_')}_meta_mapping"
         if hasattr(self._mapping, mapping):
@@ -935,10 +948,62 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             return relation.replace('_', '-')
         return relation
 
+    def _carried_cluster_value(
+            self, stix_object: Mapping, galaxy_type: str) -> Optional[str]:
+        """Read the value slot of the Cluster Tag the export carried.
+
+        The export writes the tag MISP stored for the cluster among the labels
+        of the cluster's own object, which names the cluster an instance made
+        by its uuid: nothing else in the object says so. Only the label of the
+        cluster's own galaxy type is that tag, and one with an empty value
+        slot carries none.
+
+        :param stix_object: the object the cluster is read from
+        :param galaxy_type: the galaxy the cluster belongs to
+        :return: the value the tag names the cluster by, or None when the
+            object carried no tag
+        """
+        for field, value in self._parse_labels(stix_object).items():
+            if self._is_cluster_tag_field(field, galaxy_type):
+                return value or None
+        return None
+
+    @staticmethod
+    def _is_cluster_tag_field(field: str, galaxy_type: Optional[str]) -> bool:
+        # The label field compared in its two parts, `misp-galaxy` and the
+        # galaxy type: joined, they would spell a tag built outside the one
+        # place tags are built, where this only reads one
+        namespace, _, predicate = field.partition(':')
+        return namespace == 'misp-galaxy' and predicate == galaxy_type
+
+    def _keep_carried_cluster_tag(
+            self, cluster: MISPGalaxyCluster,
+            stix_object: Mapping, galaxy_type: str):
+        """Give the cluster the Cluster Tag its object carried.
+
+        The tag is built from the carried value, not copied whole, so a value
+        a tag cannot carry names the cluster by its uuid, as a value-built tag
+        does. A cluster whose object carried no tag gets none: the next export
+        would pass a tag guessed from the value off as the one MISP stored.
+
+        :param cluster: the Galaxy Cluster built from the object
+        :param stix_object: the object the cluster is read from
+        :param galaxy_type: the galaxy the cluster belongs to
+        """
+        value = self._carried_cluster_value(stix_object, galaxy_type)
+        if value is None:
+            return
+        tag_name = self.main_parser._build_cluster_tag(
+            galaxy_type, value, cluster.uuid
+        )
+        if tag_name is not None:
+            cluster.tag_name = tag_name
+
     def _parse_galaxy_as_container(
             self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
         galaxy_type, galaxy_name = self._extract_galaxy_labels(stix_object)
         cluster = self._parse_galaxy_cluster(stix_object, galaxy_type)
+        self._keep_carried_cluster_tag(cluster, stix_object, galaxy_type)
         if galaxy_name is None:
             self.main_parser._add_warning(
                 'Missing MISP galaxy name label on the object with id '
@@ -957,7 +1022,8 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         galaxy_type, _ = self._extract_galaxy_labels(stix_object)
         tag_name = self.main_parser._build_tag(
             'misp-galaxy', galaxy_type,
-            stix_object.get('name', stix_object['id'])
+            self._carried_cluster_value(stix_object, galaxy_type)
+            or stix_object.get('name', stix_object['id'])
         )
         return {
             'tag_names': [tag_name] if tag_name is not None else [],
