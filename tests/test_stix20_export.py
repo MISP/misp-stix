@@ -6237,15 +6237,55 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
         self.assertEqual(campaign.type, 'campaign')
         self._check_galaxy_features(campaign, galaxy, timestamp)
 
+    def _ids_labelled_with(self, label: str) -> list:
+        return [
+            stix_object.id for stix_object in self.parser.stix_objects
+            if label in stix_object.get('labels', [])
+        ]
+
     def _test_event_with_cluster_tag_names_by_uuid(self, event):
         # The tag of a galaxy cluster labels its own STIX object, never a
-        # record carrying it
+        # record carrying it. The Report listing the cluster would say the
+        # event holds it only if none of its records did: the event's tag
+        # labels the Report as well
         cluster = event['Galaxy'][0]['GalaxyCluster'][0]
         self.parser.parse_misp_event(event)
         self.assertEqual(
-            [stix_object.id for stix_object in self.parser.stix_objects
-             if cluster['tag_name'] in stix_object.get('labels', [])],
-            [f"threat-actor--{cluster['uuid']}"]
+            self._ids_labelled_with(cluster['tag_name']),
+            [f"report--{event['uuid']}", f"threat-actor--{cluster['uuid']}"]
+        )
+
+    def _test_event_with_a_cluster_tag_name_by_uuid_on_one_side(self, event):
+        # A cluster on the event alone, which the Report lists, or on the
+        # records alone, which relate to it: the structure says who holds it,
+        # and its tag labels its own STIX object only
+        cluster_uuid = '11e17436-6ede-4733-8547-4ce0254ea19e'
+        self.parser.parse_misp_event(event)
+        self.assertEqual(
+            self._ids_labelled_with(f'misp-galaxy:threat-actor="{cluster_uuid}"'),
+            [f'threat-actor--{cluster_uuid}']
+        )
+
+    def _test_event_with_unmapped_cluster_tag_names_by_uuid(self, event):
+        cluster = event['Galaxy'][0]['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event)
+        self.assertEqual(
+            self._ids_labelled_with(cluster['tag_name']),
+            [
+                f"report--{event['uuid']}",
+                f"x-misp-galaxy-cluster--{cluster['uuid']}"
+            ]
+        )
+
+    def _test_events_sharing_a_cluster_tag_name_by_uuid(self, shared, other):
+        # One cluster object serves both events: only the Report of the
+        # event holding the cluster its records hold carries its tag
+        cluster = shared['Galaxy'][0]['GalaxyCluster'][0]
+        for event in (shared, other):
+            self.parser.parse_misp_event(event)
+        self.assertCountEqual(
+            self._ids_labelled_with(cluster['tag_name']),
+            [f"report--{shared['uuid']}", f"threat-actor--{cluster['uuid']}"]
         )
 
     def _test_event_with_cluster_tags_on_a_pair_attribute(self, event):
@@ -6600,6 +6640,30 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
         event = get_event_with_cluster_tag_names_by_uuid()
         self._test_event_with_cluster_tag_names_by_uuid(event['Event'])
 
+    def test_event_with_a_cluster_tag_name_by_uuid_on_the_event_only(self):
+        event = get_event_with_cluster_tag_names_by_uuid(on_records=False)
+        self._test_event_with_a_cluster_tag_name_by_uuid_on_one_side(
+            event['Event']
+        )
+
+    def test_event_with_a_cluster_tag_name_by_uuid_on_records_only(self):
+        event = get_event_with_cluster_tag_names_by_uuid(on_event=False)
+        self._test_event_with_a_cluster_tag_name_by_uuid_on_one_side(
+            event['Event']
+        )
+
+    def test_event_with_unmapped_cluster_tag_names_by_uuid(self):
+        event = get_event_with_unmapped_cluster_tag_names_by_uuid()
+        self._test_event_with_unmapped_cluster_tag_names_by_uuid(
+            event['Event']
+        )
+
+    def test_events_sharing_a_cluster_tag_name_by_uuid(self):
+        shared, other = get_events_sharing_a_cluster_tag_name_by_uuid()
+        self._test_events_sharing_a_cluster_tag_name_by_uuid(
+            shared['Event'], other['Event']
+        )
+
     def test_event_with_cluster_tags_on_a_pair_attribute(self):
         event = get_event_with_cluster_tags_on_a_pair_attribute()
         self._test_event_with_cluster_tags_on_a_pair_attribute(event['Event'])
@@ -6868,6 +6932,36 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_cluster_tag_names_by_uuid(misp_event)
+
+    def test_event_with_a_cluster_tag_name_by_uuid_on_the_event_only(self):
+        event = get_event_with_cluster_tag_names_by_uuid(on_records=False)
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_a_cluster_tag_name_by_uuid_on_one_side(
+            misp_event
+        )
+
+    def test_event_with_a_cluster_tag_name_by_uuid_on_records_only(self):
+        event = get_event_with_cluster_tag_names_by_uuid(on_event=False)
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_a_cluster_tag_name_by_uuid_on_one_side(
+            misp_event
+        )
+
+    def test_event_with_unmapped_cluster_tag_names_by_uuid(self):
+        event = get_event_with_unmapped_cluster_tag_names_by_uuid()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_unmapped_cluster_tag_names_by_uuid(misp_event)
+
+    def test_events_sharing_a_cluster_tag_name_by_uuid(self):
+        misp_events = []
+        for event in get_events_sharing_a_cluster_tag_name_by_uuid():
+            misp_event = MISPEvent()
+            misp_event.from_dict(**event)
+            misp_events.append(misp_event)
+        self._test_events_sharing_a_cluster_tag_name_by_uuid(*misp_events)
 
     def test_event_with_cluster_tags_on_a_pair_attribute(self):
         event = get_event_with_cluster_tags_on_a_pair_attribute()

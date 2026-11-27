@@ -4764,22 +4764,54 @@ def get_event_with_attack_pattern_galaxy():
     return event
 
 
-def get_event_with_cluster_tag_names_by_uuid():
+def _event_with_cluster_tag_names_by_uuid(
+        galaxy: dict, on_event: bool, on_records: bool) -> dict:
     # A galaxy cluster made on a MISP instance has a tag naming it by its
     # uuid, not by its value: here on the event, an attribute and an
-    # object's attribute
-    galaxy = deepcopy(_TEST_THREAT_ACTOR_GALAXY)
+    # object's attribute, or on the event or the records alone
+    galaxy = deepcopy(galaxy)
     cluster = galaxy['GalaxyCluster'][0]
-    cluster['tag_name'] = f'misp-galaxy:threat-actor="{cluster["uuid"]}"'
+    cluster['tag_name'] = f'misp-galaxy:{galaxy["type"]}="{cluster["uuid"]}"'
     attribute = deepcopy(_NON_INDICATOR_ATTRIBUTE)
     misp_object = dict(_populate_object(_TEST_ASN_OBJECT))
     event = deepcopy(_BASE_EVENT)
-    for record in (event['Event'], attribute, misp_object['Attribute'][0]):
+    records = [event['Event']] if on_event else []
+    if on_records:
+        records.extend((attribute, misp_object['Attribute'][0]))
+    for record in records:
         record['Galaxy'] = [deepcopy(galaxy)]
         record['Tag'] = [{'name': cluster['tag_name']}]
     event['Event']['Attribute'] = [attribute]
     event['Event']['Object'] = [misp_object]
     return event
+
+
+def get_event_with_cluster_tag_names_by_uuid(
+        on_event: bool = True, on_records: bool = True):
+    return _event_with_cluster_tag_names_by_uuid(
+        _TEST_THREAT_ACTOR_GALAXY, on_event, on_records
+    )
+
+
+def get_event_with_unmapped_cluster_tag_names_by_uuid():
+    # The same cluster tag, on the event and the records, for a galaxy type
+    # with no STIX mapping
+    return _event_with_cluster_tag_names_by_uuid(
+        _TEST_TEA_MATRIX_GALAXY, True, True
+    )
+
+
+def get_events_sharing_a_cluster_tag_name_by_uuid():
+    # Two events whose attributes hold the same cluster, which the first
+    # event holds itself as well
+    shared = get_event_with_cluster_tag_names_by_uuid()
+    records_only = get_event_with_cluster_tag_names_by_uuid(on_event=False)
+    records_only['Event']['uuid'] = '6b9b7ec4-6a84-4ad1-8e44-4e8c3a1d9f5b'
+    records_only['Event']['Attribute'][0]['uuid'] = (
+        'c0a3f5d2-8e71-4b9a-9d6e-2f4b8a1c7e30'
+    )
+    del records_only['Event']['Object']
+    return shared, records_only
 
 
 def get_event_with_cluster_tags_on_a_pair_attribute():
