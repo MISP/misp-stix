@@ -4209,9 +4209,94 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(dict(self.parser.warnings), {})
 
+    def test_stix21_bundle_with_threat_actor_galaxy_on_the_event_too(self):
+        # The Grouping lists the cluster, which says the event holds it only
+        # while no record does: its label says it when a record does too
+        tag_name = 'misp-galaxy:threat-actor="11e17436-6ede-4733-8547-4ce0254ea19e"'
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag_on_the_event_too(bundle, tag_name)
+
+    def test_stix21_bundle_with_threat_actor_galaxy_on_the_event_too_extension_syntax(self):
+        tag_name = 'misp-galaxy:threat-actor="11e17436-6ede-4733-8547-4ce0254ea19e"'
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag_on_the_event_too(bundle, tag_name)
+
+    def test_stix21_bundle_with_custom_galaxy_on_the_event_too(self):
+        tag_name = 'misp-galaxy:tea-matrix="24430dc6-9c27-4b3c-a5e7-6dda478fffa0"'
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_custom_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag_on_the_event_too(bundle, tag_name)
+
+    def test_stix21_bundle_with_custom_galaxy_on_the_event_too_extension_syntax(self):
+        tag_name = 'misp-galaxy:tea-matrix="24430dc6-9c27-4b3c-a5e7-6dda478fffa0"'
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_custom_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag_on_the_event_too(bundle, tag_name)
+
+    def test_stix21_bundle_with_threat_actor_galaxy_carrying_no_tag_on_the_event_too(self):
+        # No tag carried: the label names the cluster by its value, as the
+        # tag built for the records does
+        self._check_cluster_tag_on_the_event_too(
+            TestInternalSTIX21Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(),
+            'misp-galaxy:threat-actor="Cutting Kitten"', kept=False
+        )
+
+    def test_stix21_bundle_with_threat_actor_galaxy_on_the_event_too_as_tags(self):
+        tag_name = 'misp-galaxy:threat-actor="11e17436-6ede-4733-8547-4ce0254ea19e"'
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag_on_the_event_too_as_tags(bundle, tag_name)
+
+    def test_stix21_bundle_with_threat_actor_galaxy_on_the_event_too_as_tags_extension_syntax(self):
+        tag_name = 'misp-galaxy:threat-actor="11e17436-6ede-4733-8547-4ce0254ea19e"'
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag_on_the_event_too_as_tags(bundle, tag_name)
+
+    def test_stix21_bundle_with_custom_galaxy_on_the_event_too_as_tags(self):
+        tag_name = 'misp-galaxy:tea-matrix="24430dc6-9c27-4b3c-a5e7-6dda478fffa0"'
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_custom_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag_on_the_event_too_as_tags(bundle, tag_name)
+
+    def test_stix21_bundle_with_custom_galaxy_on_the_event_too_as_tags_extension_syntax(self):
+        tag_name = 'misp-galaxy:tea-matrix="24430dc6-9c27-4b3c-a5e7-6dda478fffa0"'
+        bundle = TestInternalSTIX21Bundles.get_extension_syntax_bundle_with_custom_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_cluster_tag_on_the_event_too_as_tags(bundle, tag_name)
+
+    def test_stix21_bundle_with_event_label_naming_no_cluster(self):
+        tag_name = 'misp-galaxy:threat-actor="11e17436-6ede-4733-8547-4ce0254ea19e"'
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_threat_actor_galaxy_on_attribute_and_object(
+            tag_name
+        )
+        self._check_event_label_naming_no_cluster(
+            bundle, 'misp-galaxy:threat-actor="Charming Kitten"', tag_name
+        )
+
     def test_stix21_cluster_tag_round_trip(self):
         from misp_stix_converter import MISPtoSTIX21Parser
         self._check_cluster_tag_round_trip(MISPtoSTIX21Parser)
+
+    def test_stix21_cluster_tag_round_trip_as_tags(self):
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._check_cluster_tag_round_trip_as_tags(MISPtoSTIX21Parser)
+
+    def test_stix21_record_cluster_tagged_as_the_producer(self):
+        # The event's producer tag is no Report or Grouping label: a
+        # cluster tagged the same way stays on the record that holds it
+        from misp_stix_converter import MISPtoSTIX21Parser
+        self._check_record_cluster_tagged_as_the_producer(MISPtoSTIX21Parser)
 
     def test_stix21_reused_parser_does_not_leak_galaxy_clusters(self):
         # `_reset_bundle_state()` must clear `_clusters`/`_galaxies` so a parser

@@ -4866,6 +4866,37 @@ def get_event_with_cluster_tags_of_an_unmapped_galaxy():
     return event
 
 
+def get_event_with_a_producer_cluster_on_an_attribute():
+    # An attribute holding a producer galaxy cluster that names the
+    # organisation the event comes from, tagged as the import tags the event
+    # with its producer
+    galaxy = deepcopy(_TEST_TEA_MATRIX_GALAXY)
+    galaxy.update(
+        {
+            'uuid': '5a7b8c4e-2d1f-4e6a-9b3c-8f0e1d2c3b4a',
+            'name': 'Producer',
+            'type': 'producer',
+            'description': 'Producer'
+        }
+    )
+    cluster = galaxy['GalaxyCluster'][0]
+    cluster.update(
+        {
+            'uuid': '9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b',
+            'type': 'producer',
+            'value': 'MISP-Project',
+            'description': 'MISP-Project',
+            'tag_name': 'misp-galaxy:producer="MISP-Project"'
+        }
+    )
+    attribute = deepcopy(_NON_INDICATOR_ATTRIBUTE)
+    attribute['Galaxy'] = [galaxy]
+    attribute['Tag'] = [{'name': cluster['tag_name']}]
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [attribute]
+    return event
+
+
 def get_event_with_course_of_action_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
