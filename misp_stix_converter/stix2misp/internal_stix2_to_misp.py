@@ -384,6 +384,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         for cluster in misp_galaxy.clusters:
             self._add_cluster_tag(misp_layer, cluster)
 
+    def _event_holds_record_cluster(self, cluster) -> bool:
+        # MISP writes the event's tag of the cluster as a Report or Grouping
+        # label when one of the event's records holds the cluster too
+        return self._galaxy_cluster_tag(cluster) in self._event_labels
+
     def _galaxy_cluster_tag(self, cluster) -> Optional[str]:
         # The tag the cluster's object carried, kept on the cluster as it was
         # built; failing that, the tag is guessed from the cluster itself
